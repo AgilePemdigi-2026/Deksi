@@ -34,7 +34,7 @@
 <div class="rounded-2xl border border-pinggir bg-white p-5 shadow-sm sm:p-6"
      id="grafik-tren-ekonomi"
      data-testid="grafik-tren-ekonomi"
-     data-deksi-tren="{{ @json(['seri' => $payload, 'gagal' => $gagal]) }}">
+     data-deksi-tren="{{ json_encode(['seri' => $payload, 'gagal' => $gagal]) }}">
 
     {{-- Kepala kartu --}}
     <div class="flex flex-wrap items-start justify-between gap-4">

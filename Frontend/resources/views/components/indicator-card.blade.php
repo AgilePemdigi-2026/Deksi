@@ -123,8 +123,8 @@
             <span class="sr-only">Waktu pembaruan: {{ $indicator['pembaruan'] }}</span>
         </p>
         {{-- Placeholder: halaman Detail Indikator milik anggota lain --}}
-        <a href="#" class="flex items-center gap-1 text-[12px] font-semibold text-aksen"
-           title="Lihat Detail (placeholder, fitur anggota lain)">
+        <a href="{{ route('indikator.show', ['kode' => $indicator['kode']]) }}" class="flex items-center gap-1 text-[12px] font-semibold text-aksen"
+           aria-label="Lihat detail {{ $indicator['nama'] }}">
             Lihat Detail
             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
                 <path d="M4 12h15m0 0-5-5m5 5-5 5"/>
