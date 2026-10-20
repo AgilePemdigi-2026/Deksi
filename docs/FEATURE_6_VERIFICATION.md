@@ -7,7 +7,9 @@ PHP Laragon 8.3.26; Composer 2.8.4; Laravel terpasang 12.70.0; Node 24.13.1; npm
 
 Tests menggunakan kernel HTTP Laravel aktual, JSON contoh tim dan fixture sintetis yang eksplisit. Database, API sumber resmi, model AI dan Docker tidak dijalankan. Temp fixture di scratch Hermes dibersihkan oleh finally. PHP views/cache/log berada pada storage runtime lokal yang di-ignore.
 
-## Bukti actual
+## Bukti awal (20 Oktober 2026, sebelum pemindahan lokasi)
+Bagian awal dan tabel hash di bawah adalah catatan historis pada lokasi Frontend/. Saat itu belum ada commit/push/PR. Bukti revalidasi struktur terbaru dicatat terpisah di bagian akhir.
+
 | Pemeriksaan | Hasil |
 |---|---|
 | Smoke php tests/indicator-detail.php | PASS, exit 0; akses/detail/demo/periode/histori dan penolakan klaim fixture |
@@ -70,3 +72,21 @@ Rujukan pengembangan saja, tanpa klaim sertifikasi/kepatuhan atau pemetaan klaus
 | tests/indicator-detail-regression.php | 02f211158d4401e61deb471940444c8126e0427dce2e808ffcf39fae773bfadb |
 
 Batas integritas: git diff memastikan backend/, deksi/, Docker, Frontend/.env dan resources/data/indicators.json tidak diubah sebagai tracked source. Ini bukan seal seluruh filesystem/runtime. Receipt ini dan README hanya pencatatan setelah run; tidak memicu klaim eksekusi tes tambahan.
+
+## Revalidasi sebelum PR — 21 Oktober 2026 (UTC+07)
+Pengguna mengizinkan commit, push dan PR, tanpa merge. Fetch menemukan commit tim `85d7668` (penyesuaiaan lokasi frontend) pada fe: 28 file dipindahkan dari Frontend/ ke root tanpa perubahan isi. Integrasi dilakukan pada feature branch, bukan shared branch. Konflik file-location diselesaikan dengan mengikuti pemindahan tim dan mempertahankan perubahan fitur; tidak dibuat frontend duplikat. Ignore runtime serta dependency lokal dipindahkan ke root; environment lokal tidak dipublikasikan.
+
+Dari root baru: Composer check-platform-reqs --no-dev PASS pada PHP 8.3.26; npm run build PASS; php tests/indicator-detail.php PASS; php tests/indicator-detail-regression.php **26 PASS / 0 FAIL**, exit 0. Build menghasilkan CSS 48,49 kB (gzip 11,57 kB); scope pemindaian Tailwind sekarang root monorepo. Ini pengukuran build, bukan benchmark atau jaminan performa produksi. Warning __dirname Vite existing masih nonfatal.
+
+Tes ulang ini dilakukan karena lokasi aplikasi dan base integrasi benar-benar berubah, bukan untuk mengulang pengingat verifikasi. Source logic dipertahankan; sebagian hash byte berubah karena checkout/merge memakai CRLF. Tabel berikut adalah hash pada lokasi baru setelah tes:
+
+| File relatif root frontend | SHA-256 saat revalidasi |
+|---|---|
+| app/Http/Controllers/IndicatorController.php | 26c06d2af6e8756e8d726742c02b5264ac754f191af44fea1e41a64c33f9c603 |
+| app/Support/IndicatorHistory.php | 20a430a9faf0a260a13ce4ed92a15516ca4856c62f0c2248d983086d5adc3781 |
+| app/Support/IndicatorRepository.php | c9ef13224c2b81546d6fee34fdce2dd01a3c2cdbb61a7ad81d2de421419531e2 |
+| resources/views/indicators/show.blade.php | ed4c50e12aaf9af9e7e9a2c1d8b144e7bf0ff5a184d3c4958fce4394a713d386 |
+| resources/views/components/indicator-history.blade.php | 741f7d28e2c8aee8787e8f6ba0147c76f6d5cd331082d20bbcaba45a23c794a2 |
+| tests/indicator-detail-regression.php | 6f0ede55397a644f512380dc890bab9e5e84ccca66636b917d74c6872ec05975 |
+
+Pengguna menyatakan tampilan lokal aman untuk dilanjutkan ke PR; itu bukan pengesahan fidelity terhadap frame High-Fi yang belum dapat dibaca. Status review High-Fi, data resmi/backend, fitur 7, Docker dan BDD akademik tetap seperti batas di atas. Kesiapan akhir masih review tim, bukan auto-merge. Catatan internal .hermes, .env.local, vendor, node_modules, build, storage dan log tidak termasuk perubahan PR.

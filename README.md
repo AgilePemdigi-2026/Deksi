@@ -5,7 +5,7 @@ Laravel 12 + PHP ^8.2 + Blade + Tailwind/Vite, mengikuti composer.json dan style
 ## Menjalankan lokal
 Gunakan PHP/Composer yang tersedia di Laragon atau runtime sesuai composer.json. Pada mesin pengembangan saat implementasi, PHP ada di `C:/laragon/bin/php/php-8.3.26-Win32-vs16-x64/php.exe` dan Composer di `C:/laragon/bin/composer/composer.phar`. Tidak ada perubahan PATH global.
 
-Jalankan dari folder Frontend. Contoh berikut mengasumsikan php, composer, node dan npm tersedia pada terminal lokal:
+Jalankan dari **root repository pada branch `fe` atau feature branch turunannya**. Pada commit tim `85d7668`, aplikasi frontend dipindahkan dari `Frontend/` ke root; jangan membuat salinan `Frontend/` lagi. Contoh berikut mengasumsikan php, composer, node dan npm tersedia pada terminal lokal:
 
 ```bash
 # Siapkan direktori runtime yang tidak masuk Git.
@@ -52,4 +52,4 @@ Figma belum dapat diakses. Ekspor SRS final menempatkan gambar dashboard yang sa
 Perubahan penunjang minimum: base Controller yang hilang, package/entrypoint Vite dan lockfile, ignore runtime, perbaikan serialisasi Blade dashboard yang menyebabkan HTTP 500, pengurutan import CSS, serta navigasi kartu. Komponen dashboard lainnya bukan cakupan implementasi fitur 6; renderer canvas interaktif dashboard sebelumnya belum tersedia dan tidak ditambahkan pada entrypoint bersama.
 
 ## Kolaborasi
-Branch kerja feat/detail-indikator dari fe. Tidak direct push ke fe/be/main. Commit, push, PR ke fe dan merge belum dilakukan; memerlukan instruksi dan review sesuai workflow tim.
+Branch kerja feat/detail-indikator mengikuti fe terbaru. Tidak direct push ke fe/be/main. Ajukan perubahan melalui PR ke fe dan tunggu review tim; jangan merge otomatis. Status commit/push/PR aktual dibaca dari Git/GitHub, bukan diasumsikan dari dokumen ini.
