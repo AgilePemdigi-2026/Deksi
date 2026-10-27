@@ -63,8 +63,13 @@
 
         <section aria-labelledby="penelusuran" class="kartu-indikator p-5 sm:p-6">
             <h2 id="penelusuran" class="text-lg font-bold text-navy-900">Transparansi dan sumber</h2>
-            <p class="mt-3 text-sm leading-relaxed text-teks">Source Trace lengkap belum tersedia. Halaman penelusuran institusi, rilis, formula, dan versi dikerjakan pada fitur 7.</p>
-            <p class="mt-4 rounded-lg bg-spark p-3 text-xs leading-relaxed text-teks">Tautan Source Trace akan diaktifkan setelah tujuan dan metadata versinya tersedia. Nama institusi saja bukan bukti angka sudah diverifikasi.</p>
+            @if ($sourceTrace !== null)
+                <p class="mt-3 text-sm leading-relaxed text-teks">Telusuri metadata sumber untuk indikator, periode, dan snapshot demo yang sama. Metadata resmi masih parsial.</p>
+                <a href="{{ route('indikator.source-trace', ['kode' => $indicator['kode'], 'trace' => $sourceTrace['id']]) }}" class="mt-4 inline-block rounded border border-pinggir px-4 py-2 text-sm font-semibold text-aksen">Lihat Sumber Data →</a>
+                <p class="mt-3 text-xs leading-relaxed text-teks">Versi {{ $sourceTrace['version'] }}. Nama institusi saja bukan bukti angka sudah diverifikasi.</p>
+            @else
+                <p class="mt-3 text-sm leading-relaxed text-teks">Source Trace untuk snapshot ini belum tersedia atau tidak cocok. Tautan tidak diaktifkan agar angka dan provenance tidak tertukar.</p>
+            @endif
         </section>
 
         <section aria-labelledby="analisis" class="kartu-indikator p-5 sm:p-6">
