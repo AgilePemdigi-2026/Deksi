@@ -1,55 +1,188 @@
-# DEKSI Frontend — Detail Indikator (fitur 6)
+# DEKSI Project
 
-Laravel 12 + PHP ^8.2 + Blade + Tailwind/Vite, mengikuti composer.json dan style frontend tim. Halaman ini masih memakai **dataset demo lokal**, bukan angka resmi yang telah diverifikasi. Fitur 7, backend dan Docker tidak diimplementasikan pada perubahan ini.
+Project ini terdiri dari dua layanan utama dalam satu repositori:
 
-## Menjalankan lokal
-Gunakan PHP/Composer yang tersedia di Laragon atau runtime sesuai composer.json. Pada mesin pengembangan saat implementasi, PHP ada di `C:/laragon/bin/php/php-8.3.26-Win32-vs16-x64/php.exe` dan Composer di `C:/laragon/bin/composer/composer.phar`. Tidak ada perubahan PATH global.
+- `backend/` : API REST berbasis Django
+- `deksi/` : aplikasi Laravel
+- `docker-compose.yml` : menjalankan seluruh stack lokal beserta PostgreSQL
 
-Jalankan dari **root repository pada branch `fe` atau feature branch turunannya**. Pada commit tim `85d7668`, aplikasi frontend dipindahkan dari `Frontend/` ke root; jangan membuat salinan `Frontend/` lagi. Contoh berikut mengasumsikan php, composer, node dan npm tersedia pada terminal lokal:
+Tujuan proyek ini adalah menyediakan layanan autentikasi, indikator, dan feedback dalam satu ekosistem yang terintegrasi.
 
-```bash
-# Siapkan direktori runtime yang tidak masuk Git.
-php -r "foreach (['bootstrap/cache','storage/framework/views','storage/framework/cache/data','storage/framework/sessions','storage/logs'] as \$p) { if (!is_dir(\$p)) mkdir(\$p,0777,true); }"
-composer install --no-scripts --no-plugins --prefer-dist --no-interaction
-npm ci --ignore-scripts
-npm run build
+## Teknologi yang Digunakan
+
+### Backend
+- Python
+- Django
+- Django REST Framework
+- PostgreSQL
+- Token Authentication
+- CORS
+
+### Frontend / App
+- PHP
+- Laravel
+- Blade
+- Composer
+- npm / Vite
+
+## Struktur Proyek
+
+```text
+PPL PRAK/
+├── backend/
+│   ├── apps/
+│   │   ├── accounts/
+│   │   ├── feedback/
+│   │   └── indicators/
+│   ├── backend/
+│   ├── .env
+│   ├── Dockerfile
+│   ├── docker-entrypoint.sh
+│   ├── manage.py
+│   └── requirements.txt
+│
+├── deksi/
+│   ├── app/
+│   ├── config/
+│   ├── database/
+│   ├── public/
+│   ├── resources/
+│   ├── routes/
+│   ├── tests/
+│   ├── .env
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── docker-entrypoint.sh
+│   ├── composer.json
+│   ├── package.json
+│   └── artisan
+│
+├── docker-compose.yml
+├── .dockerignore
+├── README.md
+└── .gitignore
 ```
 
-Buat `.env.local` dari `.env.example` **hanya bila belum ada**, lalu:
+## Fitur Utama
+
+- Autentikasi dan manajemen akun
+- Endpoint API untuk indikator
+- Endpoint API untuk feedback
+- Integrasi backend dan frontend dalam satu monorepo
+- Setup lokal berbasis Docker
+
+## Persyaratan Sistem
+
+Sebelum menjalankan project, pastikan perangkat Anda sudah memiliki:
+
+- Docker + Docker Compose
+- Git
+- Browser untuk mengakses frontend/backend
+
+Untuk setup non-Docker, Anda juga butuh:
+
+- Python 3.10+
+- pip
+- PHP 8.3+
+- Composer
+- Node.js + npm
+- PostgreSQL
+
+## Setup dengan Docker
+
+Pastikan Docker sudah aktif di mesin Anda.
+
+Jalankan perintah berikut di root project:
 
 ```bash
-php artisan key:generate --env=local
-php artisan serve --env=local --host=127.0.0.1 --port=8010
+docker compose up --build
 ```
 
-Jangan menimpa environment milik tim atau commit app key. `.env` sudah terlacak pada baseline repository; ignore baru tidak otomatis menghapus file yang sudah terlacak. Perubahan fitur ini tidak memodifikasi atau menghapus `.env` tersebut. `.env.local`, vendor, node_modules, runtime storage dan public/build diabaikan Git.
+Setelah semua container berjalan, maka:
 
-Halaman: `/dashboard` lalu Lihat Detail, atau `/indikator/pdb`. Route memakai kode existing: pdb, inflasi, fiskal, investasi, bi_rate dan tpt. Semua tetap dataset demo. Tidak ada endpoint ekonomi baru yang dibuat di backend.
+- Backend Django: http://localhost:8000
+- Laravel App: http://localhost:8001
+- PostgreSQL: localhost:5432
 
-## Perilaku fitur
-- Akses publik tanpa login; nilai/satuan/periode/institusi/tanggal berasal dari dataset yang sama.
-- Grafik SVG server-rendered dan tabel historis native HTML, tanpa library chart tambahan.
-- Gap/null bukan nol; seri tidak konsisten tidak digambar diam-diam.
-- Metadata hilang ditandai; contoh badge perubahan dan klaim kausal tidak dipromosikan menjadi hasil analisis.
-- Indikator tidak dikenal: HTTP 404 dengan navigasi kembali. Dataset rusak/hilang: HTTP 503 dengan retry.
-- Link Source Trace dan AI tidak dibuat palsu; ketersediaannya dijelaskan sebagai fitur/dependensi belum tersedia.
+## Konfigurasi Default Database
 
-## Pengujian
+Database yang digunakan adalah PostgreSQL dengan detail berikut:
+
+```env
+DB_NAME=deksi
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+```
+
+## File Environment
+
+Sudah disiapkan file environment untuk masing-masing layanan:
+
+- `backend/.env`
+- `deksi/.env`
+
+Jika dibutuhkan, Anda bisa menyesuaikan nilai env sesuai kebutuhan deploy atau local development.
+
+## Run Manual (Tanpa Docker)
+
+### 1. Backend Django
+
 ```bash
-php tests/indicator-detail.php
-php tests/indicator-detail-regression.php
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
 ```
 
-Untuk menjaga lokasi fixture sementara eksplisit, set DEKSI_TEST_SCRATCH ke direktori scratch yang diizinkan sebelum menjalankan regresi. Default runner memakai storage/framework/testing lokal. Runner menjalankan HTTP kernel Laravel nyata dan helper grafik, bukan mock API. Tidak memakai PHPUnit/Behat atau menguji database/backend produksi.
+### 2. Laravel App
 
-Hasil aktual dan batas kualitas/ISO: [FEATURE_6_VERIFICATION](docs/FEATURE_6_VERIFICATION.md).
+```bash
+cd deksi
+composer install
+php artisan key:generate
+php artisan migrate
+php artisan serve --host=0.0.0.0 --port=8001
+```
 
-## Batas integrasi dan desain
-Docker di branch main pada audit membangun deksi/, bukan Frontend/. Tidak ada perubahan Docker dalam pekerjaan ini. Cara menjalankan di atas independen dari Docker tim.
+## Endpoint API Utama
 
-Figma belum dapat diakses. Ekspor SRS final menempatkan gambar dashboard yang sama pada C.1 dan C.2 (keduanya merujuk relationship gambar yang sama). Karena itu style existing dipakai sementara, tetapi kesesuaian halaman dengan High-Fi detail belum dapat disahkan. Kirim frame Detail Indikator yang benar untuk review visual.
+Backend Django menyediakan route utama berikut:
 
-Perubahan penunjang minimum: base Controller yang hilang, package/entrypoint Vite dan lockfile, ignore runtime, perbaikan serialisasi Blade dashboard yang menyebabkan HTTP 500, pengurutan import CSS, serta navigasi kartu. Komponen dashboard lainnya bukan cakupan implementasi fitur 6; renderer canvas interaktif dashboard sebelumnya belum tersedia dan tidak ditambahkan pada entrypoint bersama.
+- `/api/v1/auth/`
+- `/api/v1/indicators/`
+- `/api/v1/feedback/`
 
-## Kolaborasi
-Branch kerja feat/detail-indikator mengikuti fe terbaru. Tidak direct push ke fe/be/main. Ajukan perubahan melalui PR ke fe dan tunggu review tim; jangan merge otomatis. Status commit/push/PR aktual dibaca dari Git/GitHub, bukan diasumsikan dari dokumen ini.
+## Catatan Pengembangan
+
+- Untuk lokal development, gunakan konfigurasi Docker agar lebih konsisten.
+- File `.env` tidak disarankan dipublish ke repository production dalam bentuk yang sama.
+- Pastikan port `8000`, `8001`, dan `5432` tidak digunakan oleh aplikasi lain.
+- Jika menjalankan di production, ubah `DEBUG=True` dan kunci secret ke nilai yang aman.
+
+## Kontrol Docker
+
+Untuk melihat container yang sedang berjalan:
+
+```bash
+docker compose ps
+```
+
+Untuk menghentikan container:
+
+```bash
+docker compose down
+```
+
+Untuk membersihkan volume database:
+
+```bash
+docker compose down -v
+```
+
+## Lisensi
+
+Project ini belum memiliki lisensi eksplisit yang ditetapkan secara formal. Anda dapat menyesuaikan sesuai kebijakan tim atau institusi.
