@@ -186,3 +186,12 @@ docker compose down -v
 ## Lisensi
 
 Project ini belum memiliki lisensi eksplisit yang ditetapkan secara formal. Anda dapat menyesuaikan sesuai kebijakan tim atau institusi.
+
+## Frontend root dan Detail Indikator (fitur 6)
+
+Repository juga memuat aplikasi frontend Laravel/Blade pada root, hasil pemindahan dari `Frontend/`. Aplikasi ini berbeda dari aplikasi Laravel pada `deksi/` yang dijelaskan pada setup Docker di atas; pemindahan lokasi tidak otomatis mengubah target Docker.
+
+- [Panduan frontend root: setup, fitur, pengujian, dan batas integrasi](docs/FRONTEND.md).
+- [Bukti pengujian dan batas penerimaan fitur 6](docs/FEATURE_6_VERIFICATION.md).
+
+Halaman Detail Indikator dapat diakses publik tanpa login dan saat ini memakai data demo lokal. Dokumen ini tidak menyatakan frontend root sudah terhubung ke API/data resmi atau dijalankan oleh Docker. Pengujian fitur secara historis tidak menggantikan pengujian hasil integrasi.
