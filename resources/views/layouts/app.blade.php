@@ -10,7 +10,7 @@
     <meta name="description" content="Ringkasan indikator ekonomi makro terbaru berdasarkan data resmi kementerian dan lembaga negara.">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen font-sans">
+<body class="min-h-screen font-sans @yield('body-class')">
 
     {{-- Bagian atas: pastikan sangat minimal, agar kartu dan grafik tetap fokus --}}
     <header class="sticky top-0 z-40 border-b border-pinggir bg-white/95 backdrop-blur">
@@ -29,7 +29,7 @@
                 </a>
                 {{-- Tautan fitur lain (placeholder, bukan lingkup Sprint 1 - Azka) --}}
                 @if (request()->routeIs('indikator.*'))
-                    <span aria-current="page" class="px-3 py-1.5 text-sm font-semibold text-navy-900">Detail Indikator</span>
+                    <span aria-current="page" class="px-3 py-1.5 text-sm font-semibold text-navy-900">{{ request()->routeIs('indikator.source-trace') ? 'Sumber Data' : 'Detail Indikator' }}</span>
                 @else
                 <a href="#" class="rounded-lg px-3 py-1.5 text-sm text-teks">Indikator</a>
                 <a href="#" class="rounded-lg px-3 py-1.5 text-sm text-teks">Analisis</a>
@@ -62,9 +62,13 @@
     </main>
 
     <footer class="border-t border-pinggir bg-white">
+        @hasSection('footer')
+            @yield('footer')
+        @else
         <div class="mx-auto max-w-7xl px-4 py-6 text-center text-xs text-samar sm:px-6 lg:px-8">
             <span class="font-mono">DEKSI</span> · Deteksi Ekonomi Indonesia · Data dari kementerian dan lembaga resmi
         </div>
+        @endif
     </footer>
 </body>
 </html>
