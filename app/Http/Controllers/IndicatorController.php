@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Support\IndicatorRepository;
 use App\Support\IndicatorHistory;
+use App\Support\SourceTraceRepository;
 use Illuminate\Contracts\View\View;
 
 class IndicatorController extends Controller
 {
-    public function __construct(private IndicatorRepository $indikator)
+    public function __construct(private IndicatorRepository $indikator, private SourceTraceRepository $traces)
     {
     }
 
@@ -36,6 +37,13 @@ class IndicatorController extends Controller
                 ? (string) $value : null;
         }
 
-        return view('indicators.show', ['indicator' => $safe, 'history' => $history]);
+        try {
+            $sourceTrace = $this->traces->forIndicator($indicator);
+        } catch (\RuntimeException|\JsonException $exception) {
+            report($exception);
+            $sourceTrace = null;
+        }
+
+        return view('indicators.show', ['indicator' => $safe, 'history' => $history, 'sourceTrace' => $sourceTrace]);
     }
 }
