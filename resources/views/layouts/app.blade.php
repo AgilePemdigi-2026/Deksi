@@ -23,15 +23,19 @@
                 </span>
             </a>
             <nav class="ml-2 hidden items-center gap-1 lg:flex" aria-label="Navigasi utama">
-                <a href="{{ route('dashboard') }}" aria-current="page"
+                <a href="{{ route('dashboard') }}" @if (request()->routeIs('dashboard')) aria-current="page" @endif
                    class="flex items-center gap-2 rounded-lg border border-pinggir bg-white px-3 py-1.5 text-sm font-semibold text-navy-900 shadow-sm">
                     <span class="h-1.5 w-1.5 rounded-full bg-aksen"></span> Dashboard
                 </a>
                 {{-- Tautan fitur lain (placeholder, bukan lingkup Sprint 1 - Azka) --}}
+                @if (request()->routeIs('indikator.*'))
+                    <span aria-current="page" class="px-3 py-1.5 text-sm font-semibold text-navy-900">Detail Indikator</span>
+                @else
                 <a href="#" class="rounded-lg px-3 py-1.5 text-sm text-teks">Indikator</a>
                 <a href="#" class="rounded-lg px-3 py-1.5 text-sm text-teks">Analisis</a>
                 <a href="#" class="rounded-lg px-3 py-1.5 text-sm text-teks">Sumber Data</a>
                 <a href="#" class="rounded-lg px-3 py-1.5 text-sm text-teks">Tentang DEKSI</a>
+                @endif
             </nav>
             <div class="ml-auto hidden w-64 lg:block">
                 <label class="sr-only" for="pencarian-header">Cari data atau indikator</label>
@@ -39,6 +43,9 @@
                        placeholder="Cari data atau indikator..." aria-disabled="true"
                        class="w-full rounded-lg border border-transparent bg-latar px-3 py-2 text-sm placeholder-samar disabled:cursor-default">
             </div>
+            @if (request()->routeIs('indikator.*'))
+                <span class="ml-auto rounded-lg border border-pinggir px-3 py-2 text-sm font-semibold text-navy-900">Akses publik</span>
+            @else
             <a href="#" class="flex items-center gap-2 rounded-lg border border-pinggir bg-white px-3.5 py-2 text-sm font-semibold text-navy-900 shadow-sm"
                title="Login Admin (fitur anggota lain, Sprint 1)">
                 <svg class="h-4 w-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -46,6 +53,7 @@
                 </svg>
                 Masuk
             </a>
+            @endif
         </div>
     </header>
 
