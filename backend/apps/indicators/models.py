@@ -1,4 +1,6 @@
 import uuid
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -326,3 +328,70 @@ class DiagnosticFlag(models.Model):
 
     def __str__(self):
         return f"[{self.severity}] {self.flag_code}: {self.data_point}"
+
+
+class RevisionQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError('Revisions cannot be updated directly; use the review service.')
+
+    def delete(self):
+        raise ValidationError('Revisions are retained; deletion is not supported.')
+
+    def bulk_create(self, *args, **kwargs):
+        raise ValidationError('Create validated revisions individually.')
+
+    def bulk_update(self, *args, **kwargs):
+        raise ValidationError('Revisions cannot be bulk updated.')
+
+
+class SourceTraceRevision(models.Model):
+    """Frozen public content; working values remain in the existing tables."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source_trace = models.ForeignKey(SourceTrace, on_delete=models.PROTECT, related_name='revisions')
+    data_point = models.ForeignKey(IndicatorDataPoint, on_delete=models.PROTECT, related_name='trace_revisions')
+    indicator = models.ForeignKey(EconomicIndicator, on_delete=models.PROTECT, related_name='trace_revisions')
+    sequence = models.PositiveIntegerField()
+    previous_revision = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT)
+    schema_version = models.PositiveSmallIntegerField(default=1)
+    snapshot = models.JSONField()
+    content_sha256 = models.CharField(max_length=64)
+    publication_status = models.CharField(max_length=20, choices=PublicationStatus.choices, default=PublicationStatus.DRAFT)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    objects = RevisionQuerySet.as_manager()
+
+    def save(self, *args, **kwargs):
+        from .source_trace import digest, validate_snapshot
+
+        if not self._state.adding or kwargs.get('force_update') or type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError('Stored revisions are immutable.')
+        if self.publication_status != PublicationStatus.DRAFT or any(
+            value is not None for value in (self.reviewed_by_id, self.reviewed_at, self.published_at)
+        ):
+            raise ValidationError('New revisions require their own review before publication.')
+        if self.source_trace.data_point_id != self.data_point_id or self.data_point.indicator_id != self.indicator_id:
+            raise ValidationError('Revision parents must identify the same observation.')
+        if self.previous_revision_id and (
+            self.previous_revision.source_trace_id != self.source_trace_id
+            or self.previous_revision.sequence >= self.sequence
+        ):
+            raise ValidationError('The previous revision must precede this revision on the same trace.')
+        validate_snapshot(self)
+        self.content_sha256 = digest(self.snapshot)
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Revisions are retained; deletion is not supported.')
+
+    class Meta:
+        db_table = 'source_trace_revisions'
+        ordering = ['-sequence', '-id']
+        permissions = [('publish_sourcetracerevision', 'Review and publish source trace revisions')]
+        constraints = [
+            models.UniqueConstraint(fields=['source_trace', 'sequence'], name='trace_revision_sequence_unique'),
+            models.CheckConstraint(condition=models.Q(sequence__gt=0), name='trace_revision_sequence_positive'),
+        ]
