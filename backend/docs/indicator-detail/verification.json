@@ -1,0 +1,118 @@
+{
+  "artifact_kind": "executed_backend_test_receipt",
+  "recorded_at": "2026-10-28T00:28:38.599728+00:00",
+  "base_branch": "be",
+  "base_commit": "03052e3911966895456fd338300621c159ae30e4",
+  "head_branch": "feat/6-indicator-detail-backend",
+  "postgresql": {
+    "version": "18.6",
+    "tests": 43,
+    "skipped": 0,
+    "exit_code": 0,
+    "server_stopped": true,
+    "command": [
+      "python",
+      "-B",
+      "backend/manage.py",
+      "test",
+      "apps.indicators.tests",
+      "--settings=backend.test_settings",
+      "--noinput",
+      "--verbosity=1"
+    ],
+    "environment": {
+      "DEKSI_TEST_DB": "postgres",
+      "DEKSI_TEST_PG_PORT": "55436"
+    }
+  },
+  "sqlite": {
+    "tests": 43,
+    "skipped": 1,
+    "exit_code": 0
+  },
+  "source_fingerprints": {
+    "checkout_sha256": {
+      "backend/apps/indicators/admin.py": "c16628a7ce79e156a5dff3ae7459613dea84627afe9f4edc3ecf787bd16e0f3d",
+      "backend/apps/indicators/apps.py": "4270538aea2597b4f3c71e5960851a4ce1833f12f3d21981f19df38126d0963d",
+      "backend/apps/indicators/detail_reader.py": "71299206340dd55f726c68a2a4f33aadf6b6fe4b8071069b7c8d9e7471114501",
+      "backend/apps/indicators/models.py": "9f9f11f79cf52a8c3c68531b1389d7233412485ea1b237bc860173c692d3f7cf",
+      "backend/apps/indicators/revisions.py": "207e5d083cd4a81e3352cbd66aa865522aca82b78a1964acb19ab6101b63340c",
+      "backend/apps/indicators/snapshots.py": "eaffd195eb4913eebde4c197692a951131042734b8e63ac3007d7b66e777d210",
+      "backend/apps/indicators/urls.py": "bc4927aebdd0858e331e245ee55d7ead1cb31fcbee1dfbcdab0abd812bdc44a9",
+      "backend/apps/indicators/views.py": "3b252a00640a53ff9c578d50c03029bc337f887095d49c78a304491b864e7347",
+      "backend/apps/indicators/__init__.py": "0041155638f3b41a600405ec0ba2439374b0d4a8377816a99e52227afec51a08",
+      "backend/apps/indicators/migrations/0001_initial.py": "9e0ddcef0f60cbaa45d182955529e124501dfe455a09746b04974201a1a208f3",
+      "backend/apps/indicators/migrations/0002_sourcetracerevision.py": "db8832b102822f18ef689759de05e8644156186de4b7820bac3d15d1ef03f890",
+      "backend/apps/indicators/migrations/__init__.py": "18165c346c7c66e32dd98b92c6eef7cafd186ec1f4150c61c8851c79895d6444",
+      "backend/apps/indicators/tests/helpers.py": "3595ed7e40e238a5773eb4ce77b47f9569d57986a806d586c3c36dcfe579db6b",
+      "backend/apps/indicators/tests/test_admin.py": "decdb50f4e5b755a5b2d473944df0a54668d2c58b9b3b6f6e6ca8565d690c02f",
+      "backend/apps/indicators/tests/test_detail_api.py": "3df4ff33f446297bd2c3056bca52c7e7ece480d07cdb89720290ab84d1e8dc8a",
+      "backend/apps/indicators/tests/test_live_and_concurrency.py": "8f9558dd7cdf1b47f7282723cd357a4a5e0f1340c1cf3a21c024913f4d08eaee",
+      "backend/apps/indicators/tests/test_migration.py": "bf7002effd7fbfc61f8ef77b00b40d072e27f78125bbf49dc55c8543a803c60c",
+      "backend/apps/indicators/tests/test_public_boundaries.py": "8ac2be37cbcbadc33a1744fcbb98752dceee933941c89d022508fec525f214ad",
+      "backend/apps/indicators/tests/test_revisions.py": "647591309c96eb6b2ca77042e039ac2fb1d8bf23766efc1856688d1697130240",
+      "backend/apps/indicators/tests/test_storage.py": "c1cee17c58d34f4107d2e952a8702cc9e02788f0e0297910965f7153661938fc",
+      "backend/apps/indicators/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backend/backend/asgi.py": "50d7b89708802338a49b8339cbd77a819e68ddb94b423d68d869fc41376c4f56",
+      "backend/backend/settings.py": "e40f8ebdbe4578c684aa560bcaae94d16d979d2d33d84bb8c6b389999b6ab89f",
+      "backend/backend/test_settings.py": "5bc46392d9c9928471e2b464ee95eb9acf31e054189ad7acfbfb70ac374ffd5d",
+      "backend/backend/urls.py": "7a940a7bf58f66de931c70c4147b88ebc4d8dd85cbac890ed43bbdc7a4e4f3aa",
+      "backend/backend/wsgi.py": "9783d7bc94580d3d37af381f69e7473abe9af217cf8c3a8e1e0d33b82f334c75",
+      "backend/backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "canonical_git_blob_ids": {
+      "backend/apps/indicators/admin.py": "0f6054af6a36d3836e287ff3d7dd707d5aef867d",
+      "backend/apps/indicators/apps.py": "2350a96b3bbb51d51a0e1ec395a2ebc8e3d2297f",
+      "backend/apps/indicators/detail_reader.py": "586d83337fe647860c54e54ba3585fd4772597d9",
+      "backend/apps/indicators/models.py": "32e6af27e02960052a56782619460e159d4c22c3",
+      "backend/apps/indicators/revisions.py": "d27a7a165c30c9c7cc0fb6daaae0e8de78e648dd",
+      "backend/apps/indicators/snapshots.py": "b9826aba797526826fee18bb603516619b9f8839",
+      "backend/apps/indicators/urls.py": "dc4974a57d4b4f7f96140fcbe27ac1a4e9723d8c",
+      "backend/apps/indicators/views.py": "a0b235b7dd73d08165c7f199a60f2f1ee1455a42",
+      "backend/apps/indicators/__init__.py": "9120c89d51049da0eb2469bb18c570615e557826",
+      "backend/apps/indicators/migrations/0001_initial.py": "d06ec9bd2fe537315a954b58fd116a21ca84d0f2",
+      "backend/apps/indicators/migrations/0002_sourcetracerevision.py": "c70f405eb79882802d9891a28b8efd29ff4a6c35",
+      "backend/apps/indicators/migrations/__init__.py": "5e95275b629c09dad356d42b90c87be14d2bc5a4",
+      "backend/apps/indicators/tests/helpers.py": "9d7ba3cd52e18866b0d093de24aa00c78a99e2e1",
+      "backend/apps/indicators/tests/test_admin.py": "aaf289582c2b3c5ebe0b15bc4dc0b799441db79e",
+      "backend/apps/indicators/tests/test_detail_api.py": "77284971fa1b6e9e402166f806607bbec8295d59",
+      "backend/apps/indicators/tests/test_live_and_concurrency.py": "99a0e640ce89dc974626990d797831d892892045",
+      "backend/apps/indicators/tests/test_migration.py": "08b0fd428d32ed7195d74a3a56f6bc2e0eb4b329",
+      "backend/apps/indicators/tests/test_public_boundaries.py": "c0bd1496db72d7cb31a73106452f00d40e3aa422",
+      "backend/apps/indicators/tests/test_revisions.py": "9e928782d8cc5d3aaf3ff3271ac76a86d69dbcc7",
+      "backend/apps/indicators/tests/test_storage.py": "39559f8855ebd58ad90bb19ea8a2b163fb8cb248",
+      "backend/apps/indicators/tests/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "backend/backend/asgi.py": "f934e0f267fa410a1735302dbad437c2ddfc054a",
+      "backend/backend/settings.py": "19133408aec737b1d926d3c3e152e2cc1f9974b8",
+      "backend/backend/test_settings.py": "54c8713abbd0959f38f956be2084a2cc10174d53",
+      "backend/backend/urls.py": "a6a1a8ba3961c5a0063842832e659df3860cb8fd",
+      "backend/backend/wsgi.py": "64f766f3e82a232f17f932c740e22e2529cb494a",
+      "backend/backend/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    "normalization_note": "Git blob IDs use repository clean filters; checkout SHA256 records actual Windows bytes."
+  },
+  "protected_frontend_files_unchanged": 12,
+  "external_F7_drift": {
+    "status": "OBSERVED_NOT_REBASED_OR_OVERWRITTEN",
+    "documents_different_from_batch1": [
+      "ACCEPTANCE.md",
+      "contract.json",
+      "README.md",
+      "VERSIONING.md"
+    ],
+    "published_pr": 20,
+    "head_commit": "23aa32537f539f7a17bdbab10a983556fe260533",
+    "integration_status": "BLOCKED_SHARED_MODEL_MIGRATION_RECONCILIATION_REQUIRED",
+    "combined_tests": "NOT_RUN"
+  },
+  "limits": [
+    "synthetic isolated data only",
+    "no production database or env read",
+    "no FE integration or official-data verification",
+    "ORM/Admin immutability not direct-SQL enforcement",
+    "No source-trace endpoint or economic change calculation",
+    "Human team review and frontend integration pending",
+    "No GitHub CI claim",
+    "Standalone F6 result, not combined F6+PR20 acceptance"
+  ]
+}

@@ -326,3 +326,89 @@ class DiagnosticFlag(models.Model):
 
     def __str__(self):
         return f"[{self.severity}] {self.flag_code}: {self.data_point}"
+
+
+class RevisionQuerySet(models.QuerySet):
+    """All revision writes go through capture/publication services, not bulk editors."""
+
+    def update(self, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError('Use the revision publication service.')
+
+    def delete(self):
+        from django.core.exceptions import ValidationError
+        raise ValidationError('Revisions are retained; withdraw publication instead.')
+
+    def bulk_create(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError('Capture revisions individually.')
+
+    def bulk_update(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError('Revision content is immutable.')
+
+
+class SourceTraceRevision(models.Model):
+    """Shared observation snapshot. ORM/Admin protection does not restrict direct SQL."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    data_point = models.ForeignKey(IndicatorDataPoint, on_delete=models.PROTECT, related_name='revisions')
+    source_trace = models.ForeignKey(SourceTrace, on_delete=models.PROTECT, null=True, blank=True, related_name='revisions')
+    sequence = models.PositiveIntegerField()
+    previous_revision = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True)
+    schema_version = models.PositiveSmallIntegerField(default=1)
+    snapshot = models.JSONField()
+    snapshot_hash = models.CharField(max_length=64, editable=False)
+    publication_status = models.CharField(max_length=20, choices=PublicationStatus.choices, default=PublicationStatus.DRAFT)
+    reviewed_by = models.ForeignKey('accounts.AdminUser', on_delete=models.PROTECT, null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = RevisionQuerySet.as_manager()
+
+    class Meta:
+        db_table = 'source_trace_revisions'
+        ordering = ['data_point_id', 'sequence']
+        constraints = [
+            models.UniqueConstraint(fields=['data_point', 'sequence'], name='unique_point_revision_sequence'),
+            models.CheckConstraint(condition=models.Q(sequence__gt=0), name='positive_revision_sequence'),
+            models.CheckConstraint(
+                condition=~models.Q(publication_status='published') | (
+                    models.Q(reviewed_by__isnull=False) & models.Q(reviewed_at__isnull=False) & models.Q(published_at__isnull=False)
+                ), name='published_revision_requires_review',
+            ),
+        ]
+
+    def validate_content(self):
+        from django.core.exceptions import ValidationError
+        from .snapshots import digest, validate
+        try:
+            validate(self.snapshot, point_id=self.data_point_id, trace_id=self.source_trace_id,
+                     revision_id=self.pk, sequence=self.sequence, schema_version=self.schema_version)
+            if self.snapshot_hash != digest(self.snapshot):
+                raise ValidationError('Snapshot content does not match its review binding.')
+        except (TypeError, ValueError, KeyError, OverflowError):
+            raise ValidationError('Invalid snapshot content.') from None
+
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        if not self._state.adding:
+            raise ValidationError('Revision content is immutable; capture a new revision.')
+        if self.publication_status != PublicationStatus.DRAFT or any([self.reviewed_by_id, self.reviewed_at, self.published_at]):
+            raise ValidationError('New revisions must start unreviewed and draft.')
+        self.validate_content()
+        if self.snapshot['identity']['indicator_id'] != str(self.data_point.indicator_id):
+            raise ValidationError('Observation identity mismatch.')
+        if self.source_trace_id and self.source_trace.data_point_id != self.data_point_id:
+            raise ValidationError('Source Trace belongs to another observation.')
+        if self.previous_revision_id and (self.previous_revision.data_point_id != self.data_point_id or self.previous_revision.sequence >= self.sequence):
+            raise ValidationError('Invalid revision parent.')
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError('Revisions are retained; withdraw publication instead.')
+
+    def __str__(self):
+        return f'{self.data_point_id} / revision {self.sequence}'

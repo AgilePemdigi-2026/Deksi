@@ -1,5 +1,7 @@
-from django.contrib import admin
-from .models import DataSource, EconomicIndicator, IndicatorDataPoint, SourceTrace, DiagnosticFlag
+from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from .models import DataSource, EconomicIndicator, IndicatorDataPoint, SourceTrace, DiagnosticFlag, SourceTraceRevision
 
 
 @admin.register(DataSource)
@@ -41,3 +43,52 @@ class DiagnosticFlagAdmin(admin.ModelAdmin):
     list_filter = ('severity',)
     search_fields = ('flag_code', 'message')
     readonly_fields = ('id', 'created_at')
+
+
+@admin.register(SourceTraceRevision)
+class SourceTraceRevisionAdmin(admin.ModelAdmin):
+    """Review frozen contents; creation is an explicit capture service operation."""
+
+    list_display = ('id', 'data_point_id', 'sequence', 'publication_status', 'published_at')
+    list_filter = ('publication_status',)
+    readonly_fields = tuple(field.name for field in SourceTraceRevision._meta.fields)
+    actions = ['submit_for_review', 'publish_selected', 'withdraw_selected']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_actions(self, request):
+        user = request.user
+        if not user.is_active or not user.is_staff or not (user.is_superuser or user.role in {'reviewer', 'superadmin'}):
+            return {}
+        return super().get_actions(request)
+
+    @admin.action(description='Submit selected draft revisions for review', permissions=['view'])
+    def submit_for_review(self, request, queryset):
+        from .revisions import submit_revision
+        self._apply(request, queryset, submit_revision)
+
+    @admin.action(description='Publish selected reviewed contents', permissions=['view'])
+    def publish_selected(self, request, queryset):
+        from .revisions import publish_revision
+        self._apply(request, queryset, publish_revision)
+
+    @admin.action(description='Withdraw selected published revisions', permissions=['view'])
+    def withdraw_selected(self, request, queryset):
+        from .revisions import withdraw_revision
+        self._apply(request, queryset, withdraw_revision)
+
+    def _apply(self, request, queryset, operation):
+        try:
+            with transaction.atomic():
+                count = 0
+                for revision in queryset.order_by('pk'):
+                    operation(revision.pk, request.user)
+                    count += 1
+        except ValidationError:
+            self.message_user(request, 'Status atau konten pilihan tidak sesuai. Tidak ada revisi yang diubah.', level=messages.ERROR)
+        else:
+            self.message_user(request, f'{count} revisi diproses.', level=messages.SUCCESS)

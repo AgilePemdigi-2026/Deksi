@@ -1,0 +1,698 @@
+{
+  "artifact_kind": "design_contract_not_runtime_configuration",
+  "status": "PROPOSAL",
+  "feature": 6,
+  "use_case": "UC-02",
+  "baseline": {
+    "branch": "main",
+    "commit": "21a065d3f145364a758aeec07571768a0ed29768",
+    "inspected_on": "2026-10-27",
+    "model_path": "backend/apps/indicators/models.py"
+  },
+  "implementation_status": "NOT_IMPLEMENTED",
+  "runtime_test_status": "NOT_RUN",
+  "schema_approval_status": "PENDING_D1",
+  "base_prefix": "/api/v1/indicators/",
+  "allowed_methods": [
+    "GET",
+    "HEAD",
+    "OPTIONS"
+  ],
+  "public_permission_proposal": "AllowAny_local_only",
+  "authentication_proposal": "empty_classes_local_only",
+  "cache_control_proposal": "no-store",
+  "endpoints": [
+    {
+      "id": "current",
+      "method": "GET",
+      "path": "/api/v1/indicators/{code}/detail/",
+      "query": [
+        "period_type"
+      ],
+      "selection": "latest_observation_period_in_single_public_series_using_latest_published_revision_per_point"
+    },
+    {
+      "id": "history",
+      "method": "GET",
+      "path": "/api/v1/indicators/{code}/history/",
+      "query": [
+        "period_type",
+        "page"
+      ],
+      "selection": "one_latest_published_revision_per_data_point_ordered_by_observation_period_ascending"
+    },
+    {
+      "id": "revision",
+      "method": "GET",
+      "path": "/api/v1/indicators/{code}/data-points/{data_point_id}/revisions/{revision_id}/",
+      "query": [],
+      "selection": "exact_public_revision_matching_indicator_and_point_no_fallback"
+    }
+  ],
+  "query_policy": {
+    "period_types": [
+      "annual",
+      "quarterly",
+      "monthly"
+    ],
+    "period_type_default": "infer_only_when_exactly_one_public_frequency_otherwise_400_series_selection_required",
+    "page": "positive_integer_default_1",
+    "page_size": 20,
+    "reject_unknown_or_duplicate_keys": true
+  },
+  "success_envelope": {
+    "success": true,
+    "message": "generic_string",
+    "data": "detail_or_history_object"
+  },
+  "error_envelope": {
+    "success": false,
+    "message": "generic_string",
+    "data": null,
+    "error": {
+      "code": "scoped_error_code"
+    }
+  },
+  "http_statuses": [
+    200,
+    400,
+    404,
+    405,
+    429,
+    503
+  ],
+  "detail_fields_relative_to_data": [
+    {
+      "path": "snapshot.identity.indicator_id",
+      "type": "uuid",
+      "sources": [
+        "EconomicIndicator.id"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.identity.data_point_id",
+      "type": "uuid",
+      "sources": [
+        "IndicatorDataPoint.id"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.identity.trace_id",
+      "type": "uuid|null",
+      "sources": [
+        "SourceTrace.id"
+      ],
+      "storage": "frozen_snapshot",
+      "rule": "null_for_point_only_revision_never_fabricate_trace"
+    },
+    {
+      "path": "snapshot.identity.revision_id",
+      "type": "uuid",
+      "sources": [],
+      "storage": "proposed_revision_identity"
+    },
+    {
+      "path": "snapshot.identity.revision_sequence",
+      "type": "positive_integer",
+      "sources": [],
+      "storage": "proposed_revision_identity"
+    },
+    {
+      "path": "snapshot.identity.schema_version",
+      "type": "positive_integer",
+      "sources": [],
+      "storage": "proposed_revision_identity"
+    },
+    {
+      "path": "snapshot.identity.source_version",
+      "type": "string|null",
+      "sources": [
+        "SourceTrace.version"
+      ],
+      "storage": "frozen_snapshot",
+      "rule": "source_label_not_internal_revision_id"
+    },
+    {
+      "path": "snapshot.indicator.code",
+      "type": "string",
+      "sources": [
+        "EconomicIndicator.code"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.name",
+      "type": "string",
+      "sources": [
+        "EconomicIndicator.name"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.short_name",
+      "type": "string|null",
+      "sources": [
+        "EconomicIndicator.short_name"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.category",
+      "type": "string",
+      "sources": [
+        "EconomicIndicator.category"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.definition",
+      "type": "reviewed_string|null",
+      "sources": [
+        "EconomicIndicator.description"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.methodology",
+      "type": "reviewed_string|null",
+      "sources": [
+        "EconomicIndicator.methodology"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.unit",
+      "type": "string|null",
+      "sources": [
+        "EconomicIndicator.unit"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.indicator.data_type",
+      "type": "official|derived",
+      "sources": [
+        "EconomicIndicator.data_type"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.observation.value",
+      "type": "decimal_string|null",
+      "sources": [
+        "IndicatorDataPoint.value"
+      ],
+      "storage": "frozen_snapshot",
+      "rule": "20_max_digits_4_decimal_places_no_float_null_not_zero"
+    },
+    {
+      "path": "snapshot.observation.data_layer",
+      "type": "clean|derived",
+      "sources": [
+        "IndicatorDataPoint.data_layer"
+      ],
+      "storage": "frozen_snapshot",
+      "rule": "type_layer_validated_raw_internal"
+    },
+    {
+      "path": "snapshot.observation.period.type",
+      "type": "annual|quarterly|monthly",
+      "sources": [
+        "IndicatorDataPoint.period_type"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.observation.period.year",
+      "type": "integer",
+      "sources": [
+        "IndicatorDataPoint.period_year"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.observation.period.quarter",
+      "type": "integer|null",
+      "sources": [
+        "IndicatorDataPoint.period_quarter"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.observation.period.month",
+      "type": "integer|null",
+      "sources": [
+        "IndicatorDataPoint.period_month"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.observation.period.label",
+      "type": "string",
+      "sources": [
+        "IndicatorDataPoint.period_label"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.observation.fetched_at",
+      "type": "aware_datetime_string|null",
+      "sources": [
+        "IndicatorDataPoint.fetched_at"
+      ],
+      "storage": "frozen_snapshot",
+      "rule": "point_acquisition_not_source_release_or_request_time"
+    },
+    {
+      "path": "snapshot.source.institution_name",
+      "type": "string|null",
+      "sources": [
+        "SourceTrace.institution_name"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.source.institution_code",
+      "type": "string|null",
+      "sources": [
+        "SourceTrace.institution_code"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.source.publication_name",
+      "type": "string|null",
+      "sources": [
+        "SourceTrace.publication_name"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.source.publication_url",
+      "type": "safe_http_https_url|null",
+      "sources": [
+        "SourceTrace.publication_url"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.source.release_date",
+      "type": "date_string|null",
+      "sources": [
+        "SourceTrace.release_date"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.source.fetched_at",
+      "type": "aware_datetime_string|null",
+      "sources": [
+        "SourceTrace.fetched_at"
+      ],
+      "storage": "frozen_snapshot"
+    },
+    {
+      "path": "snapshot.data_origin",
+      "type": "unknown|demo|official_source",
+      "sources": [],
+      "storage": "proposed_recorded_snapshot_origin",
+      "rule": "explicit_capture_evidence_unknown_when_unrecorded_not_inferred_from_domain"
+    },
+    {
+      "path": "snapshot.change",
+      "type": "null_in_baseline",
+      "sources": [],
+      "storage": "proposed_snapshot_extension",
+      "rule": "missing_comparator_and_formula_evidence_do_not_use_legacy_trend_fields"
+    },
+    {
+      "path": "publication.status",
+      "type": "published",
+      "sources": [],
+      "storage": "proposed_revision_lifecycle"
+    },
+    {
+      "path": "publication.published_at",
+      "type": "aware_datetime_string|null",
+      "sources": [],
+      "storage": "proposed_revision_lifecycle",
+      "rule": "DEKSI_publication_not_source_release"
+    },
+    {
+      "path": "metadata.status",
+      "type": "complete|partial",
+      "sources": [],
+      "storage": "computed_from_public_projection"
+    },
+    {
+      "path": "metadata.missing_fields",
+      "type": "string_array",
+      "sources": [],
+      "storage": "computed_from_public_projection"
+    },
+    {
+      "path": "metadata.warnings",
+      "type": "coded_warning_array",
+      "sources": [],
+      "storage": "computed_from_public_projection"
+    },
+    {
+      "path": "metadata.verification_status",
+      "type": "unassessed",
+      "sources": [],
+      "storage": "computed_from_public_projection"
+    },
+    {
+      "path": "links.current",
+      "type": "relative_api_path",
+      "sources": [],
+      "storage": "computed_from_validated_public_identity",
+      "rule": "dynamic_public_access_not_frozen_content"
+    },
+    {
+      "path": "links.revision",
+      "type": "relative_api_path",
+      "sources": [],
+      "storage": "computed_from_validated_public_identity",
+      "rule": "dynamic_public_access_not_frozen_content"
+    },
+    {
+      "path": "links.history",
+      "type": "relative_api_path|null",
+      "sources": [],
+      "storage": "computed_from_validated_public_identity",
+      "rule": "dynamic_public_access_not_frozen_content"
+    },
+    {
+      "path": "links.source_trace",
+      "type": "relative_api_path|null",
+      "sources": [],
+      "storage": "computed_from_validated_public_identity",
+      "rule": "dynamic_public_access_not_frozen_content"
+    }
+  ],
+  "history_shape": {
+    "series": "frozen_indicator_id_code_unit_data_type_period_type",
+    "view": "current_published_per_observation",
+    "gap_policy": "break_on_null_or_missing_period",
+    "count": "public_nonnegative_integer",
+    "next": "relative_api_path_or_null",
+    "previous": "relative_api_path_or_null",
+    "results": "history_item_array"
+  },
+  "history_item_shape": {
+    "identity": {
+      "indicator_id": "uuid",
+      "data_point_id": "uuid",
+      "revision_id": "uuid",
+      "revision_sequence": "positive_integer"
+    },
+    "period": {
+      "type": "annual_or_quarterly_or_monthly",
+      "year": "integer",
+      "quarter": "integer_or_null",
+      "month": "integer_or_null",
+      "label": "string"
+    },
+    "value": "decimal_string_or_null",
+    "unit": "frozen_string_or_null",
+    "data_type": "official_or_derived",
+    "data_layer": "clean_or_derived",
+    "links": {
+      "revision": "relative_pinned_F6_path",
+      "source_trace": "relative_pinned_F7_path_or_null"
+    }
+  },
+  "history_semantics": {
+    "one_revision_per_point": true,
+    "duplicate_period_policy": "503_ambiguous_series_not_uuid_tiebreak",
+    "mixed_units_or_types_policy": "503_inconsistent_series",
+    "as_of_reconstruction": false,
+    "cross_page_snapshot_consistency": false,
+    "request_consistency": "required_no_mixed_selection_within_one_response",
+    "empty_first_page": "200_only_for_public_indicator_and_valid_selected_frequency_without_rows",
+    "out_of_range_page": 404,
+    "null_latest_value": "preserve_null_never_select_older_nonnull_implicitly",
+    "missing_calendar_periods": "break_chart_segment_without_synthetic_database_rows_or_zero_fill"
+  },
+  "shared_revision": {
+    "model_name_proposal": "SourceTraceRevision",
+    "implemented": false,
+    "decision": "PENDING_D1",
+    "second_revision_model_allowed": false,
+    "existing_F7_proposal": "local_untracked_source_trace_api_backend_docs_source_trace",
+    "F7_baseline_commit": "03052e3911966895456fd338300621c159ae30e4",
+    "anchor_proposal": "mandatory_data_point_FK_PROTECT_optional_source_trace_FK_PROTECT",
+    "sequence_scope_proposal": "data_point",
+    "required_deltas": [
+      "J1",
+      "J2",
+      "J3",
+      "J4",
+      "J5",
+      "J6"
+    ],
+    "reconcile_F7_canonical_before_implementation": true
+  },
+  "source_trace_binding": {
+    "availability": "null_until_trace_bound_public_revision_and_actual_F7_endpoint_exists",
+    "path_proposal": "/api/v1/indicators/{code}/data-points/{data_point_id}/source-trace/revisions/{revision_id}/",
+    "identity_fields": [
+      "indicator_id",
+      "data_point_id",
+      "trace_id",
+      "revision_id"
+    ],
+    "no_trace_policy": "allow_partial_F6_with_null_source_link_no_fake_trace",
+    "F7_endpoints_in_F6_scope": false
+  },
+  "change_policy": {
+    "baseline_output": null,
+    "warning": "change_evidence_unavailable",
+    "legacy_trend_fields_are_sufficient": false,
+    "economic_calculation_in_read_API": false,
+    "future_required_evidence": [
+      "value_decimal",
+      "kind",
+      "unit",
+      "comparison_period",
+      "comparison_data_point_id",
+      "comparison_revision_id",
+      "formula_id",
+      "formula_version",
+      "calculation_reference"
+    ],
+    "kinds_proposal": [
+      "growth_percent",
+      "percentage_points",
+      "basis_points",
+      "absolute"
+    ],
+    "future_change_activation_requires_separate_contract_and_publication_review": true
+  },
+  "period_rules": {
+    "annual": {
+      "quarter": null,
+      "month": null
+    },
+    "quarterly": {
+      "quarter_range": [
+        1,
+        4
+      ],
+      "month": null
+    },
+    "monthly": {
+      "month_range": [
+        1,
+        12
+      ],
+      "quarter": null
+    },
+    "semiannual_support": "not_modeled_do_not_coerce"
+  },
+  "public_projection": {
+    "allowed_layers_by_type": {
+      "official": [
+        "clean"
+      ],
+      "derived": [
+        "derived"
+      ]
+    },
+    "exclude": [
+      "raw_value",
+      "notes",
+      "raw_formula_inputs_JSON",
+      "reviewer_identity",
+      "credentials",
+      "last_fetch_message",
+      "internal_exception"
+    ],
+    "no_network_source_fetch": true,
+    "no_AI": true,
+    "production_demo_default": "excluded",
+    "verification_status": "unassessed",
+    "working_point_status_does_not_approve_revision": true
+  },
+  "error_codes": {
+    "400": [
+      "invalid_request",
+      "series_selection_required"
+    ],
+    "404": [
+      "not_found"
+    ],
+    "405": [
+      "method_not_allowed"
+    ],
+    "429": [
+      "throttled"
+    ],
+    "503": [
+      "indicator_detail_unavailable",
+      "ambiguous_series",
+      "inconsistent_series"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "F6-BE-01",
+      "baseline_ids": [
+        "F6-01",
+        "Q-04"
+      ],
+      "scenario": "public_access_and_write_boundary",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-02",
+      "baseline_ids": [
+        "F6-01",
+        "F6-07",
+        "Q-04"
+      ],
+      "scenario": "identity_public_ownership_and_generic_404",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-03",
+      "baseline_ids": [
+        "F6-02"
+      ],
+      "scenario": "decimal_zero_null_and_reviewed_metadata",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-04",
+      "baseline_ids": [
+        "F6-02",
+        "F6-04"
+      ],
+      "scenario": "single_series_period_frequency_and_ambiguity",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-05",
+      "baseline_ids": [
+        "F6-03"
+      ],
+      "scenario": "change_evidence_not_inferred_from_legacy_fields",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-06",
+      "baseline_ids": [
+        "F6-04"
+      ],
+      "scenario": "history_order_pagination_gaps_and_no_asof_claim",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-07",
+      "baseline_ids": [
+        "F6-05"
+      ],
+      "scenario": "no_AI_causality_or_private_diagnostic_payload",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-08",
+      "baseline_ids": [
+        "F6-06"
+      ],
+      "scenario": "timestamps_origin_and_no_fake_freshness",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-09",
+      "baseline_ids": [
+        "F6-07"
+      ],
+      "scenario": "same_revision_source_link_and_no_trace_partial",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-10",
+      "baseline_ids": [
+        "F6-07",
+        "Q-03"
+      ],
+      "scenario": "frozen_content_and_latest_public_selection",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-11",
+      "baseline_ids": [
+        "Q-03"
+      ],
+      "scenario": "partial_empty_not_found_and_storage_error",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-12",
+      "baseline_ids": [
+        "Q-04"
+      ],
+      "scenario": "allowlist_URL_safety_and_no_outbound",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-13",
+      "baseline_ids": [
+        "Q-04",
+        "Q-05"
+      ],
+      "scenario": "throttle_no_store_accounts_regression_and_no_writes",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-14",
+      "baseline_ids": [
+        "F6-07",
+        "Q-05"
+      ],
+      "scenario": "shared_storage_review_and_PostgreSQL_boundaries",
+      "runtime_status": "NOT_RUN"
+    },
+    {
+      "id": "F6-BE-15",
+      "baseline_ids": [
+        "F6-02",
+        "F6-04",
+        "F6-07",
+        "Q-05"
+      ],
+      "scenario": "Laravel_decimal_chart_adapter_and_integration",
+      "runtime_status": "NOT_RUN"
+    }
+  ],
+  "pending_decisions": [
+    "D1_shared_revision_J1_to_J6_and_F7_reconciliation",
+    "D2_review_owner_policy_retention_and_immutability_boundary",
+    "D3_isolated_PostgreSQL_test_runtime_setup",
+    "D4_FE_series_mapping_and_backend_PR_target"
+  ]
+}
