@@ -1,99 +1,91 @@
-# Project Overview
+# DEKSI (Deteksi Ekonomi Indonesia)
 
-This repository is a full-stack web application scaffold that combines:
+DEKSI adalah aplikasi web untuk memantau dan menganalisis indikator ekonomi Indonesia. Proyek ini dikembangkan sebagai bagian dari Praktikum Pembangunan Perangkat Lunak oleh Kelompok AgilePemdigi-2026.
 
-- Frontend: React + TypeScript + Vite
-- Backend: Django (Python)
-- Database: SQLite for local development
+## Teknologi
 
-```mermaid
-flowchart LR
-    U[User] --> F[Frontend\nReact + TypeScript + Vite]
-    F --> API[HTTP Requests / API Calls]
-    API --> B[Backend\nDjango]
-    B --> DB[(SQLite Database)]
-    B --> A[Authentication & App Logic]
-    F --> UI[User Interface]
+Backend menggunakan Python dan Django. Frontend menggunakan React dengan TypeScript yang dibangun menggunakan Vite. Pemeriksaan kode frontend menggunakan Oxlint, sedangkan backend menggunakan Ruff.
+
+## Fitur
+
+Fitur yang dikembangkan mencakup login admin, lupa dan reset kata sandi, dashboard ekonomi dengan filter, halaman detail indikator yang dapat diakses publik, serta penelusuran sumber data (source trace).
+
+## Struktur Direktori
+
+```
+.
+├── backend/     Proyek Django (API dan logika bisnis)
+├── frontend/    Proyek React + TypeScript (antarmuka pengguna)
+└── README.md
 ```
 
-## Tech Stack
+## Prasyarat
 
-### Frontend
-- React 19
-- TypeScript
-- Vite
-- CSS styling
+Pastikan perangkat Anda telah memiliki Python 3.10 atau lebih baru, Node.js versi LTS, dan Git.
 
-### Backend
-- Django 6.1
-- Python
-- SQLite database
+## Menjalankan Backend
 
-## Project Structure
+Jalankan perintah berikut dari folder backend.
 
-```text
-PPL PRAK/
-├── backend/
-│   ├── backend/
-│   │   ├── __init__.py
-│   │   ├── settings.py
-│   │   ├── urls.py
-│   │   ├── asgi.py
-│   │   └── wsgi.py
-│   ├── manage.py
-│   └── venv/
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   ├── index.html
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── README.md
-├── .gitignore
-├── README.mmd
-└── .git/
+```
+cd backend
+python -m venv venv
+venv\Scripts\activate
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
 ```
 
-## How It Works
+Pada macOS atau Linux, aktivasi virtual environment menggunakan `source venv/bin/activate`. Backend berjalan di http://127.0.0.1:8000/.
 
-1. The user accesses the React frontend in the browser.
-2. The frontend communicates with the Django backend through API requests.
-3. Django processes business logic and interacts with SQLite.
-4. The backend returns data or responses back to the frontend.
+Jika berkas requirements.txt belum ada, buat terlebih dahulu dari environment yang aktif dengan perintah `pip freeze > requirements.txt`.
 
-## Run the Project
+## Menjalankan Frontend
 
-### Frontend
-```bash
+Jalankan perintah berikut dari folder frontend.
+
+```
 cd frontend
 npm install
 npm run dev
 ```
 
-### Backend
-```bash
-cd backend
-python manage.py migrate
-python manage.py runserver
+Frontend berjalan di http://localhost:5173/.
+
+## Konfigurasi Lingkungan
+
+Simpan konfigurasi sensitif pada berkas .env dan jangan mengunggahnya ke repositori. Contoh variabel yang dapat digunakan:
+
+```
+SECRET_KEY=isi-dengan-kunci-rahasia
+DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-## Notes
+## Pemeriksaan Kode
 
-This repo is currently a starter/full-stack base structure. It can be extended with:
-
-- authentication
-- REST API endpoints
-- database models
-- admin/dashboard features
-- reusable React components
-
-```mermaid
-stateDiagram-v2
-    [*] --> Frontend
-    Frontend --> Backend: request data
-    Backend --> Database: query / save
-    Database --> Backend: result
-    Backend --> Frontend: response
-    Frontend --> [*]
 ```
+cd frontend
+npm run lint
+
+cd ../backend
+ruff check .
+ruff format .
+```
+
+## Alur Kerja Git
+
+Pengembangan dilakukan pada cabang fitur, misalnya feature/nama-fitur, kemudian digabungkan ke main melalui pull request setelah ditinjau anggota tim. Hindari melakukan push langsung ke main.
+
+Format pesan commit yang digunakan:
+
+```
+feat(fitur-x): deskripsi singkat perubahan
+fix(fitur-x): deskripsi perbaikan
+docs: perubahan dokumentasi
+```
+
+## Tim Pengembang
+
+Kelompok AgilePemdigi-2026, Universitas Airlangga.
