@@ -59,3 +59,32 @@ test('The foundation does not ship a dead detail anchor before feature 6 integra
   assert.doesNotMatch(html,/href="#detail"/);
   assert.match(html,/fitur 6/);
 });
+
+test('The Admin login route renders a separate account-free-public UI, not the dashboard', async () => {
+  const { default: App } = await load('App.tsx');
+  const html=render(App,{pathname:'/admin/login'});
+  assert.match(html,/Masuk Admin\./);
+  assert.match(html,/autocomplete="current-password"/i);
+  assert.doesNotMatch(html,/class="summary"/);
+});
+
+test('Login validation identifies both missing fields', async () => {
+  const { validateLogin } = await load('features/admin/validation.ts');
+  assert.deepEqual(JSON.parse(JSON.stringify(validateLogin('', ''))), {identifier:'Masukkan email atau nama pengguna.',password:'Masukkan kata sandi.'});
+});
+
+test('Login validation rejects a blank identifier without rewriting password policy', async () => {
+  const { validateLogin } = await load('features/admin/validation.ts');
+  assert.deepEqual(JSON.parse(JSON.stringify(validateLogin('   ', 'SYNTHETIC-FIXTURE'))),{identifier:'Masukkan email atau nama pengguna.'});
+  assert.deepEqual(JSON.parse(JSON.stringify(validateLogin('pengelola.contoh', ''))),{password:'Masukkan kata sandi.'});
+});
+test('Email/username and short or whitespace passwords are not normalized by UI validation', async () => {
+  const { validateLogin } = await load('features/admin/validation.ts');
+  for (const id of ['pengelola.contoh','admin@example.test']) for (const pw of ['a',' ','SYNTHETIC-FIXTURE']) assert.deepEqual(JSON.parse(JSON.stringify(validateLogin(id,pw))),{});
+});
+test('Public footer exposes the real frontend Login Admin route', async () => {
+  const { EditorialFooter } = await load('components/EditorialInfo.tsx');
+  const html=render(EditorialFooter,{onInfo:()=>{}});
+  assert.match(html,/href="\/admin\/login"/);
+  assert.doesNotMatch(html,/Admin · fitur 1 menyusul/);
+});

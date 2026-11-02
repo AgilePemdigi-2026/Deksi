@@ -6,8 +6,9 @@ import { InsightSection } from './components/ShellBottom'
 import { EditorialLanding, EditorialContext } from './components/EditorialLanding'
 import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
 import { useDashboardData } from './api'
+import LoginPage from './features/admin/LoginPage'
 
-export default function App() {
+function Dashboard() {
   const { summary, cards, loading, error } = useDashboardData()
   const [infoOpen, setInfoOpen] = useState(false)
   useEffect(() => { document.title = 'DEKSI · Deteksi Ekonomi Indonesia' }, [])
@@ -24,4 +25,8 @@ export default function App() {
     <EditorialFooter onInfo={() => setInfoOpen(true)} />
     <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
   </div>
+}
+
+export default function App({ pathname = typeof window === 'undefined' ? '/' : window.location.pathname }: { pathname?: string } = {}) {
+  return pathname.replace(/\/+$/, '') === '/admin/login' ? <LoginPage /> : <Dashboard />
 }
