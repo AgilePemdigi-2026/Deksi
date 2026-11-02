@@ -502,3 +502,165 @@ def raw_file_download(request, code: str, raw_file_id: int):
     response["Content-Disposition"] = f'attachment; filename="{Path(raw_file.raw_file.document_name).name}"'
     response["X-Checksum-SHA256"] = raw_file.raw_file.checksum_sha256
     return response
+
+
+# ---------------------------------------------------------------------------
+# Fitur 5: Filter Dashboard Ekonomi
+# ---------------------------------------------------------------------------
+
+VALID_CATEGORIES = list({ind.category for ind in Indicator.objects.all()} if False else [])
+
+INDICATOR_CATEGORY_MAP = {
+    "pdb": "PDB",
+    "inflasi": "Inflasi",
+    "fiskal": "Fiskal",
+    "investasi": "Investasi",
+    "birate": "Moneter",
+    "tpt": "Tenaga Kerja",
+}
+
+
+@require_GET
+def indicator_categories(request):
+    """
+    GET /api/indicators/categories/
+
+    Mengembalikan daftar kategori beserta daftar kode indikator yang tersedia
+    di tiap kategori.  Digunakan front-end untuk mengisi kontrol filter.
+    """
+    categories: dict[str, list[str]] = {}
+    for code in FRONTEND_INDICATOR_CODES:
+        cat = INDICATOR_CATEGORY_MAP.get(code, "Lainnya")
+        categories.setdefault(cat, []).append(code)
+    result = [
+        {"category": cat, "codes": codes}
+        for cat, codes in categories.items()
+    ]
+    return json_success({"categories": result})
+
+
+@require_GET
+def indicator_dashboard_filter(request):
+    """
+    GET /api/indicators/dashboard/
+
+    Query params:
+      category (str)  – nama kategori, mis. "PDB" atau "Inflasi"
+      year     (int)  – tahun pengamatan, mis. 2024
+
+    Mengembalikan payload yang sama dengan indicator_summary, namun disaring
+    berdasarkan parameter yang diberikan.  Jika tidak ada parameter, perilaku
+    identik dengan indicator_summary tanpa filter.
+    """
+    raw_category = request.GET.get("category", "").strip()
+    raw_year = request.GET.get("year", "").strip()
+
+    # Validasi tahun
+    if raw_year:
+        if not raw_year.isdigit():
+            return json_error("Parameter 'year' harus berupa angka bulat positif.", status=400)
+        filter_year = int(raw_year)
+    else:
+        filter_year = None
+
+    # Tentukan kode yang akan dikembalikan
+    if raw_category:
+        codes = [
+            code
+            for code, cat in INDICATOR_CATEGORY_MAP.items()
+            if cat.lower() == raw_category.lower()
+        ]
+        if not codes:
+            return json_error(
+                f"Kategori '{raw_category}' tidak dikenal. "
+                f"Pilihan yang tersedia: {sorted(set(INDICATOR_CATEGORY_MAP.values()))}",
+                status=400,
+            )
+    else:
+        codes = list(request.GET.getlist("code") or FRONTEND_INDICATOR_CODES)
+
+    indicators = []
+    for code in codes:
+        indicator = Indicator.objects.filter(code=code).first()
+        if indicator is None:
+            indicators.append({
+                "id": code,
+                "available": False,
+                "name": code,
+                "category": INDICATOR_CATEGORY_MAP.get(code, ""),
+                "value": None,
+                "unit": "",
+                "period": None,
+                "note": "Indikator belum terdefinisi di database.",
+            })
+            continue
+
+        card = serialize_summary_card(indicator)
+
+        # Terapkan filter tahun jika diminta
+        if filter_year is not None and card.get("latestYear") != filter_year:
+            # Cari observasi terakhir pada tahun yang diminta
+            obs_in_year = (
+                Observation.objects.filter(
+                    indicator=indicator,
+                    validation_status=Observation.Status.PUBLISHED,
+                    observation_date__year=filter_year,
+                )
+                .order_by("-observation_date")
+                .select_related("source", "raw_file")
+                .first()
+            )
+            if obs_in_year is None:
+                card = {
+                    "id": indicator.code,
+                    "available": False,
+                    "name": indicator.name,
+                    "category": indicator.category,
+                    "value": None,
+                    "unit": indicator.unit,
+                    "period": None,
+                    "latestPeriod": None,
+                    "latestYear": None,
+                    "hasCurrentYearData": False,
+                    "note": f"Data tahun {filter_year} belum tersedia dari sumber resmi.",
+                    "dataAvailabilityNote": f"Tidak ada data dipublikasi untuk tahun {filter_year}.",
+                }
+            else:
+                prev = (
+                    Observation.objects.filter(
+                        indicator=indicator,
+                        validation_status=Observation.Status.PUBLISHED,
+                        observation_date__lt=obs_in_year.observation_date,
+                    )
+                    .order_by("-observation_date")
+                    .first()
+                )
+                delta = delta_summary(obs_in_year, prev)
+                card.update({
+                    "value": format_decimal(obs_in_year.value),
+                    "period": obs_in_year.period_label,
+                    "latestPeriod": obs_in_year.period_label,
+                    "latestYear": obs_in_year.observation_date.year,
+                    "observationDate": obs_in_year.observation_date.isoformat(),
+                    "delta": delta["delta"],
+                    "deltaDirection": delta["deltaDirection"],
+                    "deltaPositive": delta["deltaPositive"],
+                })
+
+        indicators.append(card)
+
+    # Metadata filter aktif yang diteruskan ke front-end
+    active_filters: dict = {}
+    if raw_category:
+        active_filters["category"] = raw_category
+    if filter_year is not None:
+        active_filters["year"] = filter_year
+
+    update = serialize_update_log(latest_successful_update())
+    return json_success({
+        "updatedAt": update["updatedAt"] if update else None,
+        "updatedAtFormatted": update["formatted"] if update else None,
+        "lastUpdate": update,
+        "activeFilters": active_filters,
+        "indicators": indicators,
+    })

@@ -124,3 +124,7 @@ class DataUpdateLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.updated_at.isoformat()} {self.status} {self.source}"
+
+
+# Re-export agar migration discovery berfungsi dari satu modul
+from indicators.feedback_model import Feedback  # noqa: E402, F401

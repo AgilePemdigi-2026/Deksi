@@ -128,3 +128,126 @@ export function useTrend(code: string) {
 
   return { trend, loading, error };
 }
+
+// ---------------------------------------------------------------------------
+// Fitur 5 – Filter Dashboard
+// ---------------------------------------------------------------------------
+
+export interface CategoryEntry {
+  category: string;
+  codes: string[];
+}
+
+export interface FilteredSummaryResponse extends SummaryResponse {
+  activeFilters: { category?: string; year?: number };
+}
+
+export interface DashboardFilters {
+  category: string;
+  year: string;
+}
+
+export function useDashboardFilter(filters: DashboardFilters) {
+  const [summary, setSummary] = useState<FilteredSummaryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    const params = new URLSearchParams();
+    if (filters.category) params.set("category", filters.category);
+    if (filters.year)     params.set("year", filters.year);
+
+    const url = `${API_BASE}/indicators/dashboard/${params.toString() ? "?" + params : ""}`;
+
+    const load = async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = (await res.json()) as FilteredSummaryResponse;
+        if (!cancelled) { setSummary(body); setError(null); }
+      } catch {
+        if (!cancelled) setError("Tidak dapat memuat data dashboard.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [filters.category, filters.year]);
+
+  return { summary, loading, error, cards: summary?.indicators ?? [] };
+}
+
+export function useIndicatorCategories() {
+  const [categories, setCategories] = useState<CategoryEntry[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/indicators/categories/`)
+      .then((r) => r.json())
+      .then((body) => { if (body?.categories) setCategories(body.categories); })
+      .catch(() => {});
+  }, []);
+
+  return categories;
+}
+
+// ---------------------------------------------------------------------------
+// Fitur 8 – Umpan Balik
+// ---------------------------------------------------------------------------
+
+export interface FeedbackCategory {
+  value: string;
+  label: string;
+}
+
+export interface FeedbackPayload {
+  category: string;
+  description: string;
+  sender_name?: string;
+  sender_email?: string;
+  related_indicator_code?: string;
+  related_period?: string;
+}
+
+export interface FeedbackResult {
+  id: number | null;
+  status: "idle" | "loading" | "success" | "error";
+  message: string;
+}
+
+export function useFeedbackCategories() {
+  const [categories, setCategories] = useState<FeedbackCategory[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/feedback/categories/`)
+      .then((r) => r.json())
+      .then((body) => { if (body?.categories) setCategories(body.categories); })
+      .catch(() => {});
+  }, []);
+
+  return categories;
+}
+
+export async function submitFeedback(payload: FeedbackPayload): Promise<FeedbackResult> {
+  try {
+    const res = await fetch(`${API_BASE}/feedback/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+    if (res.status === 201) {
+      return { id: body.id, status: "success", message: body.message };
+    }
+    const msg =
+      body?.error ??
+      Object.values(body ?? {}).flat().join(" ") ??
+      "Terjadi kesalahan saat mengirim umpan balik.";
+    return { id: null, status: "error", message: String(msg) };
+  } catch {
+    return { id: null, status: "error", message: "Tidak dapat menghubungi server." };
+  }
+}
