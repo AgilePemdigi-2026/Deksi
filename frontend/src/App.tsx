@@ -1,32 +1,27 @@
 import './App.css'
-import { useEffect } from "react";
-import { Navbar } from "./components/ShellTop";
-import { Hero } from "./components/HeroStatus";
-import { InsightSection, Footer } from "./components/ShellBottom";
-import { EconomicSummary } from "./components/EconomicSummary";
-import { TrendChart } from "./components/TrendChart";
-import { useDashboardData } from "./api";
+import { useEffect, useState } from 'react'
+import { EconomicSummary } from './components/EconomicSummary'
+import { TrendChart } from './components/TrendChart'
+import { InsightSection } from './components/ShellBottom'
+import { EditorialLanding, EditorialContext } from './components/EditorialLanding'
+import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
+import { useDashboardData } from './api'
 
 export default function App() {
-  const { summary, cards, loading, error } = useDashboardData();
-
-  useEffect(() => {
-    document.title = "DEKSI — Deteksi Ekonomi Indonesia";
-  }, []);
-
-  return (
-    <div className="deksi-page">
-      <Navbar />
-      <Hero
-        updatedAt={summary?.lastUpdate?.formatted ?? null}
-        period={cards[0]?.latestPeriod ?? null}
-        loading={loading}
-        error={error}
-      />
+  const { summary, cards, loading, error } = useDashboardData()
+  const [infoOpen, setInfoOpen] = useState(false)
+  useEffect(() => { document.title = 'DEKSI · Deteksi Ekonomi Indonesia' }, [])
+  return <div className="deksi-page">
+    <a className="skip-link" href="#hero-title">Lewati ke konten utama</a>
+    <main>
+      <EditorialLanding cards={cards} summary={summary} loading={loading} error={error} onInfo={() => setInfoOpen(true)} />
+      <div className="api-context" role="status"><span>PEMBARUAN BACKEND</span><p>{loading ? 'Memuat metadata…' : error ? error : summary?.lastUpdate?.formatted ?? 'Waktu pembaruan belum tersedia.'}</p><p>Nilai dan metadata ditampilkan sesuai respons API, bukan fixture prototipe.</p></div>
       <EconomicSummary cards={cards} loading={loading} error={error} />
       <TrendChart />
       <InsightSection />
-      <Footer />
-    </div>
-  );
+      <EditorialContext cards={cards} loading={loading} error={error} />
+    </main>
+    <EditorialFooter onInfo={() => setInfoOpen(true)} />
+    <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
+  </div>
 }

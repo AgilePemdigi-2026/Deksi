@@ -1,0 +1,102 @@
+{
+  "approved_public_baseline_sha256": "1bedb30ee30c3c180bf947083259d063f257a8cf518935eec2829dd2d06e5503",
+  "roles": {
+    "hero-business": "hero-business.webp",
+    "stat-market": "stat-market.webp",
+    "feature-logistics": "feature-logistics.webp",
+    "activity-skyline": "activity-skyline.webp",
+    "activity-port": "activity-port.webp",
+    "activity-food": "activity-food.webp",
+    "activity-harvest": "activity-harvest.webp",
+    "activity-market": "activity-market.webp",
+    "activity-bank": "activity-bank.webp",
+    "activity-agriculture": "activity-agriculture.webp",
+    "activity-distribution": "activity-distribution.webp",
+    "portrait-agriculture": "portrait-agriculture.webp"
+  },
+  "sources": [
+    {
+      "key": "jakarta-skyline",
+      "title": "Wisma 46 (Januari 2025).jpg",
+      "artist": "Medelam",
+      "source": "https://commons.wikimedia.org/wiki/File:Wisma_46_(Januari_2025).jpg",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "source_sha256": "c8892cec65657bf4b4e7a37f46651da1b328d7ea570bde898d55cd67a728993a"
+    },
+    {
+      "key": "container-port",
+      "title": "Tanjung Priok container terminal 2006.jpg",
+      "artist": "Niels Johannes",
+      "source": "https://commons.wikimedia.org/wiki/File:Tanjung_Priok_container_terminal_2006.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_sha256": "9702d143d4293190fb6300e7f41d806024d2ea2e95e3dd8eda4e95ff5b000da1"
+    },
+    {
+      "key": "rice-harvest",
+      "title": "Farmer harvesting rice, Kampung Rawa 2014-06-20.jpg",
+      "artist": "Crisco 1492",
+      "source": "https://commons.wikimedia.org/wiki/File:Farmer_harvesting_rice,_Kampung_Rawa_2014-06-20.jpg",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_sha256": "62ba0cef44c3e4c1b1d667d512a1899860fdba32c3605fefa52e70df03f7bff5"
+    },
+    {
+      "key": "godean-market",
+      "title": "Godean traditional market in Yogyakarta.jpg",
+      "artist": "Police office of Indonesia",
+      "source": "https://commons.wikimedia.org/wiki/File:Godean_traditional_market_in_Yogyakarta.jpg",
+      "license": "Public domain",
+      "license_url": null,
+      "source_sha256": "f5c2d00b7d2c9e45102a814275cc50b0bc172ff9be2ad4b8be33d3d86c03a1fe"
+    },
+    {
+      "key": "bank-museum",
+      "title": "Bank Indonesia Museum - Jakarta (2025) - img 04.jpg",
+      "artist": "Chainwit.",
+      "source": "https://commons.wikimedia.org/wiki/File:Bank_Indonesia_Museum_-_Jakarta_(2025)_-_img_04.jpg",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "source_sha256": "f524e7dbd53767b57e9f8166de4acf81aa845a84c021e354c6b41060cbd83fc5"
+    },
+    {
+      "key": "rice-fields",
+      "title": "Rice fields, Rice terraces, Tirta Gangga, Bali, Indonesia.jpg",
+      "artist": "Vyacheslav Argenberg",
+      "source": "https://commons.wikimedia.org/wiki/File:Rice_fields,_Rice_terraces,_Tirta_Gangga,_Bali,_Indonesia.jpg",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "source_sha256": "5216d2c115102dcfbd32e140700fb2581d672e83832968c7e0f26db002224c41"
+    },
+    {
+      "key": "container-rail",
+      "title": "Stasiun Tanjung Priok.jpg",
+      "artist": "Hutomo",
+      "source": "https://commons.wikimedia.org/wiki/File:Stasiun_Tanjung_Priok.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_sha256": "8667f5501cbffd526e8b6d6834d5df4bb85e091938c93bf961362e9bcb6cc553"
+    },
+    {
+      "key": "fruit-market",
+      "title": "Slow motion video of a fruit and veggie stand",
+      "artist": "Mixkit contributor (name not supplied in retained asset metadata)",
+      "source": "https://mixkit.co/free-stock-video/slow-motion-video-of-a-fruit-and-veggie-stand-991/",
+      "license": "Mixkit Stock Video Free License",
+      "license_url": "https://mixkit.co/license/modal/videoFree/",
+      "source_sha256": "f0d0dedd871364473a80545586e7ccc9f66047cbd709265e09282ce5a27dc467"
+    },
+    {
+      "key": "user-hero",
+      "title": "Foto kawasan perkotaan dari unggahan pengguna",
+      "artist": "Atribusi belum tersedia",
+      "source": null,
+      "license": "Lisensi belum dikonfirmasi",
+      "license_url": null,
+      "source_sha256": "66e66a879c6c395e7458150df28e96d864c0b737174134f6f90340094d56c183"
+    }
+  ],
+  "modifications": "Cropped, monochrome, contrast/side feathering from approved prototype. No source verification of economic values implied.",
+  "publication_gate": "User hero rights remain unconfirmed; local recovery commit only. Resolve rights or approve a replacement before public push."
+}

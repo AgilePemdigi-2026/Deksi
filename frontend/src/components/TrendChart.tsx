@@ -120,7 +120,7 @@ export function TrendChart() {
       <div className="trend-card">
         <div className="trend-head">
           <div>
-            <h2 className="trend-title">⚡ Tren Ekonomi Indonesia</h2>
+            <h2 className="trend-title">Tren Ekonomi Indonesia</h2>
             <p className="trend-sub">{trendMeta.description}</p>
           </div>
         </div>
