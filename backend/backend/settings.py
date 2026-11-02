@@ -10,22 +10,35 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Environment variables
+env = environ.Env(
+    DEBUG=(bool, True),
+    SECRET_KEY=(str, ''),
+    ALLOWED_HOSTS=(list, []),
+    BPS_API_KEY=(str, ''),
+    BPS_API_BASE_URL=(str, 'https://webapi.bps.go.id/v1'),
+    TIME_ZONE=(str, 'Asia/Jakarta'),
+)
+
+# Read .env file
+environ.Env.read_env(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&du$1&ds3*#_es$czu=7ntnqyw&up&#m1fqh8^%@sfj8vv*kdx'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-&du$1&ds3*#_es$czu=7ntnqyw&up&#m1fqh8^%@sfj8vv*kdx')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -37,10 +50,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'indicators',
     'behave_django',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -103,14 +119,28 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'id'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = env('TIME_ZONE')
 
 USE_I18N = True
 
 USE_TZ = True
 
+
+# CORS untuk frontend DEKSI (Vite dev server)
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
+# Konfigurasi pipeline data DEKSI
+DEKSI_RAW_DIR = BASE_DIR / 'raw_storage'
+DEKSI_SCRAPING_DIR = BASE_DIR.parent.parent / 'Folder Scrapping'
+
+# BPS WebAPI Configuration
+BPS_API_KEY = env('BPS_API_KEY')
+BPS_API_BASE_URL = env('BPS_API_BASE_URL')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
