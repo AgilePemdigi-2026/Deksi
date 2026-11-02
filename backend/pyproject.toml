@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"indicators/ingest.py" = ["BLE001"]
+"indicators/models.py" = ["RUF012"]
+"backend/settings.py" = ["E501"]
+"manage.py" = ["E402", "N999"]

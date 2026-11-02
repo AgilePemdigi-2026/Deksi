@@ -1,0 +1,144 @@
+.summary {
+  padding: 26px 0 8px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.indicator-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+
+.indicator-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.indicator-category {
+  margin: 0 0 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.indicator-name {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.delta-good {
+  background: #ecfdf5;
+  color: var(--positive);
+}
+
+.delta-glyph {
+  font-size: 9px;
+}
+
+.indicator-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+
+.indicator-value {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.indicator-unit {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.indicator-period {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.sparkline {
+  width: 100%;
+  height: 46px;
+  margin: 4px 0 10px;
+}
+
+.indicator-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.indicator-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.indicator-source {
+  font-weight: 600;
+}
+
+.indicator-link {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.indicator-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 980px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
