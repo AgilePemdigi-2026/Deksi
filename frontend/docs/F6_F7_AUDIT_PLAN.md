@@ -1,6 +1,10 @@
 # Jalur B — audit dan rencana port frontend F6 → F7
 
-Tanggal inspeksi: 2 November 2026, UTC+07. Status: **Batch 1 selesai; Batch 2 F6 diimplementasikan dan diuji; review visual dan izin checkpoint pending**.
+**Update pemisahan frontend:** koreksi F6 kini tersimpan pada branch F6 di commit `13a7680e96c1170cb9dcc041577e626760d8d76f`; base F7 diperbarui ke commit itu. Pengguna mengizinkan commit/push hanya dua feature branch, bukan PR/merge. Untuk status pra-publikasi dan bukti akhir gunakan [handoff publikasi F7](F7_PUBLICATION.md); catatan izin/checkpoint di bawah dipertahankan sebagai riwayat.
+
+Tanggal inspeksi awal: 2 November 2026, UTC+07. Catatan baseline/API di bawah mempertahankan keadaan pada audit tersebut.
+
+**Pembaruan 3 November 2026:** F6 direview untuk melanjutkan, checkpoint lokal diizinkan dan dibuat pada `14be3d9780f65ea0ea85244c1f089ae93f8dec3c`. Branch/worktree F7 dibuat dari checkpoint itu; frontend F7 dan navigasi pergi-kembali telah diimplementasikan serta diuji. Lihat [rencana Batch 3](F7_FRONTEND_PLAN.md), [handoff F7](F7_FRONTEND_HANDOFF.md), dan [receipt F7](F7_FRONTEND_VERIFICATION.json). Review visual F7 dan integrasi API nyata tetap belum diterima; tidak ada commit F7/push/PR/merge.
 
 Persetujuan sesi: pengguna menyatakan "oke kita buat front endnya dulu gapapa untuk backend nanti saja kita fokus fe nya dulu" setelah audit dan pembandingan gambar Source Trace. Scope tetap frontend dengan missing states jujur; bukan izin backend, fixture runtime, commit/push, atau otomatis menyetujui visual halaman baru. Gambar Source Trace dipakai sebagai referensi kelompok informasi, bukan mengganti fondasi editorial monokrom dengan tema biru. Dependency lokal boleh dipakai ulang melalui salinan paket existing yang lockfile-nya sudah dibandingkan identik; tidak ada install atau dependency baru.
 
@@ -18,7 +22,7 @@ Port perilaku Detail Indikator dan Source Trace dari checkpoint React lama ke fo
 | Backend integration ref | `be`, `c5c11553ffa2453a03f1a8a5b03ee42b214a6d58` | Berbeda dari main; fetch melaporkan ref berpindah dari sejarah lama. Tidak dipakai sebagai base atau digabungkan. |
 | Checkpoint lama | `feat/6-7-react-detail-source-trace`, `cc738a8bdd7a9af44870c5480e61991050577094` | Worktree bersih, hanya referensi perilaku dan tes fixture. Tidak diubah. |
 | F6 baru | `E:/Deksi-Team/.hermes/worktrees/feature-6-detail-fe`, `feat/6-detail-indikator-fe` | Dibuat dari fondasi tepat `505e97116f132c8630ec08d07525b8aec9e00536`; bukan dari Login. |
-| F7 rencana | `feat/7-source-trace-fe` | Belum dibuat; menunggu checkpoint F6 yang dapat dijadikan dependency dengan izin terpisah. |
+| F7 frontend (update 3 November) | `feat/7-source-trace-fe` | Dibuat di `E:/Deksi-Team/.hermes/worktrees/feature-7-source-trace-fe` dengan base/HEAD `14be3d9780f65ea0ea85244c1f089ae93f8dec3c`; delta F7 belum di-commit. |
 
 Origin diperiksa: `https://github.com/AgilePemdigi-2026/Deksi.git`. Tidak ditemukan AGENTS/CLAUDE/.cursorrules di tree fondasi atau parent worktree yang diperiksa; README dan `frontend/docs/EDITORIAL_PORT.md` dibaca. SOUL profil aktif dibaca tanpa perubahan. Fetch hanya memperbarui refs lokal, tanpa push atau perubahan branch kerja sesi lain.
 
@@ -137,4 +141,4 @@ Manifest fondasi sudah diperiksa:
 
 **Hasil Batch 2:** implementasi dan pengujian F6 tercatat di [handoff F6](F6_FRONTEND_HANDOFF.md) dan [receipt F6](F6_FRONTEND_VERIFICATION.json). Tidak mengubah receipt Batch 1 menjadi bukti implementasi atau API live baru.
 
-**Gate berikut:** review visual F6 dan izin terpisah commit lokal checkpoint F6 yang diidentifikasi di handoff sebelum membuat dependency branch F7. Publikasi, acceptance F7 dan end-to-end tetap gate terpisah. Tidak ada commit/push/PR saat penulisan handoff ini.
+**Gate saat audit awal (historis):** review visual F6 dan izin checkpoint lokal masih pending pada 2 November. Gate dependency itu sudah diselesaikan; jangan meminta izin yang sama berulang. **Gate kini:** review estetika halaman F7, koordinasi field formula/revisi dan integrasi API nyata. Izin commit F7, push, PR dan merge tetap terpisah. Keterbatasan snapshot immutable tidak dianggap selesai oleh tes frontend sintetis.

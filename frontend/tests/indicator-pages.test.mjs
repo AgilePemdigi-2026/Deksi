@@ -10,13 +10,13 @@ after(()=>vite.close())
 const {DetailPage}=await vite.ssrLoadModule('/src/features/indicators/DetailPage.tsx')
 const {fetchDetail}=await vite.ssrLoadModule('/src/features/indicators/api.ts')
 const render=(data,extra={})=>renderToStaticMarkup(createElement(DetailPage,{code:'inflasi',selector:null,data,loading:false,onRetry(){},...extra}))
-test('detail renders actual selected zero and unit, with F7 honestly unavailable',async()=>{
+test('detail renders actual selected zero and unit, with F7 bound to the same context',async()=>{
  const data=await fetchDetail('inflasi',null,undefined,responder(dto())),html=render(data)
  assert.match(html,/Inflasi UJI SINTETIS/)
  assert.match(html,/class="fd-metric">0</)
  assert.match(html,/Persen uji/)
  assert.match(html,/Source Trace/)
- assert.doesNotMatch(html,/href="[^"]*\/sumber/)
+ assert.match(html,/href="\/indikator\/inflasi\/sumber\?tanggal=2000-01-31/)
  assert.doesNotMatch(html,/Tervalidasi Resmi|Sumber Terverifikasi|demo-v1/)
 })
 test('unreachable backend retains layout, missing value, error and working retry affordance',()=>{

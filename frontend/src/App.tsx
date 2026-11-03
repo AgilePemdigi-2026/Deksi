@@ -8,6 +8,7 @@ import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
 import { useDashboardData } from './api'
 import { parseRoute } from './features/indicators/data'
 import { DetailScreen, FeatureUnavailable } from './features/indicators/DetailPage'
+import { SourceTraceScreen } from './features/indicators/SourceTracePage'
 import './features/indicators/features.css'
 
 function DashboardView() {
@@ -33,5 +34,6 @@ export default function App() {
   const route = typeof window === 'undefined' ? parseRoute('/') : parseRoute(window.location.pathname, window.location.search)
   if (route.kind === 'dashboard') return <DashboardView />
   if (route.kind === 'detail') return <DetailScreen route={route} />
-  return <FeatureUnavailable source={route.kind === 'source'} />
+  if (route.kind === 'source') return <SourceTraceScreen route={route} />
+  return <FeatureUnavailable />
 }

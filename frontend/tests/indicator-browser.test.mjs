@@ -12,10 +12,11 @@ const scratch=process.env.HERMES_TEST_SCRATCH
 assert(scratch && path.isAbsolute(scratch),'Set HERMES_TEST_SCRATCH to the permitted scratch directory')
 const executable=process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 assert(existsSync(executable),'Installed browser required; do not install or close the user browser')
-const output=path.join(root,'.artifacts/feature6-browser')
+const sourceTrace=process.argv.includes('--source-trace')
+const output=path.join(root,sourceTrace?'.artifacts/feature7-browser':'.artifacts/feature6-browser')
 await mkdir(output,{recursive:true})
 await mkdir(scratch,{recursive:true})
-const profile=await mkdtemp(path.join(scratch,'deksi-f6-browser-'))
+const profile=await mkdtemp(path.join(scratch,sourceTrace?'deksi-f7-browser-':'deksi-f6-browser-'))
 const checks=[],errors=[],requests=[],screenshots=[]
 const cancelledNetworks=new Set(),interceptionErrors=[]
 let server,chrome,ws,send,mode='ready',held=[]
@@ -26,14 +27,25 @@ function payloadFor(url){
  const payload=dto()
  const base=reading({indicatorCode:code,indicatorName:code.toUpperCase()+' UJI SINTETIS'})
  base.rawFile.downloadUrl=`/api/indicators/${code}/raw-file/1/`
- const past={...structuredClone(base),value:'2',period:'Desember 1999',observationDate:'1999-12-31'}
+ const past={...structuredClone(base),value:'2',period:'Desember 1999',observationDate:'1999-12-31',rawFile:null}
  payload.trace={...base,history:[structuredClone(base),past]}
  payload.summary.indicators[0]={...payload.summary.indicators[0],id:code,name:base.indicatorName,deltaDirection:'flat',deltaPositive:false,sparkline:[0]}
  if(!url.searchParams.get('code'))payload.summary.indicators=['pdb','inflasi','fiskal','investasi','birate','tpt'].map(id=>({...payload.summary.indicators[0],id,name:id.toUpperCase()+' UJI SINTETIS'}))
  payload.trend={...payload.trend,id:code,points:[{label:'Desember 1999',observationDate:'1999-12-31',value:2,unit:base.unit},{label:'Gap uji',observationDate:'2000-01-15',value:null,unit:base.unit},{label:'Januari 2000',observationDate:'2000-01-31',value:0,unit:base.unit}]}
+ payload.trend.points=payload.trend.points.map(point=>({...point,frequency:'monthly',dataType:'yoy'}))
+ if(mode==='mixed-type')payload.trend.points[0].dataType='level'
+ if(mode==='mixed-frequency')payload.trend.points[0].frequency='quarterly'
  if(mode==='empty')return {summary:{indicators:[]},trend:{id:code,available:false},trace:{indicatorCode:code,available:false}}
  if(mode==='changed'){payload.trace.publicationDate='2000-02-01';payload.trace.history=payload.trace.history.map(row=>({...row,publicationDate:'2000-02-01'}))}
  if(mode==='wrong')payload.trace.indicatorCode='wrong-code'
+ if(mode==='missing')payload.trace.history=payload.trace.history.filter(row=>row.observationDate!=='1999-12-31')
+ if(mode==='ambiguous')payload.trace.history.push({...structuredClone(past),value:'3'})
+ if(['value','unit','source','raw'].includes(mode))for(const row of [payload.trace,...payload.trace.history]){
+  if(mode==='value')row.value='9'
+  if(mode==='unit')row.unit='Unit berubah'
+  if(mode==='source')row.source.institution='INSTANSI BERUBAH'
+  if(mode==='raw'&&row.rawFile)row.rawFile.checksumSha256='b'.repeat(64)
+ }
  return payload
 }
 try{
@@ -54,6 +66,7 @@ try{
   if(mode==='held'){held.push(event);return}
   const url=new URL(event.request.url)
   const kind=url.pathname.endsWith('/trend/')?'trend':url.pathname.endsWith('/source-trace/')?'trace':'summary'
+  if(mode==='timeout'&&kind==='trace'){held.push(event);return}
   const payload=payloadFor(url)
   await send('Fetch.fulfillRequest',{requestId:event.requestId,responseCode:mode==='error'||(mode==='partial'&&kind==='trace')?503:200,responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Access-Control-Allow-Origin',value:'*'}],body:Buffer.from(JSON.stringify(payload[kind])).toString('base64')})
  }
@@ -80,7 +93,8 @@ try{
   assert.equal(await js('document.querySelector(".fd-metric").textContent'),'0')
   assert.equal(await js('document.querySelectorAll(".fd-point").length'),2)
   assert.equal(await js('document.querySelectorAll(".fd-line").length'),2)
-  assert.equal(await js('document.querySelector(".fd-source-panel button").disabled'),true)
+  assert.deepEqual(await js('[...document.querySelectorAll(".fd-axis-label")].map(e=>e.textContent)'),['2','1','0'])
+  assert.equal(await js('new URL(document.querySelector(".fd-source-panel a").href).pathname'),'/indikator/inflasi/sumber')
   assert(!requests.some(url=>new URL(url).pathname==='/api/indicators/'&&!new URL(url).searchParams.has('code')))
   assert(!requests.some(url=>url.includes('/pdb/trend/')))
   await shot('detail-desktop-synthetic.png')
@@ -148,12 +162,127 @@ try{
   await wait('document.querySelector(".hero-photo-wrap")')
   assert.equal(await js('location.pathname'),'/')
  })
+ await check('Request deadline recovers both screens from a stalled source and keyboard retry restores data',async()=>{
+  for(const route of ['/indikator/inflasi','/indikator/inflasi/sumber']){
+   mode='timeout';held=[];await go(route);await ready()
+   assert(await js('document.querySelector(".fd-status").textContent.includes("Batas waktu")'))
+   const metric=route.endsWith('/sumber')?'.ft-value':'.fd-metric'
+   assert.equal(await js(`document.querySelector(${JSON.stringify(metric)}).textContent`),route.endsWith('/sumber')?'Belum tersedia':'0')
+   mode='ready';held=[];await js('document.querySelector(".fd-status button").focus()');await key('Enter',13)
+   await ready();await wait(`document.querySelector(${JSON.stringify(metric)})?.textContent==="0"`)
+  }
+ })
+ await check('Mixed frequency or measurement type hides graph while labelled table preserves original rows',async()=>{
+  for(const scenario of ['mixed-type','mixed-frequency']){
+   mode=scenario;await go('/indikator/inflasi');await ready()
+   assert.equal(await js('document.querySelectorAll(".fd-line").length'),0)
+   assert(await js('document.querySelector(".fd-history").textContent.includes("Jenis data atau frekuensi histori tidak konsisten")'))
+   await js('document.querySelector(".fd-history details").open=true')
+   assert(await js(`document.querySelector('.fd-history table').textContent.includes(${JSON.stringify(scenario==='mixed-type'?'level':'quarterly')})`))
+  }
+ })
+ if(sourceTrace){
+  let sourceCurrent,sourceHistorical,selectedQuery
+  const value=()=>js('document.querySelector(".ft-value").textContent')
+  const assertNoReturn=async()=>assert.equal(await js(`!!document.querySelector(${JSON.stringify('.ft-actions a[href*="tanggal="]')})`),false)
+  await check('F7: keyboard Detail → Source Trace retains zero, source, unit and complete context',async()=>{
+   mode='ready';await go('/indikator/inflasi');await ready()
+   const target=await js('document.querySelector(".fd-source-panel a").getAttribute("href")')
+   selectedQuery=new URL(target,origin).search
+   await js('document.querySelector(".fd-source-panel a").focus()');await mark();await key('Enter',13);await ready()
+   sourceCurrent=await js('location.pathname+location.search')
+   assert.equal(sourceCurrent,target);assert.equal(await value(),'0')
+   assert.equal(await js('document.querySelector("h1").textContent'),'Source Trace Data.')
+   assert.equal(await js('document.querySelector(".ft-value-unit").textContent'),'Persen uji')
+   assert.equal(await js('document.querySelector(".ft-value-period").textContent'),'Januari 2000')
+   assert(await js('document.querySelector(".ft-summary").textContent.includes("INSTANSI UJI SINTETIS")'))
+   assert(await js('document.body.textContent.includes("Formula belum tersedia")&&document.body.textContent.includes("Riwayat revisi belum tersedia")'))
+   const raw=await js('[...document.querySelectorAll("a")].find(a=>a.textContent.includes("Unduh RAW"))?.href')
+   assert.equal(raw,'http://localhost:8000/api/indicators/inflasi/raw-file/1/')
+  })
+  await check('F7: keyboard return retains all selector parameters rather than the latest URL',async()=>{
+   await js('document.querySelector(".ft-actions a").focus()');await mark();await key('Enter',13);await ready()
+   assert.equal(await js('location.pathname'),'/indikator/inflasi')
+   assert.equal(await js('location.search'),selectedQuery)
+   assert.equal(await js('document.querySelector(".fd-metric").textContent'),'0')
+  })
+  await check('F7: historical selection, source reload and return preserve value 2 without borrowing current RAW',async()=>{
+   await js('document.querySelector("#fd-period").focus()');await mark();await key('End',35)
+   await wait('new URLSearchParams(location.search).get("tanggal")==="1999-12-31"');await ready()
+   const detail=await js('location.pathname+location.search')
+   await mark();await js('document.querySelector(".fd-source-panel a").click()');await ready()
+   sourceHistorical=await js('location.pathname+location.search')
+   assert.equal(await value(),'2')
+   assert.equal(await js('document.querySelector(".ft-value-period").textContent'),'Desember 1999')
+   assert.equal(new URL(sourceHistorical,origin).search,new URL(detail,origin).search)
+   assert.equal(await js('[...document.querySelectorAll("a")].some(a=>a.textContent.includes("Unduh RAW"))'),false)
+   await mark();await send('Page.reload');await ready();assert.equal(await value(),'2')
+   assert.equal(await js('location.pathname+location.search'),sourceHistorical)
+   await mark();await js('document.querySelector(".ft-actions a").click()');await ready()
+   assert.equal(await js('location.pathname+location.search'),detail)
+   assert.equal(await js('document.querySelector(".fd-metric").textContent'),'2')
+  })
+  await check('F7: changed value/unit/source/release/RAW and missing/ambiguous/wrong identity refuse fallback',async()=>{
+   for(const scenario of ['value','unit','source','changed','raw','missing','ambiguous','wrong']){
+    mode=scenario;await go(scenario==='raw'?sourceCurrent:sourceHistorical);await ready()
+    assert.equal(await value(),'Belum tersedia',scenario)
+    assert(await js('!!document.querySelector(".fd-status[role=alert]")'),scenario)
+    await assertNoReturn()
+   }
+  })
+  await check('F7: partial/empty/error stay missing and native keyboard retry clears stale context while loading',async()=>{
+   for(const scenario of ['partial','empty','error']){
+    mode=scenario;await go(sourceCurrent);await ready()
+    assert.equal(await value(),'Belum tersedia',scenario);await assertNoReturn()
+   }
+   mode='held';await js('document.querySelector(".fd-status button").focus()');await key('Enter',13)
+   await wait('document.querySelector("#feature-content").getAttribute("aria-busy")==="true"')
+   assert.equal(await value(),'Belum tersedia');await assertNoReturn()
+   for(let i=0;i<60&&held.length<3;i++)await delay(50)
+   assert(held.length>=3);mode='ready';const queued=held;held=[];for(const event of queued)await fulfill(event)
+   await ready();assert.equal(await value(),'0')
+  })
+  await check('F7: unsupported revision, duplicate and incomplete selector URLs make no API requests',async()=>{
+   for(const route of ['/indikator/inflasi/sumber?revisi=demo-v1','/indikator/inflasi/sumber?tanggal=2000-01-31','/indikator/inflasi/sumber'+selectedQuery+'&tanggal=2000-01-31']){
+    const before=requests.length;await go(route)
+    await wait('document.querySelector("h1")?.textContent==="Halaman tidak ditemukan."')
+    assert.equal(requests.length,before)
+   }
+  })
+  await check('F7: rapid navigation discards held source responses instead of leaking previous indicator data',async()=>{
+   mode='held';await go(sourceCurrent)
+   await wait('document.querySelector("#feature-content")?.getAttribute("aria-busy")==="true"')
+   for(let i=0;i<60&&held.length<3;i++)await delay(50)
+   assert(held.length>=3);const obsolete=held;held=[]
+   mode='ready';await go('/indikator/pdb/sumber');await ready()
+   for(const event of obsolete)try{await fulfill(event)}catch(error){assert(String(error).includes('Invalid InterceptionId'))}
+   assert(await js('document.querySelector(".ft-summary").textContent.includes("PDB UJI SINTETIS")'))
+   assert.equal(await js('location.pathname'),'/indikator/pdb/sumber')
+   assert(await js('new URL(document.querySelector(".ft-actions a").href).pathname==="/indikator/pdb"'))
+  })
+  await check('F7: responsive 390/768/1440 layouts keep tables local and public controls usable',async()=>{
+   for(const width of [390,768,1440]){
+    await go(sourceCurrent,width);await ready()
+    const bounds=await js('({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth,viewport:innerWidth})')
+    assert.equal(bounds.viewport,width);assert(bounds.scroll<=bounds.client,JSON.stringify(bounds))
+    assert.equal(await js('document.querySelectorAll(".ft-flow li").length'),6)
+    assert(await js('[...document.querySelectorAll(".source-trace-feature caption")].every(e=>getComputedStyle(e).color==="rgb(85, 85, 85)")'))
+    assert(await js('[...document.querySelectorAll(".fd-table-scroll")].every(e=>getComputedStyle(e).overflowX==="auto"&&e.tabIndex===0)'))
+    assert(await js('document.querySelector(".ft-actions a").getBoundingClientRect().height>=44'))
+    if(width===390||width===1440){
+     await js(`(()=>{const label=document.createElement('aside');label.id='qa-synthetic-label';label.style.cssText='padding:12px 24px;background:#111;color:#fff;font:12px sans-serif';label.textContent='UJI SINTETIS — bukan data ekonomi resmi. Formula dan revisi belum tersedia.';document.body.prepend(label)})()`)
+     await shot(width===390?'source-mobile-synthetic.png':'source-desktop-synthetic.png')
+     await js('document.querySelector("#qa-synthetic-label").remove()')
+    }
+   }
+  })
+ }
  await check('No runtime exceptions or runtime fixture requests',async()=>{
   assert.deepEqual(errors,[]);assert(requests.every(url=>!url.includes('/fixtures/')))
   await delay(100)
   for(const failure of interceptionErrors)assert(failure.error.includes('Invalid InterceptionId')&&cancelledNetworks.has(failure.networkId),'Unexplained interception error: '+JSON.stringify(failure))
  })
- const receipt={scope:'F6 functional browser, synthetic API interception only; not real backend/data or aesthetic approval',checks,screenshots,errors,requests,expectedAbortedInterceptions:interceptionErrors,visualAcceptance:'PENDING',apiLive:'NOT_PROVEN',f7:'NOT_IMPLEMENTED_DEPENDENCY_CHECKPOINT_PENDING'}
+ const receipt={scope:sourceTrace?'F7 source functionality plus F6 regression; synthetic API only, not backend integration or aesthetic approval':'F6 regression on F7 branch; synthetic API only',checks,feature7Checks:checks.filter(name=>name.startsWith('F7:')),feature6AndSharedChecks:checks.filter(name=>!name.startsWith('F7:')),screenshots,errors,requests,expectedAbortedInterceptions:interceptionErrors,visualAcceptance:'PENDING',apiLive:'NOT_PROVEN'}
  await writeFile(path.join(output,'verification.json'),JSON.stringify(receipt,null,2))
  console.log(JSON.stringify({checks:checks.length,output,screenshots,runtimeErrors:errors.length},null,2))
 }catch(error){console.error(error);await writeFile(path.join(output,`failure-${Date.now()}.json`),JSON.stringify({checks,errors,requests,failure:String(error)},null,2));process.exitCode=1}

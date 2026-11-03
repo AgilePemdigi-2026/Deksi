@@ -1,0 +1,193 @@
+{
+  "checked_at": "2026-11-03T05:18:32.409860+00:00",
+  "scope": "Two authorized frontend repair batches for review findings 1–4; no backend edits or publication",
+  "branch": "feat/7-source-trace-fe",
+  "head": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+  "committed": false,
+  "staged": false,
+  "batch_1": {
+    "1": "Per-resource 10s deadline covers HTTP and body parsing; timeout aborts request and preserves other fulfilled resources; parent cancellation and timer/listener cleanup preserved",
+    "2": "History retains measurement type and frequency; mixed unit/type/frequency prevents chart connection and original metadata remain in the table"
+  },
+  "batch_2": {
+    "3": "Numeric Y labels; single/constant/zero/null/negative/large-series controls; compact scientific presentation for extreme scale labels only",
+    "4": "Selected period displayed adjacent to value/unit on Source Trace; historical context preserved"
+  },
+  "red": {
+    "timeout": {
+      "exit_code": 1,
+      "failed_tests": 1,
+      "log": ".artifacts/review-b1-timeout-red.log",
+      "sha256": "c3f42eb7e61a1711a04419d90ac157dd0233cda4c1c038e6fa37624a28ce3951",
+      "reason": "Error: Request deadline did not settle"
+    },
+    "mixed_semantics": {
+      "exit_code": 1,
+      "failed_tests": 1,
+      "log": ".artifacts/review-b1-mixed-red.log",
+      "sha256": "2f8c1c94d91058a599d52eb3ce8dc0081b3499b8c43dcb49fda26514a65775cf",
+      "reason": "AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /<polyline/. Input:"
+    },
+    "numeric_scale": {
+      "exit_code": 1,
+      "failed_tests": 1,
+      "log": ".artifacts/review-b2-axis-red.log",
+      "sha256": "723c5dfe7cea35bc056985b1f4fe0397be093db85f2a805db85abe7bdeb8fec2",
+      "reason": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /class=\"fd-axis-label\"[^>]*>2<\\/text>/. Input:"
+    },
+    "period_near_value": {
+      "exit_code": 1,
+      "failed_tests": 1,
+      "log": ".artifacts/review-b2-period-red.log",
+      "sha256": "a846098fc3bafdbef6fb5f755ea8e26df3cfb5496d7c5393a4896f98722cf8a5",
+      "reason": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /class=\"ft-value-period\">Januari 2000<\\/span>/. Input:"
+    }
+  },
+  "units": {
+    "F6": {
+      "counts": {
+        "tests": 32,
+        "pass": 32,
+        "fail": 0,
+        "skipped": 0
+      },
+      "exit_code": 0,
+      "log": ".artifacts/review-f6-unit-final.log",
+      "sha256": "6410ce153215dd578fe5fb47cc8d93bed556783f69171909f0bf86ce8d5d9ab8"
+    },
+    "F7": {
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "exit_code": 0,
+      "log": ".artifacts/review-f7-unit-final.log",
+      "sha256": "08e5eb210bb871e00b02298e9fffbc1e00ab7581a253d8fea6302fca54a026eb"
+    },
+    "editorial": {
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "exit_code": 0,
+      "log": ".artifacts/review-editorial-unit-final.log",
+      "sha256": "08bf5ca08295c9ab9c57e6824228d8fc6552bad783eb21b46a440fc1c8f7fff6"
+    }
+  },
+  "browser": {
+    "exit_code": 0,
+    "F7_groups": 8,
+    "shared_F6_and_repair_groups": 10,
+    "total": 18,
+    "runtime_errors": [],
+    "checks": [
+      "Deep link loads public detail, preserves zero, chart gap and source controls without dashboard requests",
+      "Native keyboard period selection and reload retain exact historical guard and value",
+      "Changed release metadata refuses historical context without latest fallback",
+      "Malformed revision routes do not mount any API loader",
+      "Source failure preserves summary/history, whereas all errors expose empty value and keyboard retry",
+      "Empty API stays empty; responsive desktop and narrow layouts retain local scrolling",
+      "Actual dashboard → Detail → dashboard links work without login",
+      "Request deadline recovers both screens from a stalled source and keyboard retry restores data",
+      "Mixed frequency or measurement type hides graph while labelled table preserves original rows",
+      "F7: keyboard Detail → Source Trace retains zero, source, unit and complete context",
+      "F7: keyboard return retains all selector parameters rather than the latest URL",
+      "F7: historical selection, source reload and return preserve value 2 without borrowing current RAW",
+      "F7: changed value/unit/source/release/RAW and missing/ambiguous/wrong identity refuse fallback",
+      "F7: partial/empty/error stay missing and native keyboard retry clears stale context while loading",
+      "F7: unsupported revision, duplicate and incomplete selector URLs make no API requests",
+      "F7: rapid navigation discards held source responses instead of leaking previous indicator data",
+      "F7: responsive 390/768/1440 layouts keep tables local and public controls usable",
+      "No runtime exceptions or runtime fixture requests"
+    ],
+    "receipt": ".artifacts/feature7-browser/verification.json",
+    "data": "Synthetic API interception only; real disposable Chrome actions; 10-second default deadline exercised on both screens"
+  },
+  "editorial_browser": {
+    "exit_code": 0,
+    "groups": 5,
+    "runtime_errors": [],
+    "receipt": ".artifacts/browser/verification.json"
+  },
+  "build": {
+    "exit_code": 0,
+    "log": ".artifacts/review-build-final.log",
+    "warning": "Bundle chunk above 500 kB remains"
+  },
+  "lint": {
+    "exit_code": 0,
+    "log": ".artifacts/review-lint-final.log",
+    "warnings": [
+      "src/api.ts:107:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.",
+      "src/components/EconomicSummary.tsx:15:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.",
+      "src/components/TrendChart.tsx:106:38: warning react-hooks(exhaustive-deps): React hook useMemo depends on `supported`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`."
+    ],
+    "new_feature_warnings": 0
+  },
+  "source_sha256": {
+    "frontend/package-lock.json": "cd89db4feffc5fe26f45845f4030878c79fdac9b8081dfab5924f43d3d55646a",
+    "frontend/package.json": "5f347dd58101f13bb52ae9c0060436997cce47096092a1bf428d1f75a3d26cdf",
+    "frontend/src/api.ts": "ab32d65702ee201bbc364f0eb848c35e230c17d597744c675c32a4c4c3f85b6b",
+    "frontend/src/App.tsx": "7e8cd369dba8587658ffe5e61015c8a16fd336aac925a9879eb1d1c8ca3a7d54",
+    "frontend/src/features/indicators/api.ts": "05f42ba37cefba1301a8e62fe2ea79e1d4d5ad8ba86edf29b6c8bc16cd357c76",
+    "frontend/src/features/indicators/data.ts": "592bbc71d2c23ab270c52ad4ce85110729218f4fc5f001166aa81b2ca9d221a1",
+    "frontend/src/features/indicators/DetailPage.tsx": "4c3ca3ea4114e7884cb2a4a7c4a839a70f73d52074f9774e3b0a449ede859ab7",
+    "frontend/src/features/indicators/features.css": "be4661f7e3ab876080a005b0b506aa45774f3b8dc2766f9e05e61773226c12bd",
+    "frontend/src/features/indicators/source-trace.css": "65fb8ce372576fc0122da0b33baa0fbbc24eb02375134fbf8eb8e3c49baf4ac9",
+    "frontend/src/features/indicators/source.ts": "51254defa75c590f598a5f7e9b7f336619294b6ce1ff0665a659d2ea1adddd1b",
+    "frontend/src/features/indicators/SourceTracePage.tsx": "7f406ad938587cb8812a1e0b4edc1ef7cdbf99b556f250d7971f465d9d39a74f",
+    "frontend/src/features/indicators/types.ts": "994ebf9152ce47f3733db8732a49c9776df5dc3cec11987b28a392805488898e",
+    "frontend/src/features/indicators/useDetailData.ts": "5e786773dc7123b70c75fac04fa28a4d56f474818dc07f499e5b2030326ddaea",
+    "frontend/src/index.css": "c6ae5ea91997ecddd50e1c95615a854716287a1cbc8f5627b055f73bfde84a11",
+    "frontend/tests/browser.test.mjs": "f1935b0781924d9c902ff3629ad5c039bac4f891c3dd57527ff4a9a8a41f307d",
+    "frontend/tests/editorial.test.mjs": "e95d3178f9592747f372bbad3186268855651f6275e08275962018af19085cb2",
+    "frontend/tests/indicator-api.test.mjs": "3f46ee96d2508bfa5a9a0b24e9d133534ae0b2ed3e1631d02b237c304e3b42e0",
+    "frontend/tests/indicator-browser.test.mjs": "0c7198b352162183d5d8118946dfee4f96bbe6fde192dea0081474422d801c9c",
+    "frontend/tests/indicator-data.test.mjs": "12f574a4c68c670283633fd1c7c393736e8fa5b1b82151df488c23a775df6734",
+    "frontend/tests/indicator-fixtures.mjs": "692ccc4ff2bc8ed8c2ebc01d57c9db885b783b69d5f2a909af011df1df1e6b63",
+    "frontend/tests/indicator-pages.test.mjs": "12925e01fa82d59b1037d750185c15a27314e15cc35f8ae8414926cd270806d7",
+    "frontend/tests/source-trace.test.mjs": "8dbb8e622ba32740d7a3c2d90ef90081f3fdc6bf257a7353ac9fa6bfc4b0dea2"
+  },
+  "source_digest": "b87b4b0080290c12cfb1abc02d26b593e1c9a6ee66a6a0e68a93894fe3554325",
+  "outputs_sha256": {
+    ".artifacts/feature7-browser/verification.json": "b27a79a3ba1aed81e9cf1834dee7f4c980ade971529ae86e6c0e63725de80d0d",
+    ".artifacts/browser/verification.json": "03d825d62600fc7f39cc8ef29160a8f3771362105c0406408c209e0410bfbad6",
+    ".artifacts/feature7-browser/detail-desktop-synthetic.png": "2362f7073f927475e42e2624850d90c4c6980642e4e1a7b92523558aaf88ca83",
+    ".artifacts/feature7-browser/detail-empty-mobile-synthetic.png": "491136510c46b5026489522fc46c26fce7b5022505d06b6ba45ac080a69567e2",
+    ".artifacts/feature7-browser/source-desktop-synthetic.png": "a50065c34bdaec1abbeb898c279c955d48a742ce045a69facc426e5d6e4ffd94",
+    ".artifacts/feature7-browser/source-mobile-synthetic.png": "3d0e7b25bb5142941dc0c7e09bf7846ae95869d92d019176ac7093b5a8e5bf1e",
+    "dist/index.html": "b791b305ef4c332abd07e715cc70876a530403b6bc6c7a8c90c09369a7917f8f",
+    "dist/assets/index-BL35bzCl.js": "6d669b1b68cefd2e2d64306bfea06e9b5fffef4a4114d05415491deba459be23",
+    "dist/assets/index-DslwO8fm.css": "fe5562cacc1581eda47d9e59fb93ea9eee76dc4d13c0a50c65127b64861a5909"
+  },
+  "protected": {
+    "feature-6-detail-fe": {
+      "head": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+      "clean": true
+    },
+    "react-features-6-7": {
+      "head": "cc738a8bdd7a9af44870c5480e61991050577094",
+      "clean": true
+    }
+  },
+  "historical_evidence": "Original F7 receipt retained as historical. Prior feature browser outputs/logs archived under .artifacts/pre-review-fixes before refresh. This receipt supersedes it for current source.",
+  "limits": {
+    "live_api": "Not revalidated in repair batch; synthetic tests are not end-to-end acceptance",
+    "F7_visual_user_approval": "Pending",
+    "backend_snapshot_formula_revision": "Not implemented by frontend repairs",
+    "F6_checkpoint": "Original F6 branch unchanged; F6 corrections are currently in F7 worktree only, pending authorized commit separation",
+    "canonical_verification": "Not run; explicit frontend suites executed",
+    "no_changes": [
+      "backend",
+      "Login",
+      "shared dashboard transport",
+      "dependencies/lock",
+      "Git identity",
+      "commit/push/PR/merge"
+    ]
+  }
+}

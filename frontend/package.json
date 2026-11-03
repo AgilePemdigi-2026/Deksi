@@ -11,6 +11,8 @@
     "test": "node --test tests/editorial.test.mjs",
     "test:indicators": "node --test tests/indicator-data.test.mjs tests/indicator-api.test.mjs tests/indicator-pages.test.mjs",
     "test:indicators:browser": "node tests/indicator-browser.test.mjs",
+    "test:source-trace": "node --test tests/source-trace.test.mjs",
+    "test:source-trace:browser": "node tests/indicator-browser.test.mjs --source-trace",
     "test:browser": "node tests/browser.test.mjs"
   },
   "dependencies": {

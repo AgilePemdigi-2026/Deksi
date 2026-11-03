@@ -1,6 +1,8 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
 import { BrandMark } from '../../components/EditorialLanding'
-import { fetchDetail, summaryMatches } from './api'
+import { summaryMatches } from './api'
+import { boundContext } from './source'
+import { useDetailData } from './useDetailData'
 import { chartGeometry, contextHref, formatDecimal, INDICATORS, safeExternalUrl } from './data'
 import type { DetailData, HistoryPoint, Route, Selector } from './types'
 
@@ -59,6 +61,8 @@ export function DetailPage({ code, selector, data, loading, error, onRetry }: De
   const frequency = reading ? reading.frequency : summary?.frequency
   const dataType = reading ? reading.dataType : summary?.dataType
   const acquisition = reading ? reading.rawFile?.retrievedAt : summary?.retrievedAt
+  const sourceContext = !loading && !error ? boundContext(data) : null
+  const sourceHref = sourceContext ? contextHref(sourceContext.reading, sourceContext.guard, true) : null
   return <FeatureShell><main className="fd-main" id="feature-content" tabIndex={-1} aria-busy={loading}>
     <nav className="fd-breadcrumb" aria-label="Breadcrumb"><a href="/">Dashboard</a><span aria-hidden="true">/</span><span aria-current="page">Detail indikator</span></nav>
     <header className="fd-heading"><div><p className="fd-kicker">06 / DETAIL INDIKATOR EKONOMI</p><h1>{title}</h1></div><p className="fd-lead">Baca angka bersama periode, satuan, dan sumbernya. Informasi yang belum tersedia tidak diisi dengan data pengganti.</p></header>
@@ -75,24 +79,13 @@ export function DetailPage({ code, selector, data, loading, error, onRetry }: De
       <section className="fd-section"><p className="fd-kicker">MEMBACA ANGKA</p><h2>Angka bukan kesimpulan.</h2><p className="fd-body-copy">Definisi rinci belum disediakan oleh endpoint detail yang tersedia. Angka naik atau turun tidak otomatis berarti baik atau buruk. Tidak ada interpretasi atau narasi AI pengganti pada halaman ini.</p></section>
     </div><aside className="fd-aside" aria-label="Konteks dan sumber">
       <section className="fd-section"><p className="fd-kicker">ASAL & WAKTU</p><h2>Konteks data.</h2><dl className="fd-metadata"><Field label="Institusi sumber">{source}</Field><Field label="Publikasi / nama sumber">{reading?.source?.sourceName}</Field><Field label="Tanggal observasi">{observationDate}</Field><Field label="Tanggal rilis">{publicationDate ? `${publicationDate} (tanggal saja)` : null}</Field><Field label="Waktu akuisisi">{acquisition}</Field><Field label="Dokumen RAW">{reading?.rawFile?.documentName}</Field></dl><div className="fd-links"><SourceLink url={reading?.rawFile?.sourceUrl}>Buka sumber dokumen</SourceLink><SourceLink url={reading?.source?.primaryUrl}>Buka portal institusi</SourceLink></div><p className="fd-small">Portal institusi dan dokumen primer bukan hal yang sama. Metadata RAW yang tidak disertakan tidak diganti dari observasi lain.</p></section>
-      <section className="fd-source-panel"><p className="fd-kicker">07 / LANGKAH BERIKUTNYA</p><h2>Source Trace.</h2><p>Penelusuran sumber akan tersedia melalui fitur 7. Tautan belum diaktifkan agar tidak menuju halaman yang belum dipasang.</p><button type="button" className="fd-button" disabled>Source Trace belum tersedia</button><p className="fd-small">Identitas revisi dan snapshot immutable belum disediakan backend. Kecocokan respons bukan jaminan versi historis.</p></section>
+      <section className="fd-source-panel"><p className="fd-kicker">07 / TELUSURI ANGKA INI</p><h2>Source Trace.</h2><p>Baca sumber, rilis, dan batas perhitungan untuk konteks yang sama. Metadata tidak dialihkan ke observasi lain.</p>{sourceHref ? <a className="fd-button" href={sourceHref}>Buka Source Trace ↗</a> : <button type="button" className="fd-button" disabled>Konteks Source Trace belum tersedia</button>}<p className="fd-small">Identitas revisi dan snapshot immutable belum disediakan backend. Kecocokan respons bukan jaminan versi historis.</p></section>
       <section className="fd-section"><h2>Status & keterbatasan</h2><dl className="fd-metadata"><Field label="Status dari backend">{reading?.validationStatus}</Field><Field label="Waktu review pada respons">{reading?.reviewedAt}</Field><Field label="ID observasi / revisi">Belum disediakan API</Field><Field label="Klasifikasi nilai resmi / turunan">Belum disediakan API</Field></dl><p className="fd-small">Status publikasi bukan klaim independen bahwa angka telah terverifikasi resmi.</p></section>
     </aside></div>
   </main></FeatureShell>
 }
 export function DetailScreen({ route }: { route: Extract<Route, { kind: 'detail' | 'source' }> }) {
-  const [attempt, setAttempt] = useState(0)
-  const [result, setResult] = useState<{ key: string; data: DetailData | null; error: string | null } | null>(null)
-  const selectorKey = JSON.stringify(route.selector)
-  const requestKey = `${route.code}:${selectorKey}:${attempt}`
-  const current = result?.key === requestKey ? result : null
-  useEffect(() => {
-    const controller = new AbortController()
-    fetchDetail(route.code, JSON.parse(selectorKey) as Selector | null, controller.signal).then(data => {
-      if (!controller.signal.aborted) setResult({ key: requestKey, data, error: data.warnings.length === 3 ? 'Backend belum terhubung atau respons belum dapat digunakan. Tidak ada data contoh yang disisipkan.' : null })
-    }).catch(() => { if (!controller.signal.aborted) setResult({ key: requestKey, data: null, error: 'Data gagal dimuat. Tidak ada nilai pengganti.' }) })
-    return () => controller.abort()
-  }, [route.code, selectorKey, requestKey])
+  const state = useDetailData(route)
   useEffect(() => { document.title = 'Detail Indikator · DEKSI' }, [])
-  return <DetailPage code={route.code} selector={route.selector} data={current?.data ?? null} loading={current === null} error={current?.error ?? null} onRetry={() => setAttempt(value => value + 1)} />
+  return <DetailPage code={route.code} selector={route.selector} {...state} />
 }
