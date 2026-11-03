@@ -34,3 +34,6 @@ __pycache__/
 
 # Local raw data
 backend/raw_storage/
+
+# Generated frontend test captures
+frontend/.artifacts/

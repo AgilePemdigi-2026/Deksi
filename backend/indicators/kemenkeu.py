@@ -231,15 +231,19 @@ def _extract_summary_metrics(text: str) -> dict[str, KitaMetric]:
 
 
 def extract_kita_metrics(text: str) -> dict[str, KitaMetric]:
+    # Ringkasan 3 kolom (pendapatan/belanja/defisit) bergantung pada spasi
+    # kolom hasil pdftotext, jadi harus diproses dari teks mentah SEBELUM
+    # normalisasi spasi. Fallback keyword boleh memakai teks normalisasi.
     metrics = _extract_summary_metrics(text)
+    normalized = re.sub(r"[ \t]+", " ", text)
     for identifier, patterns in METRIC_KEYWORDS.items():
         if identifier in metrics:
             continue
         for pattern in patterns:
-            match = pattern.search(text)
+            match = pattern.search(normalized)
             if match is None:
                 continue
-            window = text[match.start() : match.start() + 260]
+            window = normalized[match.start() : match.start() + 260]
             candidate = parse_rp_trillion(window)
             if candidate is not None and Decimal(1) <= abs(candidate) <= Decimal(50000):
                 metrics[identifier] = KitaMetric(
@@ -255,7 +259,7 @@ def extract_kita_metrics(text: str) -> dict[str, KitaMetric]:
 def parse_kita_text(text: str, source_url: str = "") -> KitaResult:
     normalized = re.sub(r"[ \t]+", " ", text)
     cumulative_until, publication_date = find_period_info(normalized)
-    metrics = extract_kita_metrics(normalized)
+    metrics = extract_kita_metrics(text)
     if cumulative_until is not None:
         period_label = build_period_label(cumulative_until)
     else:

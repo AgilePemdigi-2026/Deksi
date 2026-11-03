@@ -20,4 +20,10 @@ def validate_one(observation) -> str | None:
         return "nilai jisdor di luar rentang wajar (Rp/USD)"
     if observation.indicator.code == "investasi" and not (0 < observation.value < 1500):
         return "nilai investasi di luar rentang wajar (Rp Triliun per triwulan)"
+    if observation.indicator.code == "fiskal" and not (-100 < observation.value < 100):
+        return "nilai fiskal di luar rentang wajar (% PDB)"
+    if observation.indicator.code in ("pendapatan_negara", "belanja_negara", "defisit_apbn") and not (
+        0 <= observation.value <= 100000
+    ):
+        return "nilai APBN di luar rentang wajar (Rp Triliun kumulatif)"
     return None

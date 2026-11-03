@@ -4,11 +4,37 @@ from django.utils import timezone
 
 
 class Source(models.Model):
+    class AcquisitionMethod(models.TextChoices):
+        API_BPS = "api_bps", "API resmi (WebAPI BPS)"
+        PDF_KITA = "pdf_kita", "PDF resmi (APBN KiTa Kemenkeu)"
+        FILE_XLSX = "file_xlsx", "File resmi (XLSX dataset)"
+        FILE_ZIP_CSV = "file_zip_csv", "File resmi (ZIP berisi CSV)"
+
+    class DataFormat(models.TextChoices):
+        JSON = "json", "JSON"
+        PDF = "pdf", "PDF"
+        XLSX = "xlsx", "XLSX"
+        ZIP_CSV = "zip_csv", "ZIP-CSV"
+
+    class SourceStatus(models.TextChoices):
+        ACTIVE = "active", "Aktif"
+        INACTIVE = "inactive", "Nonaktif"
+
     source_id = models.CharField(max_length=32, unique=True)
     source_name = models.CharField(max_length=200)
     institution = models.CharField(max_length=200)
     primary_url = models.URLField(max_length=500)
     description = models.TextField(blank=True, default="")
+    acquisition_method = models.CharField(
+        max_length=32, choices=AcquisitionMethod.choices, blank=True, default=""
+    )
+    endpoint_url = models.URLField(max_length=1000, blank=True, default="")
+    data_format = models.CharField(max_length=16, choices=DataFormat.choices, blank=True, default="")
+    frequency = models.CharField(max_length=16, blank=True, default="")
+    update_schedule = models.CharField(max_length=200, blank=True, default="")
+    status = models.CharField(
+        max_length=16, choices=SourceStatus.choices, default=SourceStatus.ACTIVE
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
@@ -124,3 +150,7 @@ class DataUpdateLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.updated_at.isoformat()} {self.status} {self.source}"
+
+
+# Re-export agar migration discovery berfungsi dari satu modul
+from indicators.feedback_model import Feedback  # noqa: E402, F401

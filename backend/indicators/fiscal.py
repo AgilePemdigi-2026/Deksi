@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import transaction
 
 from .models import Indicator, Observation, RawFile, Source
 from .storage import save_raw
@@ -52,9 +53,14 @@ def get_fiscal_indicators() -> dict[str, Indicator]:
 
 def ingest_kita_pdf_url(url: str) -> dict:
     pdf_bytes, parsed = kemenkeu.fetch_and_parse(url)
-    source = get_kemenkeu_source()
     if parsed.cumulative_until is None:
         raise kemenkeu.KitaError("periode kumulatif tidak teridentifikasi pada dokumen; data tidak disimpan")
+    with transaction.atomic():
+        return _store_parsed_result(url, pdf_bytes, parsed)
+
+
+def _store_parsed_result(url: str, pdf_bytes: bytes, parsed) -> dict:
+    source = get_kemenkeu_source()
     document_name = kemenkeu.suggested_document_name(parsed)
     raw_file, is_new = save_raw(
         source, pdf_bytes, document_name,

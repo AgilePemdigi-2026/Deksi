@@ -13,10 +13,10 @@ export function InsightSection() {
       <div className="section-head">
         <div>
           <h2 className="section-title">
-            Insight Utama <span className="insight-chip">ANALISIS DEKSI</span>
+            Narasi referensi <span className="insight-chip">BELUM DIVERIFIKASI</span>
           </h2>
           <p className="section-sub">
-            Pola makroekonomi teridentifikasi dari multi-sumber data kementerian dan regulator
+            Konten contoh dari desain tim, bukan analisis dari API atau diagnosis ekonomi yang terverifikasi.
           </p>
         </div>
       </div>
@@ -35,8 +35,11 @@ export function InsightSection() {
               <p className="insight-badge-body">{item.badgeBody}</p>
             </div>
             <footer className="insight-footer">
-              <span>{item.footerSource}</span>
-              <a href="#analisis">{item.footerAction}</a>
+              <span>Referensi desain: {item.footerSource}</span>
+              <span>
+                <a href="#analisis">Baca grafik ↗</a>{' '}
+                <a href="#/sumber-data">Source Trace ↗</a>
+              </span>
             </footer>
           </article>
         ))}
