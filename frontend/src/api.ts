@@ -206,6 +206,11 @@ export interface SourceEntry {
   institution: string;
   primaryUrl: string;
   description: string;
+  acquisitionMethod?: string;
+  dataFormat?: string;
+  frequency?: string;
+  updateSchedule?: string;
+  status?: string;
   indicators: string[];
   indicatorCount: number;
   observationCount: number;
