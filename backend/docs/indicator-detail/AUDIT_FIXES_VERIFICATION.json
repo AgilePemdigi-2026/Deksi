@@ -1,0 +1,121 @@
+{
+  "timestamp_local": "2026-11-03T18:44:02.649217+07:00",
+  "lane": "feature-6-detail-be",
+  "baseline_head": "652ec018ddad455358a9d552593c11b52c4be03b",
+  "status": "FOUR_SCOPED_FINDINGS_REPAIRED_AND_EXECUTED_LOCALLY_NOT_PUBLISHED",
+  "shared_correction_parity": "PASS (normalized text; feature-specific wiring retained)",
+  "source_sha256": {
+    "backend/indicators/admin.py": "0d6edbc67cb52618028d7da9e9afda037dcde230625f30afa7b0023643103aa9",
+    "backend/docs/indicator-detail/AUDIT_FIXES_PLAN.md": "e73eb0db023ef7f421ff93cfaa7f23367b4667a5af5081986e07351ed0b9b1ef",
+    "backend/indicators/tests/test_admin_exact_value.py": "24ef99f405a57e262e883ebb17cff6c0536496fdcd014e6799d3972d379d5596"
+  },
+  "executed_checks": {
+    "audit-final-check.log": {
+      "sha256": "f87ceb15410bde28ff826ce26228e0576558258fa64d145847921a593a61ee63",
+      "summary": [
+        "System check identified no issues (0 silenced)."
+      ]
+    },
+    "audit-final-lint.log": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "summary": []
+    },
+    "audit-final-migrations.log": {
+      "sha256": "93e6e2d5be3c054add80c0f19101608803f7ca8a7df1fa41f76bbb9a1f570f4a",
+      "summary": [
+        "No changes detected"
+      ]
+    },
+    "audit-final-tests.log": {
+      "sha256": "8aa0caec5bb0adce96b82b5216cfefb46114a51cf65fddc73cb6d01a07350b55",
+      "summary": [
+        "Ran 21 tests in 0.220s",
+        "OK",
+        "System check identified no issues (0 silenced)."
+      ]
+    }
+  },
+  "red_before_fix_evidence": {
+    "feature-6-detail-be/audit-1-admin-red.log": {
+      "sha256": "aef5ed9ba08b14c48bef2deb38077bb9ff72b47b985a61c4a9a66cc578647df6",
+      "summary": [
+        "FAIL: test_crafted_admin_sort_parameter_cannot_sort_text_values (indicators.tests.test_admin_exact_value.ExactValueAdminTests.test_crafted_admin_sort_parameter_cannot_sort_text_values) (ordering='7')",
+        "AssertionError: 'value' unexpectedly found in ['value', 'pk']",
+        "FAIL: test_crafted_admin_sort_parameter_cannot_sort_text_values (indicators.tests.test_admin_exact_value.ExactValueAdminTests.test_crafted_admin_sort_parameter_cannot_sort_text_values) (ordering='-7')",
+        "AssertionError: 'value' unexpectedly found in ['value', 'pk']",
+        "FAIL: test_exact_value_header_does_not_offer_lexical_number_sort (indicators.tests.test_admin_exact_value.ExactValueAdminTests.test_exact_value_header_does_not_offer_lexical_number_sort)",
+        "AssertionError: True is not false",
+        "Ran 3 tests in 0.024s",
+        "FAILED (failures=3)"
+      ]
+    },
+    "feature-6-detail-fe/audit-2-exact-red.log": {
+      "sha256": "029da9a6ee51b7018cdc7c36d10fafae9407964dce2ec0d665673045c13660f7",
+      "summary": [
+        "✖ history preserves backend exact decimal strings beyond numeric plot precision (20.2766ms)",
+        "✖ invalid or conflicting exact history values fail only the history resource (4.2613ms)",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "✖ history preserves backend exact decimal strings beyond numeric plot precision (20.2766ms)",
+        "✖ invalid or conflicting exact history values fail only the history resource (4.2613ms)"
+      ]
+    },
+    "feature-6-detail-fe/audit-3-source-ui-red.log": {
+      "sha256": "c30908ce031c8ef8dff61e3261f87923b19d0918c69cc02654804f3f63a62686",
+      "summary": [
+        "✖ mixed-source history explains refusal and retains each source beside its original value (32.1449ms)",
+        "ℹ tests 1",
+        "ℹ pass 0",
+        "ℹ fail 1",
+        "✖ mixed-source history explains refusal and retains each source beside its original value (32.1449ms)"
+      ]
+    },
+    "feature-6-detail-fe/audit-3-sources-red.log": {
+      "sha256": "c97b5b94d41174d109b99f644a5645ce2db9bd4338d634bb536ed779e372d40d",
+      "summary": [
+        "✖ history keeps source identities so different sources cannot become one chart series (29.4771ms)",
+        "✖ chart refuses mixed source identities while preserving the original labelled rows (20.4541ms)",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "✖ history keeps source identities so different sources cannot become one chart series (29.4771ms)",
+        "✖ chart refuses mixed source identities while preserving the original labelled rows (20.4541ms)"
+      ]
+    },
+    "feature-6-detail-fe/audit-4-calendar-red.log": {
+      "sha256": "173eb096ba6999888d24940fadc13e9e201792d910b908443f32067de7f1e174",
+      "summary": [
+        "✖ missing regular calendar periods split lines without manufacturing observations or zeroes (9.9994ms)",
+        "✖ calendar splitting avoids invented daily calendars and refuses invalid regular sequencing (1.3286ms)",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "✖ missing regular calendar periods split lines without manufacturing observations or zeroes (9.9994ms)",
+        "✖ calendar splitting avoids invented daily calendars and refuses invalid regular sequencing (1.3286ms)"
+      ]
+    }
+  },
+  "limitations": [
+    "Local uncommitted repairs only; no commit, push, PR, merge, provider request or dependency installation.",
+    "Previous publication/readiness receipts describe the earlier committed snapshots, not these repaired working trees.",
+    "Real loopback integration uses synthetic scratch records; official provider data and official verification are not proven.",
+    "Canonical Hermes verification and PostgreSQL runtime remain unverified; explicit project interpreter used.",
+    "Daily business calendars and gaps without date metadata are not inferred; regular monthly/quarterly/semiannual/annual gaps are tested.",
+    "Generic numeric SQL operations on SQLite TEXT are unsupported; the repaired Admin value display offers no numeric sort and crafted ordering is tested.",
+    "Last-valid ingestion lifecycle and immutable versioned provenance are inherited separate-scope limitations.",
+    "Human visual acceptance remains pending; functional browser checks are not aesthetic approval.",
+    "The extreme precision synthetic dashboard fixture elicited existing Recharts duplicate tick-key console warnings; dashboard source was not changed. Runtime exception checks passed; this is not a clean-console claim."
+  ],
+  "commands": [
+    "project-python manage.py test indicators.tests --settings=backend.test_settings_indicators",
+    "project-python manage.py check --settings=backend.test_settings_indicators",
+    "project-python manage.py makemigrations --check --dry-run --settings=backend.test_settings_indicators",
+    "project-ruff check indicators/admin.py indicators/tests/test_admin_exact_value.py"
+  ],
+  "runtime": {
+    "python_executable": "E:/Deksi-Team/.hermes/worktrees/feature-1-login-be/backend/.venv/Scripts/python.exe",
+    "test_settings": "backend.test_settings_indicators",
+    "HERMES_TEST_SCRATCH": "C:/Users/Pongo/AppData/Local/hermes/cache/scratch"
+  }
+}
