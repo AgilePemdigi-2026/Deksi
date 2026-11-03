@@ -59,7 +59,7 @@ export function candidates(readings: SourceReading[], selector: Selector): Sourc
 }
 export function chartGeometry(history: HistoryPoint[], unit: string) {
   if (history.some(p => p.unit !== unit)) return null
-  if (['frequency', 'dataType'].some(key => new Set(history.map(p => p[key as 'frequency' | 'dataType'] ?? null)).size > 1)) return null
+  if ((['frequency', 'dataType', 'sourceId'] as const).some(key => new Set(history.map(p => p[key] ?? null)).size > 1)) return null
   const values = history.map(p => p.value === null ? null : Number(p.value))
   const valid = values.filter((v): v is number => v !== null && Number.isFinite(v))
   if (valid.length === 0) return { segments: [] as string[], points: [] as { x: number; y: number; period: string; value: string }[], ticks: [] as { y: number; label: string }[] }
@@ -79,10 +79,19 @@ export function chartGeometry(history: HistoryPoint[], unit: string) {
     y: max === min ? 110 : 28 + (max - v) / span * 164,
     period: history[i].period, value: history[i].value!,
   })
+  const monthSteps: Record<string, number> = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 }
+  const step = monthSteps[history[0]?.frequency ?? '']
+  const calendarGap = (index: number) => {
+    const before = history[index - 1]?.observationDate, after = history[index]?.observationDate
+    if (!step || !before || !after) return false
+    if (!validDate(before) || !validDate(after)) return true
+    const month = (date: string) => Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7))
+    return month(after) - month(before) !== step
+  }
   const segments: string[] = []; let current: string[] = []
-  for (const point of points) {
+  for (const [index, point] of points.entries()) {
+    if ((!point || calendarGap(index)) && current.length) { segments.push(current.join(' ')); current = [] }
     if (point) current.push(`${point.x},${point.y}`)
-    else if (current.length) { segments.push(current.join(' ')); current = [] }
   }
   if (current.length) segments.push(current.join(' '))
   return { segments, points: points.filter(p => p !== null), ticks }

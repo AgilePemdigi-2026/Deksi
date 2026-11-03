@@ -13,7 +13,7 @@ export const dto = () => ({
   trace:{...reading(),history:[reading()]},
 })
 export const responder = (payloads, failure = null) => async (input) => {
-  const url = new URL(input)
+  const url = new URL(input, 'http://frontend.test')
   const kind = url.pathname.endsWith('/trend/') ? 'trend' : url.pathname.endsWith('/source-trace/') ? 'trace' : 'summary'
   return new Response(JSON.stringify(payloads[kind]),{status:failure === kind ? 503 : 200,headers:{'content-type':'application/json'}})
 }

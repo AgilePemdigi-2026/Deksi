@@ -30,8 +30,8 @@ test('missing source context renders empty/error without a latest detail return 
  assert.match(html,/Belum tersedia/)
  assert.doesNotMatch(html,/href="\/indikator\/inflasi\?/)
 })
-test('RAW links bind the exact indicator path to the configured API origin',()=>{
- assert.equal(rawDownloadHref('/api/indicators/inflasi/raw-file/1/','inflasi'),'http://localhost:8000/api/indicators/inflasi/raw-file/1/')
+test('RAW links bind the exact indicator path to the same browser origin',()=>{
+ assert.equal(rawDownloadHref('/api/indicators/inflasi/raw-file/1/','inflasi'),'/api/indicators/inflasi/raw-file/1/')
  for(const url of ['/api/indicators/pdb/raw-file/1/','//evil.test/api/indicators/inflasi/raw-file/1/','https://evil.test/file','/api/indicators/inflasi/raw-file/1/?next=evil','/api/indicators/inflasi/raw-file/../1/','/api/indicators/inflasi/raw-file/0/','/api/indicators/inflasi/raw-file/1/\n',null]) assert.equal(rawDownloadHref(url,'inflasi'),null)
 })
 test('Detail links only to its exact matching Source Trace context',async()=>{
@@ -112,7 +112,7 @@ test('date-only release stays date-only and valid RAW is a direct API link, not 
  const html=render(await fetchDetail('inflasi',null,undefined,responder(payload)))
  assert.match(html,/2000-02-01 \(tanggal saja\)/)
  assert.doesNotMatch(html,/2000-02-01T00:00:00/)
- assert.match(html,/href="http:\/\/localhost:8000\/api\/indicators\/inflasi\/raw-file\/1\/"/)
+ assert.match(html,/href="\/api\/indicators\/inflasi\/raw-file\/1\/"/)
 })
 test('loading, null source and null value remain explicit with no fabricated formulas or references',async()=>{
  assert.match(render(null,{loading:true}),/aria-busy="true"|Memuat metadata sumber/)

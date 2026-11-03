@@ -1,4 +1,4 @@
-export interface HistoryPoint { period: string; value: string | null; unit: string; observationDate?: string; frequency?: string | null; dataType?: string | null }
+export interface HistoryPoint { period: string; value: string | null; unit: string; observationDate?: string; year?: number; frequency?: string | null; dataType?: string | null; sourceId?: string | null }
 export interface SourceReading {
   indicatorCode: string; indicatorName: string | null; value: string | null; unit: string | null
   period: string | null; observationDate: string | null; frequency: string | null; dataType: string | null

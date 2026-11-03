@@ -90,3 +90,13 @@ test('history renders numeric Y scale including zero rather than unlabelled grid
  assert.match(html,/class="fd-axis-label"[^>]*>1<\/text>/)
  assert.match(html,/class="fd-axis-label"[^>]*>0<\/text>/)
 })
+test('mixed-source history explains refusal and retains each source beside its original value',async()=>{
+ const payload=dto()
+ payload.trend.points[0].sourceId='SOURCE_A'
+ payload.trend.points.push({...payload.trend.points[0],label:'Periode B',value:3,sourceId:'SOURCE_B'})
+ const html=render(await fetchDetail('inflasi',null,undefined,responder(payload)))
+ assert.doesNotMatch(html,/<polyline/)
+ assert.match(html,/Sumber histori tidak konsisten/)
+ assert.match(html,/<th scope="col">Sumber<\/th>/)
+ assert.match(html,/SOURCE_A/);assert.match(html,/SOURCE_B/)
+})

@@ -14,7 +14,7 @@ test('actual DTO shapes load a zero reading and deduplicate identical current/hi
   assert.equal(result.history[0].value,'0')
   assert.deepEqual(result.warnings,[])
   assert.equal(calls.length,3)
-  assert(calls.every(call=>call.url.startsWith('http://localhost:8000/api/indicators/') && call.options.credentials==='omit'))
+  assert(calls.every(call=>call.url.startsWith('/api/indicators/') && call.options.credentials==='omit'))
 })
 test('a historical selection resolves its exact context, never current latest',async()=>{
   const payload=dto()
@@ -105,4 +105,34 @@ test('parent cancellation promptly settles child requests that ignore their abor
   controller.abort()
   await assert.rejects(request,error=>error.name==='AbortError')
   assert.equal(signals.length,3);assert(signals.every(signal=>signal.aborted))
+})
+test('history preserves backend exact decimal strings beyond numeric plot precision',async()=>{
+  for(const exact of ['999999999999999999.999999','-9007199254740993.125','0','0.000001']){
+    const payload=dto()
+    payload.trend.points=[{label:'UJI',observationDate:'2000-01-31',unit:'Rp',value:Number(exact),exactValue:exact}]
+    const result=await api.fetchDetail('inflasi',null,undefined,responder(payload))
+    assert.equal(result.history[0].value,exact)
+    assert.equal(payload.trend.points[0].exactValue,exact)
+  }
+})
+test('invalid or conflicting exact history values fail only the history resource',async()=>{
+  for(const [numeric,exact] of [[1,'2'],[0,null],[null,'0'],[1,1],[1,'NaN'],[1,'1e0']]){
+    const payload=dto();payload.trend.points[0].value=numeric;payload.trend.points[0].exactValue=exact
+    const result=await api.fetchDetail('inflasi',null,undefined,responder(payload))
+    assert.equal(result.history.length,0,JSON.stringify({numeric,exact}))
+    assert.equal(result.warnings.length,1)
+    assert.equal(result.summary.value,'0')
+  }
+  const payload=dto();payload.trend.points[0].value=null;payload.trend.points[0].exactValue=null
+  assert.equal((await api.fetchDetail('inflasi',null,undefined,responder(payload))).history[0].value,null)
+})
+test('history keeps source identities so different sources cannot become one chart series',async()=>{
+  const payload=dto()
+  payload.trend.points=[
+    {label:'Jan',observationDate:'2000-01-31',value:1,unit:'%',frequency:'monthly',dataType:'yoy',sourceId:'SOURCE_A'},
+    {label:'Feb',observationDate:'2000-02-29',value:2,unit:'%',frequency:'monthly',dataType:'yoy',sourceId:'SOURCE_B'},
+  ]
+  const result=await api.fetchDetail('inflasi',null,undefined,responder(payload))
+  assert.deepEqual(result.history.map(p=>p.sourceId),['SOURCE_A','SOURCE_B'])
+  assert.equal(helper.chartGeometry(result.history,'%'),null)
 })

@@ -59,10 +59,12 @@ function parseTrend(raw: unknown, code: string): HistoryPoint[] {
   return array(payload.points).map(value => {
     const row = object(value), numeric = row.value
     if (numeric != null && (typeof numeric !== 'number' || !Number.isFinite(numeric))) throw new Error('Angka histori tidak sesuai')
+    const exact = row.exactValue === undefined ? undefined : decimal(row.exactValue)
+    if (exact !== undefined && ((numeric == null) !== (exact === null) || (exact !== null && Number(exact) !== numeric))) throw new Error('Nilai presisi dan angka grafik tidak cocok')
     const period = text(row.label), unit = text(row.unit) ?? text(payload.unit)
     if (!period || !unit) throw new Error('Periode atau satuan histori tidak tersedia')
-    return { period, unit, value: numeric == null ? null : String(numeric), observationDate: text(row.observationDate) ?? undefined,
-      frequency: text(row.frequency) ?? text(payload.frequency), dataType: text(row.dataType) ?? text(payload.dataType) }
+    return { period, unit, value: exact !== undefined ? exact : numeric == null ? null : String(numeric), observationDate: text(row.observationDate) ?? undefined,
+      frequency: text(row.frequency) ?? text(payload.frequency), dataType: text(row.dataType) ?? text(payload.dataType), sourceId: text(row.sourceId) ?? text(payload.sourceId) }
   })
 }
 export function summaryMatches(summary: SummaryReading | null, reading: SourceReading | null): boolean {
