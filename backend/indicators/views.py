@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from pathlib import Path
 
 from django.http import FileResponse, Http404, JsonResponse
@@ -6,21 +6,23 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from indicators import bps
-from indicators.models import Indicator, Observation, Source
+from indicators.models import Indicator, Observation
 from indicators.storage import compute_checksum
 from indicators.updates import latest_attempt, latest_successful_update, serialize_update_log
-
 
 FRONTEND_INDICATOR_CODES = ["pdb", "inflasi", "fiskal", "investasi", "birate", "tpt"]
 
 
 def json_success(payload):
     response = JsonResponse(payload, safe=False)
+    response["Cache-Control"] = "no-store"
     return response
 
 
 def json_error(message, status=404):
-    return JsonResponse({"error": message}, status=status)
+    response = JsonResponse({"error": message}, status=status)
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 def get_indicator(code: str) -> Indicator | None:
@@ -32,8 +34,10 @@ def published_observations(indicator: Indicator):
         Observation.objects.filter(
             indicator=indicator,
             validation_status=Observation.Status.PUBLISHED,
+            reviewed_by__isnull=False,
+            reviewed_at__isnull=False,
         )
-        .order_by("observation_date")
+        .order_by("observation_date", "id")
         .select_related("source", "raw_file")
     )
 
@@ -45,13 +49,17 @@ def latest_published(indicator: Indicator) -> Observation | None:
 
 def previous_published(latest: Observation) -> Observation | None:
     return (
-        Observation.objects.filter(
-            indicator=latest.indicator,
-            validation_status=Observation.Status.PUBLISHED,
-            observation_date__lt=latest.observation_date,
-        )
+        comparable_observations(latest)
+        .filter(observation_date__lt=latest.observation_date)
         .order_by("-observation_date")
         .first()
+    )
+
+
+def comparable_observations(observation: Observation):
+    return published_observations(observation.indicator).filter(
+        source_id=observation.source_id, unit=observation.unit,
+        frequency=observation.frequency, data_type=observation.data_type,
     )
 
 
@@ -59,42 +67,33 @@ def format_decimal(value) -> str:
     if value is None:
         return ""
     if isinstance(value, Decimal):
-        normalized = value.normalize()
-        return f"{normalized:f}"
+        text = format(value, "f")
+        return text.rstrip("0").rstrip(".") if "." in text else text
     return str(value)
 
 
 def delta_summary(latest: Observation, previous: Observation | None) -> dict:
+    result = {"delta": None, "deltaDirection": None, "deltaPositive": False,
+              "previousPeriod": previous.period_label if previous else None,
+              "changePercentage": None, "changeValue": None, "changeUnit": None}
     if previous is None:
-        return {"delta": None, "deltaDirection": None, "deltaPositive": False, "previousPeriod": None}
-    denominator = abs(previous.value)
-    if denominator == 0:
-        change_percentage = None
-    else:
-        change_percentage = float(((latest.value - previous.value) / denominator * Decimal("100")).quantize(Decimal("0.01")))
-    if change_percentage is None:
-        delta_text = f"vs {previous.period_label}"
-        direction = "flat"
-        positive = False
-    elif change_percentage > 0:
-        delta_text = f"+{change_percentage}% vs {previous.period_label}"
-        direction = "up"
-        positive = True
-    elif change_percentage < 0:
-        delta_text = f"{change_percentage}% vs {previous.period_label}"
-        direction = "down"
-        positive = False
-    else:
-        delta_text = f"0,00% (Tetap) vs {previous.period_label}"
-        direction = "flat"
-        positive = False
-    return {
-        "delta": delta_text,
-        "deltaDirection": direction,
-        "deltaPositive": positive,
-        "changePercentage": change_percentage,
-        "previousPeriod": previous.period_label,
-    }
+        return result
+    rate = latest.unit.strip().casefold() in {"%", "persen", "percent"}
+    if not rate and previous.value == 0:
+        return result
+    with localcontext() as context:
+        context.prec = 60
+        difference = latest.value - previous.value
+        change = difference if rate else difference / abs(previous.value) * Decimal("100")
+        change = change.quantize(Decimal("0.01"))
+    direction = "up" if change > 0 else "down" if change < 0 else "flat"
+    value = format_decimal(change)
+    label = " poin persentase" if rate else "%"
+    result.update(delta=f"{'+' if change > 0 else ''}{value}{label} vs {previous.period_label}",
+                  deltaDirection=direction, deltaPositive=change > 0,
+                  changePercentage=None if rate else float(change), changeValue=value,
+                  changeUnit="percentage_point" if rate else "percent")
+    return result
 
 
 def serialize_summary_card(indicator: Indicator) -> dict:
@@ -116,7 +115,7 @@ def serialize_summary_card(indicator: Indicator) -> dict:
             "dataAvailabilityNote": "Data terbaru belum tersedia.",
         }
     sparkline_rows = list(
-        published_observations(indicator)
+        comparable_observations(latest)
         .order_by("-observation_date")
         .values_list("value", flat=True)[:7]
     )
@@ -142,11 +141,14 @@ def serialize_summary_card(indicator: Indicator) -> dict:
         "publicationDate": latest.publication_date.isoformat() if latest.publication_date else None,
         "source": source.institution,
         "sourceId": source.source_id,
-        "retrievedAt": latest.raw_file.retrieved_at.isoformat() if latest.raw_file and latest.raw_file.retrieved_at else None,
+        "retrievedAt": (latest.raw_file.retrieved_at.isoformat()
+                        if latest.raw_file and latest.raw_file.retrieved_at else None),
         "delta": delta["delta"],
         "deltaDirection": delta["deltaDirection"],
         "deltaPositive": delta["deltaPositive"],
         "changePercentage": delta.get("changePercentage"),
+        "changeValue": delta["changeValue"],
+        "changeUnit": delta["changeUnit"],
         "previousPeriod": delta.get("previousPeriod"),
         "sparkline": sparkline,
         "note": "Nilai resmi berasal dari sumber terintegrasi; daftar sumber tersedia pada Source Trace.",
@@ -242,6 +244,7 @@ GRANULARITY_LABELS = {
     "quarterly": "Kuartalan",
     "semiannual": "Semesteran",
     "adhoc": "Peristiwa",
+    "annual": "Tahunan",
 }
 
 NATIVE_NOTE = {
@@ -267,11 +270,13 @@ def trend_points(observs) -> list[dict]:
         {
             "label": observation.period_label,
             "value": float(observation.value),
+            "exactValue": format_decimal(observation.value),
             "unit": observation.unit,
             "year": observation.observation_date.year,
             "observationDate": observation.observation_date.isoformat(),
             "frequency": observation.frequency,
             "dataType": observation.data_type,
+            "sourceId": observation.source.source_id,
         }
         for observation in observs
     ]
@@ -280,49 +285,30 @@ def trend_points(observs) -> list[dict]:
 def aggregate_trend(observations, term: str, indicator: Indicator) -> list[dict]:
     if term not in ("Tahunan", "Bulanan"):
         return trend_points(observations)
-    points = trend_points(observations)
-    if term == "Tahunan":
-        buckets: dict[int, list[dict]] = {}
-        for point in points:
-            buckets.setdefault(point["year"], []).append(point)
-        aggregate = []
-        for year in sorted(buckets):
-            entries = sorted(buckets[year], key=lambda p: p["observationDate"])
-            if indicator.aggregation_kind == "sum":
-                value = sum(entry["value"] for entry in entries)
-            elif indicator.aggregation_kind == "end":
-                value = entries[-1]["value"]
-            else:
-                value = sum(entry["value"] for entry in entries) / len(entries)
-            aggregate.append(
-                {
-                    "label": str(year),
-                    "value": round(value, 2),
-                    "year": year,
-                    "unit": entries[0]["unit"],
-                }
-            )
-        return aggregate
-    buckets: dict[tuple[int, int], list[float]] = {}
-    labels = {}
-    month_names = {
-        1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "Mei", 6: "Jun",
-        7: "Jul", 8: "Agu", 9: "Sep", 10: "Okt", 11: "Nov", 12: "Des",
-    }
+    signatures = {(o.source_id, o.unit, o.frequency, o.data_type) for o in observations}
+    if len(signatures) != 1:
+        raise ValueError("Agregasi ditolak: sumber, satuan, frekuensi atau jenis data tidak sebanding.")
+    kind = indicator.aggregation_kind if term == "Tahunan" else "avg"
+    if kind not in {"sum", "avg", "end"} or (kind == "sum" and observations[0].data_type == "cumulative_ytd"):
+        raise ValueError("Metode agregasi tidak sesuai dengan jenis data.")
+    buckets = {}
     for observation in observations:
         day = observation.observation_date
-        key = (day.year, day.month)
-        buckets.setdefault(key, []).append(float(observation.value))
-        labels.setdefault(key, f"{month_names[key[1]]} {key[0]}")
-    return [
-        {
-            "label": labels[key],
-            "value": round(sum(values) / len(values), 2),
-            "year": key[0],
-            "unit": observations[0].unit,
-        }
-        for key in sorted(buckets)
-    ]
+        key = (day.year,) if term == "Tahunan" else (day.year, day.month)
+        buckets.setdefault(key, []).append(observation)
+    result = []
+    for key, rows in sorted(buckets.items()):
+        with localcontext() as context:
+            context.prec = 60
+            total = sum((row.value for row in rows), Decimal(0))
+            value = rows[-1].value if kind == "end" else total if kind == "sum" else total / len(rows)
+            value = value.quantize(Decimal("0.01"))
+        result.append({"label": str(key[0]) if len(key) == 1 else f"{key[0]}-{key[1]:02d}",
+                       "value": float(value), "exactValue": format_decimal(value),
+                       "year": key[0], "unit": rows[0].unit, "sourceId": rows[0].source.source_id,
+                       "frequency": "annual" if term == "Tahunan" else "monthly",
+                       "dataType": rows[0].data_type, "aggregationKind": kind})
+    return result
 
 
 @require_GET
@@ -361,16 +347,22 @@ def indicator_trend(request, code: str):
     if term == GRANULARITY_LABELS.get(native_frequency):
         points = trend_points(observations)
         note = NATIVE_NOTE.get(native_frequency, "")
-    elif term == "Tahunan":
-        points = aggregate_trend(observations, "Tahunan", indicator)
-        note = year_aggregation_note(indicator)
     else:
-        points = aggregate_trend(observations, "Bulanan", indicator)
-        note = "Ket: Agregasi bulanan dihitung sebagai rata-rata nilai harian (deterministik)."
+        try:
+            points = aggregate_trend(observations, term, indicator)
+        except ValueError as exc:
+            return json_error(str(exc), status=400)
+        note = year_aggregation_note(indicator) if term == "Tahunan" else "Agregasi bulanan: rata-rata nilai harian."
     first = observations[0]
     latest = observations[-1]
     has_current = latest.observation_date.year >= timezone.localdate().year
-    historical_average = round(sum(float(observation.value) for observation in observations) / len(observations), 2)
+    compatible = len({(o.source_id, o.unit, o.frequency, o.data_type) for o in observations}) == 1
+    historical_average = None
+    if compatible:
+        with localcontext() as context:
+            context.prec = 60
+            total = sum((o.value for o in observations), Decimal(0))
+            historical_average = (total / len(observations)).quantize(Decimal("0.01"))
     availability_note = (
         f"Data terbaru tersedia sampai {latest.period_label}."
         if not has_current
@@ -393,7 +385,8 @@ def indicator_trend(request, code: str):
             "hasCurrentYearData": has_current,
             "dataAvailableUntil": latest.period_label,
             "dataAvailabilityNote": availability_note,
-            "historicalAverage": historical_average,
+            "historicalAverage": float(historical_average) if historical_average is not None else None,
+            "historicalAverageExact": format_decimal(historical_average) if historical_average is not None else None,
             "observationCount": len(observations),
             "note": note,
         }
@@ -482,9 +475,7 @@ def raw_file_download(request, code: str, raw_file_id: int):
     if indicator is None:
         raise Http404("Indikator tidak ditemukan")
     raw_file = (
-        Observation.objects.filter(
-            indicator=indicator,
-            validation_status=Observation.Status.PUBLISHED,
+        published_observations(indicator).filter(
             raw_file_id=raw_file_id,
         )
         .select_related("raw_file")

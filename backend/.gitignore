@@ -1,0 +1,7 @@
+.artifacts/
+__pycache__/
+*.py[cod]
+.venv/
+db.sqlite3
+raw_storage/
+.env

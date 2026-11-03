@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from indicators.fields import ObservationDecimalField
+
 
 class Source(models.Model):
     source_id = models.CharField(max_length=32, unique=True)
@@ -85,7 +87,7 @@ class Observation(models.Model):
     period_label = models.CharField(max_length=100)
     frequency = models.CharField(max_length=12, choices=Frequency.choices)
     data_type = models.CharField(max_length=20, choices=DataType.choices)
-    value = models.DecimalField(max_digits=24, decimal_places=6)
+    value = ObservationDecimalField(max_digits=24, decimal_places=6)
     unit = models.CharField(max_length=50)
     publication_date = models.DateField(null=True, blank=True)
     validation_status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)

@@ -1,0 +1,75 @@
+{
+  "verified_at": "2026-11-03T09:57:47.695282+00:00",
+  "branch": "feat/6-detail-indikator-be",
+  "base": "0e92899ce54f85440fe920ca457dfd91f747e1aa",
+  "scope": "F6 backend compatibility and precision; F7 hardening follows as dependent delta",
+  "tests": 17,
+  "checks": {
+    "tests": {
+      "path": "backend\\.artifacts\\f6-final-tests.log",
+      "sha256": "f2b2521ed18ee7c1886f60992b17263e40dfa273b45c358d24ee802b096a9441",
+      "exit_code": 0,
+      "result": "Ran 17 tests"
+    },
+    "check": {
+      "path": "backend\\.artifacts\\f6-final-check.log",
+      "sha256": "f87ceb15410bde28ff826ce26228e0576558258fa64d145847921a593a61ee63",
+      "exit_code": 0,
+      "result": "no issues"
+    },
+    "migrations": {
+      "path": "backend\\.artifacts\\f6-final-migrations.log",
+      "sha256": "93e6e2d5be3c054add80c0f19101608803f7ca8a7df1fa41f76bbb9a1f570f4a",
+      "exit_code": 0,
+      "result": "No changes detected"
+    },
+    "lint": {
+      "path": "backend\\.artifacts\\f6-final-lint.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0,
+      "result": "All checks passed!"
+    }
+  },
+  "source_sha256": {
+    "backend/.gitignore": "8ab5391454daa4d09a6941ac851b76df1e700430335fa5d033e8635913a0adbc",
+    "backend/backend/test_settings_indicators.py": "9bb8aadaa7e8951cab07744881a0c6dd3d7f6930a556392a8cd7cfe98262aefa",
+    "backend/docs/indicator-detail/PLAN.md": "0e982a1e582263bb55968db11f0708531f271d0b3b085fb376bcd015a4ed322e",
+    "backend/docs/indicator-detail/README.md": "610933ff289a152347377911fc1d529580565e39830898542dcdd385672ae23f",
+    "backend/indicators/fields.py": "2555cbd68df58a84f043baf6c30ff0f0f36eed73aa5436179a263aaaf4d6cc7f",
+    "backend/indicators/migrations/0004_exact_observation_decimal.py": "bed2742d02ec365b01f6abf996d3650248587091887c5ca2fd1dfd42d33776c4",
+    "backend/indicators/models.py": "85ced245d4950e3cd95d38d387356aed9a2f93535afe3a711d9169c784abacfa",
+    "backend/indicators/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/indicators/tests/support.py": "faa488060bcbcae885d5d4f4a28b6c7c4c2eda0bc1451588355f00d50d3b4801",
+    "backend/indicators/tests/test_detail_api.py": "ff00ff05a7d1ae74684b9891b2f3065471148058f401ae1db8ac49a2b566c50e",
+    "backend/indicators/tests/test_detail_trend.py": "94648d2721c58f4f3d4717cb6e7d4cf4f3c8ceff349b7d8bdfc298c100b4cce3",
+    "backend/indicators/tests/test_exact_value.py": "32b276597ff9d2cab1e83e83a5707d95fcce0cd9f56a3eecd7c7484252ef257b",
+    "backend/indicators/views.py": "067fe74013a0c0260a30a30806ba9b54fb02eba7eb227005a7f995963cd1f192",
+    "backend/requirements.txt": "0708dd8fe3f256fc266060a13af8e933b7073e8c8e061bbe26a25338ece7ae23"
+  },
+  "runtime": "Existing Login venv Python 3.13.7/Django 6.1.2, reused read-only; no installation",
+  "database": "Test-runner SQLite only; no user database/.env read",
+  "canonical": "Generic recipe selected global python 3.14.7 without Django; explicit project-interpreter checks passed. Bootstrap/start phases not run.",
+  "limits": [
+    "No production/deployment or PostgreSQL execution",
+    "No immutable revisions/formula-input ledger introduced",
+    "Existing SQLite precision lost before migration cannot be reconstructed",
+    "SQLite exact-value SQL numeric ordering/aggregation is outside this field contract"
+  ],
+  "allowlist": [
+    "backend/.gitignore",
+    "backend/backend/test_settings_indicators.py",
+    "backend/docs/indicator-detail/PLAN.md",
+    "backend/docs/indicator-detail/README.md",
+    "backend/indicators/fields.py",
+    "backend/indicators/migrations/0004_exact_observation_decimal.py",
+    "backend/indicators/models.py",
+    "backend/indicators/tests/__init__.py",
+    "backend/indicators/tests/support.py",
+    "backend/indicators/tests/test_detail_api.py",
+    "backend/indicators/tests/test_detail_trend.py",
+    "backend/indicators/tests/test_exact_value.py",
+    "backend/indicators/views.py",
+    "backend/requirements.txt",
+    "backend/docs/indicator-detail/VERIFICATION.json"
+  ]
+}
