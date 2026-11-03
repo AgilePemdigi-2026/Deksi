@@ -8,6 +8,7 @@ import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
 import { DashboardFilter } from './components/DashboardFilter'
 import { FeedbackForm } from './components/FeedbackForm'
 import { SourceDataPage, type SourcePageSelection } from './components/SourceDataPage'
+import { AdminSourcesPage } from './components/AdminSourcesPage'
 import { useDashboardFilter, type DashboardFilters } from './api'
 
 const INITIAL_FILTERS: DashboardFilters = { category: '', year: '' }
@@ -30,6 +31,9 @@ export default function App() {
   const [sourceRoute, setSourceRoute] = useState<SourcePageSelection | null>(
     () => (typeof window !== 'undefined' ? parseSourceHash() : null),
   )
+  const [adminRoute, setAdminRoute] = useState(
+    () => typeof window !== 'undefined' && (window.location.hash || '').startsWith('#/admin/sumber'),
+  )
 
   // Fitur 5: gunakan hook filter; saat filter kosong hasilnya identik dengan
   // endpoint /api/indicators/ sehingga tidak ada perubahan perilaku default.
@@ -38,11 +42,28 @@ export default function App() {
   useEffect(() => { document.title = 'DEKSI · Deteksi Ekonomi Indonesia' }, [])
 
   // Fitur 9: rute hash publik #/sumber-data (tanpa login, tanpa router tambahan).
+  // Fitur 10: rute hash admin #/admin/sumber (session auth + staf).
   useEffect(() => {
-    const sync = () => setSourceRoute(parseSourceHash());
+    const sync = () => {
+      setSourceRoute(parseSourceHash());
+      setAdminRoute((window.location.hash || '').startsWith('#/admin/sumber'));
+    };
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
   }, [])
+
+  if (adminRoute) {
+    return (
+      <div className="deksi-page">
+        <a className="skip-link" href="#admin-sources-title">Lewati ke konten utama</a>
+        <main>
+          <AdminSourcesPage />
+        </main>
+        <EditorialFooter onInfo={() => setInfoOpen(true)} />
+        <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
+      </div>
+    );
+  }
 
   if (sourceRoute) {
     return (

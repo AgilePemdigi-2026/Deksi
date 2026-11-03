@@ -2,6 +2,7 @@ from django.urls import path
 
 from indicators import views
 from indicators import feedback_views
+from indicators import source_admin_views
 
 
 urlpatterns = [
@@ -37,4 +38,20 @@ urlpatterns = [
     # ── Fitur 8: Umpan Balik ─────────────────────────────────────────────────
     path("feedback/", feedback_views.submit_feedback, name="feedback-submit"),
     path("feedback/categories/", feedback_views.feedback_categories, name="feedback-categories"),
+
+    # ── Fitur 10: Kelola Sumber Data (Admin, session auth + staf) ───────────
+    path("admin/session/", source_admin_views.admin_session, name="admin-session"),
+    path("admin/login/", source_admin_views.admin_login, name="admin-login"),
+    path("admin/logout/", source_admin_views.admin_logout, name="admin-logout"),
+    path(
+        "admin/sources/acquisition-methods/",
+        source_admin_views.acquisition_methods,
+        name="admin-acquisition-methods",
+    ),
+    path("admin/sources/", source_admin_views.admin_source_list, name="admin-source-list"),
+    path(
+        "admin/sources/create/",
+        source_admin_views.admin_source_create,
+        name="admin-source-create",
+    ),
 ]
