@@ -1,0 +1,51 @@
+{
+  "scope": "Batch 1 source inspection + three bounded public local GETs; no application suite or implementation",
+  "recorded_at": "2026-11-02T14:50:10.055549+00:00",
+  "base_and_head": "505e97116f132c8630ec08d07525b8aec9e00536",
+  "branch": "feat/6-detail-indikator-fe",
+  "worktree": "E:\\Deksi-Team\\.hermes\\worktrees\\feature-6-detail-fe",
+  "probes": [
+    {
+      "name": "summary",
+      "method": "GET",
+      "url": "http://localhost:8000/api/indicators/?code=inflasi",
+      "recorded_at": "2026-11-02T14:50:03.959713+00:00",
+      "result": "NOT_REACHABLE_OR_INVALID",
+      "error_type": "ConnectTimeout",
+      "error": "timed out"
+    },
+    {
+      "name": "trend",
+      "method": "GET",
+      "url": "http://localhost:8000/api/indicators/inflasi/trend/",
+      "recorded_at": "2026-11-02T14:50:05.972342+00:00",
+      "result": "NOT_REACHABLE_OR_INVALID",
+      "error_type": "ConnectTimeout",
+      "error": "timed out"
+    },
+    {
+      "name": "source_trace",
+      "method": "GET",
+      "url": "http://localhost:8000/api/indicators/inflasi/source-trace/",
+      "recorded_at": "2026-11-02T14:50:07.992047+00:00",
+      "result": "NOT_REACHABLE_OR_INVALID",
+      "error_type": "ConnectTimeout",
+      "error": "timed out"
+    }
+  ],
+  "tracked_frontend_backend_diff_exit": 0,
+  "application_unit_build_lint_browser": "NOT_RUN_AUDIT_ONLY",
+  "source_pins": {
+    "editorial": "505e97116f132c8630ec08d07525b8aec9e00536",
+    "main": "0e92899ce54f85440fe920ca457dfd91f747e1aa",
+    "old_checkpoint": "cc738a8bdd7a9af44870c5480e61991050577094"
+  },
+  "read_source_sha256": {
+    "frontend/src/api.ts": "f1cdbfda4dc309319a7ab25db2f8d33d9e742f46d2d9a10bd57e3481701fc7b9",
+    "frontend/src/App.tsx": "d65d2b1ee5e2f1ec90de2bf9f20038e1a81160a1f9e8d1851c2d9fb0f5b767c9",
+    "frontend/package.json": "336517eec69e76995529ca4adc2f815db2bcbc229214cdf370cd6f979bd6f6a5",
+    "backend/indicators/views.py": "51a15157b89511cfa0f85b606c759f76b547d1faec0ccd783746106045d4b3f4",
+    "backend/indicators/urls.py": "699f04241565b76192cf3d27e4c1523d525f91ade566f20fd086549e715df66f",
+    "backend/indicators/models.py": "14a9c0c88cc227b497d80ee441c69ba7479901a49ad4591cdaa41f15fb18f8ac"
+  }
+}

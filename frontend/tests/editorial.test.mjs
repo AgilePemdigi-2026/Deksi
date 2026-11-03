@@ -53,9 +53,9 @@ test('An empty API response remains an explicit empty state', async () => {
   assert.doesNotMatch(html,/class="indicator-card"/);
 });
 
-test('The foundation does not ship a dead detail anchor before feature 6 integration', async () => {
+test('The integrated card uses a real detail route rather than a dead anchor', async () => {
   const { IndicatorCard } = await load('components/IndicatorCard.tsx');
   const html=render(IndicatorCard,{meta});
   assert.doesNotMatch(html,/href="#detail"/);
-  assert.match(html,/fitur 6/);
+  assert.match(html,/href="\/indikator\/pdb"/);
 });

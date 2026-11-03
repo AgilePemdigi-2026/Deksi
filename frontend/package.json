@@ -9,6 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "node --test tests/editorial.test.mjs",
+    "test:indicators": "node --test tests/indicator-data.test.mjs tests/indicator-api.test.mjs tests/indicator-pages.test.mjs",
+    "test:indicators:browser": "node tests/indicator-browser.test.mjs",
     "test:browser": "node tests/browser.test.mjs"
   },
   "dependencies": {

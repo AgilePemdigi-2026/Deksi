@@ -46,7 +46,7 @@ const Sparkline = ({ points, color }: { points: number[]; color: string }) => {
   );
 };
 
-export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> }) {
+export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> & { id?: string } }) {
   return (
     <article className="indicator-card">
       <div className="indicator-head">
@@ -76,9 +76,7 @@ export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> }) {
         <span className="indicator-source">
           {meta.source} • Observasi: {meta.sourceDate}
         </span>
-        <button type="button" className="indicator-link" disabled title="Halaman detail diintegrasikan melalui branch frontend fitur 6">
-          Detail · fitur 6 menyusul
-        </button>
+        {meta.id && /^[a-z][a-z0-9_-]{0,31}$/.test(meta.id) ? <a className="indicator-link" href={`/indikator/${encodeURIComponent(meta.id)}`}>Lihat detail ↗</a> : <button type="button" className="indicator-link" disabled>Detail belum tersedia</button>}
       </footer>
     </article>
   );

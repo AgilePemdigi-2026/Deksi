@@ -6,8 +6,11 @@ import { InsightSection } from './components/ShellBottom'
 import { EditorialLanding, EditorialContext } from './components/EditorialLanding'
 import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
 import { useDashboardData } from './api'
+import { parseRoute } from './features/indicators/data'
+import { DetailScreen, FeatureUnavailable } from './features/indicators/DetailPage'
+import './features/indicators/features.css'
 
-export default function App() {
+function DashboardView() {
   const { summary, cards, loading, error } = useDashboardData()
   const [infoOpen, setInfoOpen] = useState(false)
   useEffect(() => { document.title = 'DEKSI · Deteksi Ekonomi Indonesia' }, [])
@@ -24,4 +27,11 @@ export default function App() {
     <EditorialFooter onInfo={() => setInfoOpen(true)} />
     <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
   </div>
+}
+
+export default function App() {
+  const route = typeof window === 'undefined' ? parseRoute('/') : parseRoute(window.location.pathname, window.location.search)
+  if (route.kind === 'dashboard') return <DashboardView />
+  if (route.kind === 'detail') return <DetailScreen route={route} />
+  return <FeatureUnavailable source={route.kind === 'source'} />
 }
