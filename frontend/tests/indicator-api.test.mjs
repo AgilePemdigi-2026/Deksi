@@ -81,3 +81,28 @@ test('aborted requests cannot publish a ready result even if an injected transpo
   const controller=new AbortController();controller.abort()
   await assert.rejects(api.fetchDetail('inflasi',null,controller.signal,responder(dto())),error=>error.name==='AbortError')
 })
+test('a stalled source request times out while independent summary and history survive',async()=>{
+  let requestSignal
+  const fetcher=async(url,options)=>{
+    if(url.endsWith('/source-trace/')){requestSignal=options.signal;return new Promise(()=>{})}
+    return responder(dto())(url)
+  }
+  let timer
+  try {
+    const result=await Promise.race([api.fetchDetail('inflasi',null,undefined,fetcher,20),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Request deadline did not settle')),500)})])
+    assert.equal(result.summary.value,'0');assert.equal(result.history.length,1)
+    assert.equal(result.selected,null);assert.match(result.warnings.join(' '),/Timeout|waktu/i)
+    assert.equal(requestSignal.aborted,true)
+  } finally {clearTimeout(timer)}
+})
+test('a stalled JSON body has the same deadline as the HTTP request',async()=>{
+  const result=await api.fetchDetail('inflasi',null,undefined,async()=>({ok:true,json:()=>new Promise(()=>{})}),20)
+  assert.equal(result.warnings.length,3);assert.equal(result.summary,null);assert.equal(result.selected,null)
+})
+test('parent cancellation promptly settles child requests that ignore their abort signal',async()=>{
+  const controller=new AbortController(),signals=[]
+  const request=api.fetchDetail('inflasi',null,controller.signal,async(_,options)=>{signals.push(options.signal);return new Promise(()=>{})},500)
+  controller.abort()
+  await assert.rejects(request,error=>error.name==='AbortError')
+  assert.equal(signals.length,3);assert(signals.every(signal=>signal.aborted))
+})

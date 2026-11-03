@@ -59,12 +59,23 @@ export function candidates(readings: SourceReading[], selector: Selector): Sourc
 }
 export function chartGeometry(history: HistoryPoint[], unit: string) {
   if (history.some(p => p.unit !== unit)) return null
+  if (['frequency', 'dataType'].some(key => new Set(history.map(p => p[key as 'frequency' | 'dataType'] ?? null)).size > 1)) return null
   const values = history.map(p => p.value === null ? null : Number(p.value))
   const valid = values.filter((v): v is number => v !== null && Number.isFinite(v))
-  if (valid.length === 0) return { segments: [] as string[], points: [] as { x: number; y: number; period: string; value: string }[] }
+  if (valid.length === 0) return { segments: [] as string[], points: [] as { x: number; y: number; period: string; value: string }[], ticks: [] as { y: number; label: string }[] }
   const min = Math.min(...valid), max = Math.max(...valid), span = max - min || 1
+  const scale = (min === max ? [{ y: 110, value: min }] : [{ y: 28, value: max }, { y: 110, value: min + span / 2 }, { y: 192, value: min }])
+    .filter((tick, index, all) => all.findIndex(other => other.value === tick.value) === index)
+  let ticks: { y: number; label: string }[] = []
+  // Increase display precision only when distinct numeric ticks would share a label.
+  for (let precision = 5; precision <= 17; precision++) {
+    ticks = scale.map(tick => ({
+      y: tick.y, label: new Intl.NumberFormat('id-ID', { maximumSignificantDigits: precision, notation: Math.abs(tick.value) >= 1e9 || (tick.value !== 0 && Math.abs(tick.value) < 0.001) ? 'scientific' : 'standard' }).format(tick.value),
+    }))
+    if (new Set(ticks.map(tick => tick.label)).size === ticks.length) break
+  }
   const points = values.map((v, i) => v === null || !Number.isFinite(v) ? null : {
-    x: history.length === 1 ? 380 : 44 + i * 672 / (history.length - 1),
+    x: history.length === 1 ? 418 : 120 + i * 596 / (history.length - 1),
     y: max === min ? 110 : 28 + (max - v) / span * 164,
     period: history[i].period, value: history[i].value!,
   })
@@ -74,5 +85,5 @@ export function chartGeometry(history: HistoryPoint[], unit: string) {
     else if (current.length) { segments.push(current.join(' ')); current = [] }
   }
   if (current.length) segments.push(current.join(' '))
-  return { segments, points: points.filter(p => p !== null) }
+  return { segments, points: points.filter(p => p !== null), ticks }
 }

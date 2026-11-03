@@ -25,19 +25,20 @@ export function FeatureUnavailable({ source = false }: { source?: boolean }) {
 function History({ history }: { history: HistoryPoint[] }) {
   const title = useId(), description = useId()
   const chart = chartGeometry(history, history[0]?.unit ?? '')
+  const chartError = history.some(point => point.unit !== history[0]?.unit) ? 'Satuan histori tidak konsisten.' : 'Jenis data atau frekuensi histori tidak konsisten.'
   return <section className="fd-section fd-history" aria-labelledby={title}>
     <div className="fd-section-head"><h2 id={title}>Histori indikator</h2><span>{history.length ? `${history.length} titik dari API` : 'DATA BELUM TERSEDIA'}</span></div>
     <p id={description} className="fd-muted">Grafik mengikuti respons histori, bukan perhitungan ekonomi frontend. Titik grafik tidak menjamin metadata Source Trace tersedia.</p>
-    {!history.length ? <div className="fd-chart-empty"><p>Histori belum tersedia.</p><span>Tidak ada angka contoh atau seri nol pengganti.</span></div> : chart === null ? <p className="fd-chart-empty">Satuan histori tidak konsisten. Grafik tidak ditampilkan; nilai asli tetap ada pada tabel.</p> : !chart.points.length ? <p className="fd-chart-empty">Nilai historis belum tersedia. Data kosong tidak dianggap nol.</p> : <figure>
+    {!history.length ? <div className="fd-chart-empty"><p>Histori belum tersedia.</p><span>Tidak ada angka contoh atau seri nol pengganti.</span></div> : chart === null ? <p className="fd-chart-empty">{chartError} Grafik tidak ditampilkan; nilai asli tetap ada pada tabel.</p> : !chart.points.length ? <p className="fd-chart-empty">Nilai historis belum tersedia. Data kosong tidak dianggap nol.</p> : <figure>
       <p className="fd-chart-unit">Satuan: {history[0].unit}</p>
       <svg viewBox="0 0 760 244" role="img" aria-labelledby={`${title} ${description}`}>
-        {[28, 110, 192].map(y => <line key={y} x1="44" x2="716" y1={y} y2={y} className="fd-grid" />)}
+        {chart.ticks.map(tick => <g key={tick.y}><line x1="120" x2="716" y1={tick.y} y2={tick.y} className="fd-grid" /><text x="108" y={tick.y + 4} textAnchor="end" className="fd-axis-label">{tick.label}</text></g>)}
         {chart.segments.map((points, i) => <polyline key={i} points={points} className="fd-line" />)}
         {chart.points.map((point, i) => <circle key={i} cx={point.x} cy={point.y} r="4" className="fd-point"><title>{`${point.period}: ${formatDecimal(point.value)} ${history[0].unit}`}</title></circle>)}
-        <text x="44" y="230">{history[0].period}</text><text x="716" y="230" textAnchor="end">{history[history.length - 1].period}</text>
+        <text x="120" y="230">{history[0].period}</text><text x="716" y="230" textAnchor="end">{history[history.length - 1].period}</text>
       </svg><figcaption>Nilai grafik berasal dari angka numerik API histori. Nilai presisi pada ringkasan mengikuti string angka dari respons detail/sumber.</figcaption>
     </figure>}
-    {history.length > 0 && <details><summary>Lihat tabel histori</summary><div className="fd-table-scroll" tabIndex={0} role="region" aria-label="Tabel histori indikator"><table><caption>Observasi historis, bukan jurnal revisi</caption><thead><tr><th scope="col">Periode</th><th scope="col">Tanggal observasi</th><th scope="col">Nilai</th><th scope="col">Satuan</th></tr></thead><tbody>{history.map((point, index) => <tr key={index}><th scope="row">{point.period}</th><td>{point.observationDate ?? 'Belum tersedia'}</td><td>{formatDecimal(point.value)}</td><td>{point.unit}</td></tr>)}</tbody></table></div></details>}
+    {history.length > 0 && <details><summary>Lihat tabel histori</summary><div className="fd-table-scroll" tabIndex={0} role="region" aria-label="Tabel histori indikator"><table><caption>Observasi historis, bukan jurnal revisi</caption><thead><tr><th scope="col">Periode</th><th scope="col">Tanggal observasi</th><th scope="col">Nilai</th><th scope="col">Satuan</th><th scope="col">Frekuensi</th><th scope="col">Jenis data</th></tr></thead><tbody>{history.map((point, index) => <tr key={index}><th scope="row">{point.period}</th><td>{point.observationDate ?? 'Belum tersedia'}</td><td>{formatDecimal(point.value)}</td><td>{point.unit}</td><td>{point.frequency ?? 'Belum tersedia'}</td><td>{point.dataType ?? 'Belum tersedia'}</td></tr>)}</tbody></table></div></details>}
   </section>
 }
 export interface DetailProps { code: string; selector: Selector | null; data: DetailData | null; loading: boolean; error?: string | null; onRetry: () => void }

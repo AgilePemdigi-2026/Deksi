@@ -61,7 +61,8 @@ function parseTrend(raw: unknown, code: string): HistoryPoint[] {
     if (numeric != null && (typeof numeric !== 'number' || !Number.isFinite(numeric))) throw new Error('Angka histori tidak sesuai')
     const period = text(row.label), unit = text(row.unit) ?? text(payload.unit)
     if (!period || !unit) throw new Error('Periode atau satuan histori tidak tersedia')
-    return { period, unit, value: numeric == null ? null : String(numeric), observationDate: text(row.observationDate) ?? undefined }
+    return { period, unit, value: numeric == null ? null : String(numeric), observationDate: text(row.observationDate) ?? undefined,
+      frequency: text(row.frequency) ?? text(payload.frequency), dataType: text(row.dataType) ?? text(payload.dataType) }
   })
 }
 export function summaryMatches(summary: SummaryReading | null, reading: SourceReading | null): boolean {
@@ -72,12 +73,31 @@ export function summaryMatches(summary: SummaryReading | null, reading: SourceRe
     summary.source === reading.source?.institution && summary.publicationDate === reading.publicationDate &&
     summary.retrievedAt === (reading.rawFile?.retrievedAt ?? null)
 }
-export async function fetchDetail(code: string, selector: Selector | null, signal?: AbortSignal, fetcher: typeof fetch = fetch): Promise<DetailData> {
+export async function fetchDetail(code: string, selector: Selector | null, signal?: AbortSignal, fetcher: typeof fetch = fetch, timeoutMs = 10_000): Promise<DetailData> {
   if (!/^[a-z][a-z0-9_-]{0,31}$/.test(code)) throw new Error('Kode indikator tidak valid')
+  if (signal?.aborted) throw new DOMException('Request cancelled', 'AbortError')
   async function get(path: string): Promise<unknown> {
-    const response = await fetcher(API_BASE + path, { method: 'GET', signal, credentials: 'omit', cache: 'no-store' })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return response.json()
+    const controller = new AbortController()
+    const cancel = () => controller.abort(new DOMException('Request cancelled', 'AbortError'))
+    let rejectAbort: () => void = () => {}
+    const aborted = new Promise<never>((_, reject) => {
+      rejectAbort = () => reject(controller.signal.reason)
+      controller.signal.addEventListener('abort', rejectAbort, { once: true })
+    })
+    signal?.addEventListener('abort', cancel, { once: true })
+    const timer = setTimeout(() => controller.abort(new DOMException('Batas waktu request terlampaui', 'TimeoutError')), timeoutMs)
+    try {
+      // The deadline also covers body parsing and transports that ignore cancellation.
+      return await Promise.race([aborted, (async () => {
+        const response = await fetcher(API_BASE + path, { method: 'GET', signal: controller.signal, credentials: 'omit', cache: 'no-store' })
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return response.json()
+      })()])
+    } finally {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', cancel)
+      controller.signal.removeEventListener('abort', rejectAbort)
+    }
   }
   const encoded = encodeURIComponent(code)
   const responses = await Promise.allSettled([

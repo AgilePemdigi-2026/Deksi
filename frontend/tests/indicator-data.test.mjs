@@ -38,3 +38,20 @@ test('strict context route rejects duplicate query, invalid calendar and arbitra
   assert.equal(data.parseRoute('/indikator/inflasi','?'+query).kind,'detail')
   for(const changed of [query+'&tanggal=2000-01-31',query.replace('2000-01-31','2000-02-31'),query+'&revisi=made-up',query.replace('monthly','invalid')]) assert.equal(data.parseRoute('/indikator/inflasi','?'+changed).kind,'not-found')
 })
+test('Y scale stays finite for negative, constant, zero, missing and large series',()=>{
+ for(const values of [['-2','2'],['0'],['2','2'],[null],['1000000000000','2000000000000']]){
+  const chart=data.chartGeometry(values.map(value=>({period:'uji',value,unit:'%'})),'%')
+  assert(chart.ticks.every(tick=>Number.isFinite(tick.y)&&!tick.label.includes('NaN')))
+  assert.equal(chart.ticks.length,values[0]===null?0:values[0]===values.at(-1)?1:3)
+ }
+})
+test('nearby scale values retain distinct labels without changing source values',()=>{
+ for(const values of [['5.000001','5.000002'],['-5.000002','-5.000001'],['1000000000000','1000000000001'],['0.0000001000001','0.0000001000002']]){
+  const input=values.map(value=>({period:'uji',value,unit:'%'})),before=JSON.stringify(input)
+  const chart=data.chartGeometry(input,'%')
+  assert.equal(new Set(chart.ticks.map(tick=>tick.label)).size,3,JSON.stringify(chart.ticks))
+  assert.deepEqual(chart.points.map(point=>point.value),values)
+  assert.equal(JSON.stringify(input),before)
+ }
+ assert.deepEqual(data.chartGeometry(['0','2'].map(value=>({period:'uji',value,unit:'%'})),'%').ticks.map(tick=>tick.label),['2','1','0'])
+})

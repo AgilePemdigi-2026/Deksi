@@ -72,3 +72,21 @@ test('loading, empty and unit-mismatch chart states stay explicit',async()=>{
  assert.doesNotMatch(html,/<polyline/)
  assert.match(html,/<table>/)
 })
+test('mixed measurement type or frequency refuses the chart but retains labelled original rows',async()=>{
+ for(const field of ['dataType','frequency']){
+ const payload=dto()
+ payload.trend.points.push({...payload.trend.points[0],label:'Periode B',value:5,[field]:field==='dataType'?'level':'quarterly'})
+ const data=await fetchDetail('inflasi',null,undefined,responder(payload)),html=render(data)
+ assert.doesNotMatch(html,/<polyline/)
+ assert.match(html,/Jenis data atau frekuensi histori tidak konsisten/)
+ assert.match(html,/Periode B/)
+ assert.match(html,field==='dataType'?/level/:/quarterly/)
+ }
+})
+test('history renders numeric Y scale including zero rather than unlabelled grid lines',async()=>{
+ const payload=dto();payload.trend.points.push({...payload.trend.points[0],label:'Periode B',value:2})
+ const html=render(await fetchDetail('inflasi',null,undefined,responder(payload)))
+ assert.match(html,/class="fd-axis-label"[^>]*>2<\/text>/)
+ assert.match(html,/class="fd-axis-label"[^>]*>1<\/text>/)
+ assert.match(html,/class="fd-axis-label"[^>]*>0<\/text>/)
+})
