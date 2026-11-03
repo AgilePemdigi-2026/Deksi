@@ -185,3 +185,8 @@ AXES_RESET_ON_SUCCESS = False
 AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
 AXES_VERBOSE = False
 AXES_SENSITIVE_PARAMETERS = ["username", "identifier", "password", "ip_address", "csrfmiddlewaretoken"]
+
+# Local reset is opt-in and restricted to locmem until delivery/timing is reviewed.
+ADMIN_PASSWORD_RESET_ENABLED = False
+ADMIN_PASSWORD_RESET_FRONTEND_ORIGIN = ""
+PASSWORD_RESET_TIMEOUT = 1800

@@ -1,3 +1,4 @@
+from django.utils.cache import add_never_cache_headers
 from django.views.debug import SafeExceptionReporterFilter
 
 
@@ -16,4 +17,9 @@ class AuthReportingMiddleware:
         if request.path_info.startswith("/api/auth/") or request.path_info == "/admin/login/":
             request.exception_reporter_filter = AuthExceptionReporterFilter()
             request.sensitive_post_parameters = "__ALL__"
-        return self.get_response(request)
+        response = self.get_response(request)
+        if request.path_info.startswith("/api/auth/password-reset/"):
+            add_never_cache_headers(response)
+            response["Referrer-Policy"] = "no-referrer"
+            response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
