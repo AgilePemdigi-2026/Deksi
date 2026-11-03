@@ -52,3 +52,4 @@ h1{font-family:Archivo,sans-serif;font-variation-settings:'wdth' 104,'wght' 640;
 .login-page .session-panel p{margin:0 0 18px}
 .login-page #auth-logout{margin-top:18px}
 .login-page .session-refresh{display:block;min-height:44px;padding:8px 0;background:transparent;font-size:13px;text-decoration:underline;text-underline-offset:4px}
+.login-page .form-assistance a{display:inline-flex;align-items:center;min-height:44px;text-underline-offset:4px}.login-page .form-assistance a:hover{text-decoration:underline}

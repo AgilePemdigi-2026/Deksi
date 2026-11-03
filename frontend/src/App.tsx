@@ -7,6 +7,9 @@ import { EditorialLanding, EditorialContext } from './components/EditorialLandin
 import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
 import { useDashboardData } from './api'
 import LoginPage from './features/admin/LoginPage'
+import ForgotPasswordPage from './features/admin/ForgotPasswordPage'
+import ResetPasswordPage from './features/admin/ResetPasswordPage'
+import type { RecoveryService } from './features/admin/recovery'
 
 function Dashboard() {
   const { summary, cards, loading, error } = useDashboardData()
@@ -27,6 +30,8 @@ function Dashboard() {
   </div>
 }
 
-export default function App({ pathname = typeof window === 'undefined' ? '/' : window.location.pathname }: { pathname?: string } = {}) {
+export default function App({ pathname = typeof window === 'undefined' ? '/' : window.location.pathname, resetService }: { pathname?: string; resetService?: RecoveryService } = {}) {
+  if (pathname.replace(/\/+$/, '') === '/admin/forgot-password') return <ForgotPasswordPage service={resetService} />
+  if (pathname.replace(/\/+$/, '') === '/admin/reset-password') return <ResetPasswordPage service={resetService} />
   return pathname.replace(/\/+$/, '') === '/admin/login' ? <LoginPage /> : <Dashboard />
 }

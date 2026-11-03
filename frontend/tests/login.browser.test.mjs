@@ -106,9 +106,7 @@ try {
  await click('#auth-logout');await wait('document.getElementById("form-status").textContent.includes("telah keluar")')
  authMode='credentials'
  checks.push('Revoked Admin permission clears the visible identity and still permits explicit logout')
- await click('#recovery-help summary');assert(await js('document.getElementById("recovery-help").open'))
- assert(await js('document.getElementById("recovery-help").textContent.includes("belum tersedia")'))
- await click('#recovery-help summary')
+ assert.equal(await js('document.getElementById("recovery-help").getAttribute("href")'),'/admin/forgot-password')
  await js('document.getElementById("identifier").focus()');await key('Tab',9)
  assert.equal(await js('document.activeElement.id'),'password')
  await key('Tab',9);assert.equal(await js('document.activeElement.id'),'password-toggle')
@@ -117,7 +115,7 @@ try {
  assert.equal(await js('document.querySelectorAll("#prototype-info a").length'),3)
  await key('Escape',27);assert.equal(await js('document.getElementById("prototype-info").open'),false)
  assert(await js('document.activeElement.matches(".footer-links button")'))
- checks.push('Recovery help, actual keyboard focus and source-dialog Escape/return focus work')
+ checks.push('Recovery entry link, actual keyboard focus and source-dialog Escape/return focus work')
  for(const width of[390,760,1024]){await go(width,'/admin/login');assert.equal(await js('document.documentElement.scrollWidth'),width);await screenshot(`login-${width}.png`)}
  await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});await go(390,'/admin/login')
  assert.equal(await js('getComputedStyle(document.querySelector(".submit-button")).transitionDuration'),'0s')
