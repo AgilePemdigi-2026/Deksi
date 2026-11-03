@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test tests/editorial.test.mjs tests/auth.test.mjs tests/password-reset.test.mjs",
+    "test": "node --test tests/editorial.test.mjs tests/auth.test.mjs tests/password-reset.test.mjs tests/recoveryClient.test.mjs",
     "test:browser": "node tests/browser.test.mjs && node tests/login.browser.test.mjs && node tests/password-reset.browser.mjs",
     "test:browser:login": "node tests/login.browser.test.mjs",
     "test:integration:login": "node tests/login.integration.mjs",
+    "test:integration:reset": "node tests/reset.integration.mjs",
     "test:browser:reset": "node tests/password-reset.browser.mjs",
     "preview:reset": "node tests/recovery-preview/server.mjs"
   },

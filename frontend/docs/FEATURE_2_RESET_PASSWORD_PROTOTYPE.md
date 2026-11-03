@@ -1,5 +1,7 @@
 # Fitur 2 — prototype Reset Password Admin, Batch 2
 
+**Catatan historis:** dokumen ini merekam tahap prototype sebelum publikasi dan integrasi berikutnya. Untuk status form FE–BE dan hasil tes terbaru, baca [laporan integrasi](FEATURE_2_RESET_PASSWORD_INTEGRATION.md). Preview sintetis tetap test-only dan tidak membuktikan pengiriman inbox nyata.
+
 Tanggal: 3 November 2026. Status: **siap review visual dan kontrak; bukan reset backend siap pakai**.
 
 Branch lokal `feat/2-reset-password-fe`, base fitur 1 `c288b46128db918d2d2965b72ec599d6cbe6e768`. Belum commit/push/PR. Worktree fitur 1 FE/BE dan checkpoint fitur 6/7 tidak diubah. Prototype HTML historis tidak ditimpa; gambar dan font Login tetap digunakan.

@@ -141,7 +141,7 @@ export default function ResetPasswordPage({ service = unavailableRecovery }: { s
   return <RecoveryLayout title={title}>
     {stage === 'checking' && <p className="form-intro" role="status">Mohon tunggu, tautan pemulihan sedang diperiksa.</p>}
     {stage === 'invalid' && <><p className="form-intro">Tautan mungkin tidak valid, kedaluwarsa, atau sudah digunakan.</p><a id="recovery-new-link" className="recovery-cta-link" href="/admin/forgot-password">Minta tautan baru <span aria-hidden="true">↗</span></a></>}
-    {stage === 'unavailable' && <><p className="form-intro">Status tautan belum dapat dipastikan. Pada tahap prototype, layanan reset belum terhubung.</p><button type="button" className="submit-button" id="recovery-recheck" onClick={retryCheck}>Periksa kembali</button><a className="recovery-secondary" href="/admin/forgot-password">Minta tautan baru</a></>}
+    {stage === 'unavailable' && <><p className="form-intro">Status tautan belum dapat dipastikan. Periksa koneksi atau coba kembali nanti.</p><button type="button" className="submit-button" id="recovery-recheck" onClick={retryCheck}>Periksa kembali</button><a className="recovery-secondary" href="/admin/forgot-password">Minta tautan baru</a></>}
     {stage === 'complete' && <><p className="form-intro">Kata sandi akun Admin telah diperbarui. Silakan masuk kembali melalui halaman Login.</p><a id="recovery-login" className="recovery-cta-link" href="/admin/login">Kembali ke Login <span aria-hidden="true">↗</span></a></>}
     {stage === 'valid' && <>
       <p className="form-intro">Pilih kata sandi yang berbeda dari sebelumnya untuk melanjutkan akses akun Admin.</p>

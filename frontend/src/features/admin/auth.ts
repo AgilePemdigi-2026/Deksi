@@ -56,7 +56,7 @@ export function createAuthClient(origin: string, fetcher: typeof fetch = fetch) 
       if (origin) {
         try {
           const url = new URL(origin)
-          if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error()
+          if (/[\s@\\]/.test(origin) || !/^https?:\/\//i.test(origin) || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error()
           base = url.origin
         } catch {
           throw new AuthError('invalid_configuration')

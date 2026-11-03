@@ -17,7 +17,7 @@ export class RecoveryError extends Error {
   }
 }
 
-// Batch 2: the only successful implementation is injected by the test-only preview.
+// Explicit disconnected service for isolated previews or callers without an adapter.
 const notConnected = () => Promise.reject(new RecoveryError('not_connected'))
 export const unavailableRecovery: RecoveryService = { request: notConnected, check: notConnected, confirm: notConnected }
 

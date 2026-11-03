@@ -50,7 +50,7 @@ test('Fragment parsing is bounded, refuses duplicate credentials and does not re
   for(const fragment of ['', '#uid=demo-user', '#uid=a&uid=b&token=c', '#uid=a&token=b&token=c', '#uid=a&token=b&next=elsewhere', '#uid=<script>&token=a', '#uid=a&token=%', '#uid=a&token='+ 'x'.repeat(257), '#uid=a&token='+ 'x'.repeat(2000)])assert.equal(parseResetCredentials(fragment),null)
 })
 
-test('Unconnected runtime recovery never returns a synthetic successful result', async () => {
+test('Explicitly disconnected recovery never returns a synthetic successful result', async () => {
   const { unavailableRecovery } = await load('features/admin/recovery.ts')
   for(const operation of [()=>unavailableRecovery.request('admin@example.test'),()=>unavailableRecovery.check({uid:'demo',token:'demo'}),()=>unavailableRecovery.confirm({uid:'demo',token:'demo'},'synthetic','synthetic')]){
     await assert.rejects(operation(),error=>error.code==='not_connected')

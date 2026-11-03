@@ -9,7 +9,7 @@ export async function openIsolatedBrowser(scratch) {
   const chrome=spawn(process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore'})
   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))
   let ws,send
-  const runtimeErrors=[],requests=[]
+  const runtimeErrors=[],requests=[],responses=[]
   async function close(){
     if(send)await send('Browser.close').catch(()=>{})
     ws?.close();chrome.kill();await delay(400)
@@ -26,7 +26,8 @@ export async function openIsolatedBrowser(scratch) {
     ws.addEventListener('message',event=>{
       const result=JSON.parse(event.data)
       if(result.method==='Runtime.exceptionThrown')runtimeErrors.push(result.params.exceptionDetails.text)
-      if(result.method==='Network.requestWillBeSent')requests.push({url:result.params.request.url,method:result.params.request.method})
+      if(result.method==='Network.requestWillBeSent')requests.push({id:result.params.requestId,url:result.params.request.url,method:result.params.request.method})
+      if(result.method==='Network.responseReceived')responses.push({path:new URL(result.params.response.url).pathname,status:result.params.response.status,method:requests.find(item=>item.id===result.params.requestId)?.method,headers:Object.fromEntries(Object.entries(result.params.response.headers).filter(([name])=>['cache-control','referrer-policy'].includes(name.toLowerCase())))})
       if(!result.id)return
       const item=pending.get(result.id);if(!item)return
       pending.delete(result.id);clearTimeout(item.timer)
@@ -49,6 +50,6 @@ export async function openIsolatedBrowser(scratch) {
       await writeFile(file,Buffer.from(image.data,'base64'))
     }
     await send('Page.enable');await send('Runtime.enable');await send('Network.enable')
-    return{send,js,wait,click,fill,key,navigate,screenshot,close,runtimeErrors,requests,delay}
+    return{send,js,wait,click,fill,key,navigate,screenshot,close,runtimeErrors,requests,responses,delay}
   }catch(error){await close();throw error}
 }

@@ -78,7 +78,7 @@ test('A false logout response never claims that an authenticated session ended',
 })
 
 test('Unsafe auth-origin configuration fails closed without making a request', async () => {
-  for(const origin of ['javascript:example','https://user:fixture@auth.example.test','https://auth.example.test/?token=fixture','https://auth.example.test/path','https://auth.example.test/#fragment']){
+  for(const origin of ['javascript:example','https://user:fixture@auth.example.test','https://@auth.example.test','https:auth.example.test','https://auth.example.test\\',' https://auth.example.test','https://auth.example.test/?token=fixture','https://auth.example.test/path','https://auth.example.test/#fragment']){
     let requested=false
     const client=createAuthClient(origin,async()=>{requested=true;return new Response(JSON.stringify({authenticated:false,user:null}))})
     await assert.rejects(client.session(),error=>error.code==='invalid_configuration')

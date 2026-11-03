@@ -1,5 +1,11 @@
 # Fitur 2 — kontrak Reset Password Admin v1
 
+**Status terbaru, 3 November 2026:** BE telah diimplementasikan pada lane terpisah dan form FE sudah memakai adapter HTTP nyata, dengan tes browser terhadap Django lokal. Lihat [integrasi dan bukti terkini](FEATURE_2_RESET_PASSWORD_INTEGRATION.md). Default BE di luar test tetap disabled; inbox/SMTP dan produksi belum diuji.
+
+## Baseline perencanaan prototype — historis
+
+Bagian di bawah mempertahankan keputusan/proposal ketika prototype dibuat. Pernyataan “belum dibuat/diotorisasi/NOT RUN” di bawah bukan status integrasi terkini; gunakan laporan tertaut di atas untuk milestone dan izin yang kemudian diberikan. Contoh fixture tetap sintetis. Bentuk payload `DEKSI-RESET-1` tidak diganti.
+
 Tanggal: 3 November 2026. Versi: **DEKSI-RESET-1 — untuk review, belum API implementasi**.
 
 Dokumen ini menetapkan bentuk payload dan pemetaan state untuk tahap selanjutnya, bukan bukti endpoint/email sudah berfungsi. Base FE: `c288b46128db918d2d2965b72ec599d6cbe6e768`; base BE kandidat: `57608774398ee86f8eb8b60ce596ef71eefd6556`. Lane FE saat ini `feat/2-reset-password-fe`. Implementasi BE, schema/migrasi limiter atau outbox, provider email dan deployment belum diotorisasi pada batch ini.

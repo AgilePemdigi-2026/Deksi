@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from '../../src/App'
-import { RecoveryError } from '../../src/features/admin/recovery'
+import { RecoveryError, unavailableRecovery } from '../../src/features/admin/recovery'
 import type { RecoveryService } from '../../src/features/admin/recovery'
 import '../../src/index.css'
 import './preview.css'
@@ -33,7 +33,7 @@ const service: RecoveryService = {
   },
 }
 
-const props = scenario === 'runtime-default' ? {} : { resetService:service }
+const props = { resetService: scenario === 'disconnected-preview' ? unavailableRecovery : service }
 createRoot(document.getElementById('root')!).render(<StrictMode>
   <aside className="reset-preview-toolbar" aria-label="Kontrol prototype">
     <p><strong>PREVIEW SINTETIS</strong> · Tidak mengirim email atau mengubah kata sandi. Gunakan data contoh.</p>
@@ -45,7 +45,7 @@ createRoot(document.getElementById('root')!).render(<StrictMode>
       <a href="/admin/forgot-password?scenario=unavailable">Server tidak tersedia</a>
       <a href="/admin/reset-password?scenario=password-error#uid=demo-user&token=demo-token">Validasi server</a>
       <a href="/admin/reset-password?scenario=confirm-uncertain#uid=demo-user&token=demo-token">Hasil perubahan tidak pasti</a>
-      <a href="/admin/forgot-password?scenario=runtime-default">Tanpa service reset</a>
+      <a href="/admin/forgot-password?scenario=disconnected-preview">Service sengaja tidak terhubung</a>
       <a href="/admin/login">Login existing</a>
     </nav></details>
   </aside>

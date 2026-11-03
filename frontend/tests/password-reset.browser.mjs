@@ -104,12 +104,12 @@ try{
   assert.equal(await js('document.querySelector("#recovery-confirm-submit").disabled'),true)
   await js('document.querySelector("#recovery-confirm-form").requestSubmit()')
   assert.equal(await js('window.__resetPreviewCounts.confirm'),1)
-  await navigate(origin+'/admin/forgot-password?scenario=runtime-default')
+  await navigate(origin+'/admin/forgot-password?scenario=disconnected-preview')
   await fill('#recovery-email','admin@example.test');await click('#recovery-request-submit')
-  await wait('document.querySelector("#recovery-status").textContent.includes("belum terhubung")','Default runtime service must visibly refuse synthetic success')
+  await wait('document.querySelector("#recovery-status").textContent.includes("belum terhubung")','Explicitly disconnected preview service must visibly refuse synthetic success')
   assert.equal(await js('window.__resetPreviewCounts.request'),0)
   assert.equal(await js('Boolean(document.getElementById("recovery-accepted"))'),false)
-  checks.push('Ambiguous confirmation prevents replay and the non-injected runtime service visibly fails closed')
+  checks.push('Ambiguous confirmation prevents replay and an explicitly disconnected preview service visibly fails closed')
 
   for(const width of [1440,1024,760,390]){
     await navigate(origin+'/admin/forgot-password',width)
