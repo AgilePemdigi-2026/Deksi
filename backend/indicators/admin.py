@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 
+from indicators.feedback_model import Feedback
 from indicators.lifecycle import review_candidate
 from indicators.models import DataUpdateLog, Indicator, Observation, ObservationCandidate, RawFile, Source
 
@@ -120,3 +121,26 @@ class DataUpdateLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = (
+        "id", "category", "sender_name", "sender_email",
+        "related_indicator_code", "related_period", "status", "created_at",
+    )
+    list_filter = ("status", "category")
+    search_fields = ("description", "sender_name", "sender_email", "related_indicator_code")
+    readonly_fields = ("ip_address", "created_at", "updated_at")
+    ordering = ("-created_at",)
+    actions = ("action_mark_resolved", "action_mark_in_review")
+
+    @admin.action(description="Tandai sebagai Diselesaikan", permissions=["change"])
+    def action_mark_resolved(self, request, queryset):
+        updated = queryset.update(status=Feedback.Status.RESOLVED)
+        self.message_user(request, f"{updated} umpan balik ditandai sebagai Diselesaikan.")
+
+    @admin.action(description="Tandai sebagai Sedang Ditinjau", permissions=["change"])
+    def action_mark_in_review(self, request, queryset):
+        updated = queryset.update(status=Feedback.Status.IN_REVIEW)
+        self.message_user(request, f"{updated} umpan balik ditandai sebagai Sedang Ditinjau.")

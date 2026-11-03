@@ -3,5 +3,8 @@ __pycache__/
 *.py[cod]
 .venv/
 db.sqlite3
+*.sqlite3
 raw_storage/
 .env
+.test-artifacts/
+.ruff_cache/

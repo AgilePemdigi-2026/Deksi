@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from indicators.feedback_model import Feedback  # noqa: F401
 from indicators.fields import ObservationDecimalField
 
 

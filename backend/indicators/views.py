@@ -99,8 +99,11 @@ def delta_summary(latest: Observation, previous: Observation | None) -> dict:
     return result
 
 
-def serialize_summary_card(indicator: Indicator) -> dict:
-    latest = latest_published(indicator)
+def serialize_summary_card(indicator: Indicator, *, year: int | None = None) -> dict:
+    latest = (
+        latest_published(indicator) if year is None
+        else published_observations(indicator).filter(observation_date__year=year).last()
+    )
     current_year = timezone.localdate().year
     if latest is None:
         return {
@@ -115,11 +118,15 @@ def serialize_summary_card(indicator: Indicator) -> dict:
             "latestYear": None,
             "hasCurrentYearData": False,
             "note": "Data belum tersedia dari sumber resmi yang terintegrasi. DEKSI tidak menampilkan angka pengganti.",
-            "dataAvailabilityNote": "Data terbaru belum tersedia.",
+            "dataAvailabilityNote": (
+                "Data terbaru belum tersedia." if year is None
+                else f"Tidak ada data dipublikasi yang direview untuk tahun {year}."
+            ),
         }
     sparkline_rows = list(
         comparable_observations(latest)
-        .order_by("-observation_date")
+        .filter(observation_date__lte=latest.observation_date)
+        .order_by("-observation_date", "-id")
         .values_list("value", flat=True)[:7]
     )
     sparkline = [float(value) for value in reversed(sparkline_rows)]
