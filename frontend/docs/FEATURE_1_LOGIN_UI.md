@@ -1,5 +1,11 @@
 # Feature 1 — Login Admin frontend
 
+## Current integration — 3 November 2026
+
+Login now connects to the Django backend on its separate feature worktree: CSRF, actual login, server session confirmation/restore and logout. The approved base design is retained; the new authenticated state displays account identity and logout without inventing an Admin dashboard. See [FEATURE_1_LOGIN_INTEGRATION.md](FEATURE_1_LOGIN_INTEGRATION.md) for configuration, current tests, evidence limits and remaining review. These integration edits remain local and uncommitted/unpushed.
+
+The sections below preserve the historical UI-only checkpoint from 2 November 2026, including the permissions and verification limits recorded at that stage. They are not the current authentication status.
+
 ## Branch and dependency
 - Branch: `feat/1-login-admin-fe`.
 - Depends on local shared foundation commit `505e97116f132c8630ec08d07525b8aec9e00536` (`feat/fe/editorial-baseline`), originally based on main `0e92899ce54f85440fe920ca457dfd91f747e1aa`.

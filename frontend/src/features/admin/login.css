@@ -48,3 +48,7 @@ h1{font-family:Archivo,sans-serif;font-variation-settings:'wdth' 104,'wght' 640;
 
 }
 .login-page .info-dialog a{text-decoration:underline;text-underline-offset:3px}
+.login-page .session-panel{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.login-page .session-panel p{margin:0 0 18px}
+.login-page #auth-logout{margin-top:18px}
+.login-page .session-refresh{display:block;min-height:44px;padding:8px 0;background:transparent;font-size:13px;text-decoration:underline;text-underline-offset:4px}

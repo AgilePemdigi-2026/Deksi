@@ -8,9 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test tests/editorial.test.mjs",
+    "test": "node --test tests/editorial.test.mjs tests/auth.test.mjs",
     "test:browser": "node tests/browser.test.mjs && node tests/login.browser.test.mjs",
-    "test:browser:login": "node tests/login.browser.test.mjs"
+    "test:browser:login": "node tests/login.browser.test.mjs",
+    "test:integration:login": "node tests/login.integration.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
