@@ -184,6 +184,38 @@ try {
       assert(await js('document.documentElement.scrollWidth <= document.documentElement.clientWidth'))
     }
   })
+  const lifecycleAction=action=>{
+    const result=spawnSync(process.env.DEKSI_QA_PYTHON,[fileURLToPath(new URL('./run_frontend_integration.py',import.meta.url)),'--lifecycle-action',action],{encoding:'utf8',env:process.env})
+    assert.equal(result.status,0,result.stderr)
+  }
+  let oldLifecycleSource
+  await check('Real staged, rejected and failed candidate reviews retain old public value and RAW', async () => {
+    await go('/indikator/birate'); await ready()
+    assert.equal(await js('document.querySelector(".fd-metric").textContent'),'5')
+    oldLifecycleSource=await js('document.querySelector(".fd-source-panel a").getAttribute("href")')
+    for(const action of ['stage6','reject6','stage7','fail7']) {
+      lifecycleAction(action)
+      await go('/indikator/birate'); await ready()
+      assert.equal(await js('document.querySelector(".fd-metric").textContent'),'5',action)
+      await go(oldLifecycleSource); await ready()
+      assert.equal(await js('document.querySelector(".ft-value").textContent'),'5',action)
+      assert.equal(await js('[...document.querySelectorAll("a")].find(a=>a.textContent.includes("Unduh RAW"))?.href'),fixture.lifecycleRawUrl)
+    }
+  })
+  await check('Explicit real Admin CLI review promotes candidate and old frontend guard refuses the changed context', async () => {
+    lifecycleAction('publish7')
+    await go('/indikator/birate'); await ready()
+    assert.equal(await js('document.querySelector(".fd-metric").textContent'),'7')
+    const link=await js('document.querySelector(".fd-source-panel a").getAttribute("href")')
+    await go(link); await ready()
+    assert.equal(await js('document.querySelector(".ft-value").textContent'),'7')
+    assert.equal(await js('[...document.querySelectorAll("a")].find(a=>a.textContent.includes("Unduh RAW"))?.href'),fixture.lifecycleRawUrl)
+    const raw=await js(`(async()=>{const r=await fetch(${JSON.stringify(fixture.lifecycleRawUrl)});const b=await r.arrayBuffer();return {status:r.status,hash:[...new Uint8Array(await crypto.subtle.digest('SHA-256',b))].map(x=>x.toString(16).padStart(2,'0')).join('')}})()`)
+    assert.equal(raw.status,200);assert.equal(raw.hash,fixture.lifecycleRawSha256)
+    await go(oldLifecycleSource); await ready()
+    assert.equal(await js('document.querySelector(".ft-value").textContent'),'Belum tersedia')
+    assert((await js('document.querySelector(".fd-status").textContent')).includes('berubah'))
+  })
   await check('Real-API source page remains readable at 390/768/1440; no source-link fetch or console exception', async () => {
     for(const width of [390,768,1440]) {
       await go(currentURL,width); await ready()

@@ -1,29 +1,21 @@
-# Status aktif F7 backend — Batch 2
+# Status aktif F7 backend — Batch 2 disesuaikan setelah Batch 1
 
-Tanggal: 2026-11-03. Scope: integrasi implementasi saat ini dan persiapan branch, bukan implementasi lifecycle Batch 1.
+Tanggal: 2026-11-03. Branch `feat/7-source-trace-be`; HEAD dasar `df7f3bd8a0dad2caacb1fe5b22cb2ed6067faabb`, sudah mewarisi F6 `032b9aec4de0a5d9d96fe94b638329ab5207b586`. Receipt mengikat overlay lifecycle yang diuji; SHA checkpoint baru dicatat terpisah setelah otorisasi.
 
-## Baseline dan koreksi
+## Hasil integrasi terkini
 
-- Branch `feat/7-source-trace-be`, checkpoint `a9c6367b7077341a0ae43276463fbd08546a5c28`, parent checkpoint F6 `652ec018ddad455358a9d552593c11b52c4be03b`.
-- Perubahan lokal shared tetap milik F6. Delta F7 menambah perluasan fixture/harness untuk exact history, sumber campuran dan periode kosong. Penataan checkpoint final belum diartikan selesai sebelum ancestry dan tree aktual diperiksa.
-- FE pasangan: worktree `feature-7-source-trace-fe`, berbasis `94a05cd1fe5044d3d7e0f71ad6d0487edd5f921f` dengan koreksi lokal adapter/tabel/grafik. Backend worktree membawa FE lama; jangan menggunakannya sebagai pengganti pasangan ini.
+- 19 file fondasi lifecycle F6 telah diselaraskan tanpa menimpa implementasi khusus F7 (`views`, `provenance`, kontrak trace dan route download RAW); writer storage F7 kini dipakai ulang di fondasi F6. Lihat [status F6](../indicator-detail/CURRENT_STATUS.md) dan [panduan review](../indicator-detail/LIFECYCLE.md).
+- Public GET, selector lengkap, decimal string, pembatasan RAW dan konteks FE tetap kompatibel. Tidak menambah akun publik, panggilan provider atau server-side request ke URL sumber.
+- Canonical baru lulus: 73 test backend pada runner, dengan 1 SKIP symlink Windows; Django check, migration drift, Ruff 19 file dan syntax Node PASS.
+- 13 pemeriksaan actual React → Django PASS, termasuk pending → tetap nilai lama, reject → tetap nilai lama, kegagalan review → rollback, review CLI Admin eksplisit → nilai baru, RAW digest tetap cocok, dan konteks lama ditolak. Ini bukan hanya mutasi fixture lama: jalur staging, service transaksi dan command review produksi dijalankan.
+- Entry Admin HTTP dicakup unit aktual di suite backend. Review pada browser-integrasi dilakukan melalui CLI Admin berizin pada fixture, bukan login/form Admin di browser atau bukti review manusia terhadap data resmi.
+- Scratch DB/RAW serta profil browser dibersihkan dan backend task dihentikan. Canonical `passed` exit 0 dibaca balik dari ledger read-only. Receipt lokal: `.artifacts/lifecycle-canonical.json` dan `.artifacts/live-integration/verification.json`.
+- Source FE companion `feature-7-source-trace-fe` tidak diubah pada batch ini. Unit FE F6/F7/editorial, browser fixture dan build/lint memiliki bukti historis terpisah; tidak diklaim baru dijalankan.
 
-## Bukti yang dibedakan
+## Gate yang belum dipromosikan
 
-- Canonical terakhir yang telah dijalankan sebelum dokumen ini: 42 test backend dieksekusi, 41 PASS dan 1 SKIP symlink Windows; check/drift/scoped lint PASS. Hasil disimpan oleh CLI dan dibaca balik dari ledger root/session yang tepat.
-- Integrasi actual FE → Django: 11 kelompok PASS dengan data sintetis di database/RAW scratch, tanpa intersepsi API. Mencakup navigasi, zero/exact values, selektor historis, RAW valid/korup, guard perubahan konteks, sumber campuran, gap Januari–Maret dan responsif. Cleanup database, profil browser serta proses milik task telah dibuktikan.
-- Unit FE F6 40, F7 12, editorial 7; build/lint dan browser gabungan 18 kelompok mempunyai receipt terpisah pada source yang sama. Ini tidak dijumlahkan dengan backend atau dipromosikan menjadi eksekusi baru.
-- Satu percobaan terdahulu timeout pada koneksi awal Chrome `Runtime.enable`; kegagalan dipertahankan, lalu verifikasi ulang berhasil. Penyebab host yang pasti belum dibuktikan.
-- Runtime real-loopback dibuktikan oleh harness; standalone `hermes verify` start/readiness sengaja tidak digunakan. Data resmi dan persetujuan visual bukan hasil test teknis.
+Temuan reviewer independen tentang publish observasi legacy sudah ditutup dengan regresi Admin POST; no-op fakta legacy dan risiko overwrite RAW F6 juga telah direproduksi dan diperbaiki. Canonical akhir diulang setelah repair, bukan memakai hasil sebelum review. Pengguna telah mengizinkan commit dan dependency lokal kandidat ini, bukan push, PR atau merge shared. Ancestry final harus dicatat pada handoff dan dicek terhadap overlay yang sudah diuji; menyalin source shared tidak menggantikan hal itu.
 
-## Gate tersisa
+Kandidat bukan snapshot/jurnal immutable; formula versi dan official verification tetap unavailable/unassessed. PostgreSQL, provider resmi, DB pengguna, deployment dan persetujuan visual belum diuji/disetujui. Warning tick-key dashboard pada angka ekstrem sudah tercatat pada Batch 2 sebelumnya dan tidak disamakan dengan kegagalan alur F6/F7. Konsol kosong dari uncaught exception bukan berarti tidak ada warning React.
 
-[Status fondasi F6](../indicator-detail/CURRENT_STATUS.md) menjelaskan risiko importer/review. Data lama → kandidat → review → data baru BELUM diuji karena staging kandidat belum dibuat. Ini batas wajib laporan, bukan PASS yang boleh diasumsikan dari mutasi fixture lama.
-
-API tidak menjanjikan snapshot immutable atau formula versi; revisi/official verification tetap eksplisit unavailable/unassessed. PostgreSQL/deploy dan akuisisi sumber resmi belum dilakukan. Dashboard existing menghasilkan warning tick-key pada fixture angka ekstrem; tiga lint warning frontend bawaan serta build chunk warning tetap terpisah dari kegagalan test.
-
-`EVALUATION.md` dan `VERIFICATION.json` awal adalah bukti checkpoint historis. `AUDIT_FIXES_VERIFICATION.json` mencatat koreksi audit berikutnya. Artifact canonical dan report Batch 2 pada `.artifacts/` adalah bukti lokal, bukan file produk yang otomatis di-commit.
-
-## Publikasi
-
-Belum push/PR/merge. Commit lokal dan integrasi dependency memerlukan persetujuan checkpoint; lakukan backup/hash overlay terlebih dahulu dan jangan rewrite checkpoint lama. FE companion juga perlu keputusan publikasi terpisah. Jangan menyebut seluruh backend siap produksi selama gate lifecycle di atas belum ditutup.
+`EVALUATION.md`, `VERIFICATION.json` dan `AUDIT_FIXES_VERIFICATION.json` lama dipertahankan sebagai sejarah. Hasil 13 pemeriksaan baru tidak dijumlahkan dengan jumlah test backend/FE, dan PASS teknis bukan izin publikasi atau klaim siap produksi.

@@ -31,26 +31,69 @@ def configure():
     django.setup()
 
 
-def set_value(value):
+def configure_owned_database():
     scratch = Path(os.environ["HERMES_TEST_SCRATCH"]).resolve()
     database = Path(os.environ["DEKSI_TEST_DATABASE"]).resolve()
     if not database.is_relative_to(scratch) or not database.parent.name.startswith("deksi-be-live-"):
         raise RuntimeError("Mutation is restricted to this runner's owned scratch database")
     configure()
+
+
+def set_value(value):
+    configure_owned_database()
     from indicators.models import Observation
     changed = Observation.objects.filter(indicator__code="inflasi", observation_date=date(2000, 1, 31)).update(
         value=Decimal(value))
     assert changed == 1
 
 
+def lifecycle_action(action):
+    configure_owned_database()
+    from django.contrib.auth import get_user_model
+    from django.core.management import call_command
+    from unittest.mock import patch
+
+    from indicators.lifecycle import review_candidate, stage_observation
+    from indicators.models import Observation, ObservationCandidate
+
+    row = Observation.objects.get(indicator__code="birate", observation_date=date(2020, 1, 31))
+    actor = get_user_model().objects.get(username="reviewer-synthetic")
+    if action in {"stage6", "stage7"}:
+        stage_observation(indicator_id=row.indicator_id, source_id=row.source_id,
+            observation_date=row.observation_date, period_label=row.period_label, frequency=row.frequency,
+            data_type=row.data_type, value=Decimal(action[-1]), unit=row.unit,
+            publication_date=row.publication_date, raw_file_id=row.raw_file_id)
+        return
+    candidate = ObservationCandidate.objects.get(indicator__code="birate", status="pending",
+        payload__value="6.000000" if action == "reject6" else "7.000000")
+    if action == "reject6":
+        review_candidate(candidate.pk, actor, publish=False, notes="Ditolak pada UJI SINTETIS")
+    elif action == "fail7":
+        with patch("indicators.lifecycle.record_update_success", side_effect=RuntimeError("UJI rollback")):
+            try:
+                review_candidate(candidate.pk, actor)
+            except RuntimeError as exc:
+                assert str(exc) == "UJI rollback"
+            else:
+                raise AssertionError("Injected failure did not execute")
+        row.refresh_from_db()
+        candidate.refresh_from_db()
+        assert row.value == Decimal("5") and candidate.status == "pending"
+    elif action == "publish7":
+        call_command("publish_observations", username=actor.get_username(), candidate_ids=[candidate.pk])
+
+
 def seed(owned):
     from django.contrib.auth import get_user_model
+    from django.contrib.auth.models import Permission
     from django.utils import timezone
 
     from indicators.models import Indicator, Observation, Source
     from indicators.storage import save_raw
 
     reviewer = get_user_model().objects.create_user(username="reviewer-synthetic", is_staff=True)
+    reviewer.user_permissions.add(Permission.objects.get(content_type__app_label="indicators",
+                                                        codename="change_observationcandidate"))
     source = Source.objects.create(source_id="TEST_ONLY", source_name="Dataset UJI SINTETIS",
                                    institution="INSTANSI UJI SINTETIS", primary_url="https://example.test/source")
     for code in ["pdb", "inflasi", "fiskal", "investasi", "birate", "tpt"]:
@@ -87,10 +130,17 @@ def seed(owned):
             period_label=f"{months[month - 1]} 2000 UJI", frequency="monthly", data_type="level",
             value=Decimal(value), unit="%", validation_status="published",
             reviewed_by=reviewer, reviewed_at=timezone.now())
+    lifecycle_raw, _ = save_raw(source, b"UJI SINTETIS lifecycle 2020", "UJI lifecycle.txt",
+                                source_url="https://example.test/lifecycle", period_label="Januari 2020 UJI")
+    Observation.objects.create(indicator=Indicator.objects.get(code="birate"), source=source, raw_file=lifecycle_raw,
+        observation_date=date(2020, 1, 31), period_label="Januari 2020 UJI", frequency="monthly", data_type="level",
+        value=Decimal("5"), unit="%", validation_status="published", reviewed_by=reviewer, reviewed_at=timezone.now())
     manifest = {"synthetic": True, "rawPath": raw.stored_path, "rawSha256": raw.checksum_sha256,
                 "rawContent": payload.decode(), "rawUrl": f"http://localhost:8000/api/indicators/inflasi/raw-file/{raw.pk}/",
                 "oldestValueDisplay": "2,123456", "oldestPeriod": "Februari 1998", "rows": 24,
-                "exactValue": exact_value, "exactDisplay": "999.999.999.999.999.999,999999"}
+                "exactValue": exact_value, "exactDisplay": "999.999.999.999.999.999,999999",
+                "lifecycleRawUrl": f"http://localhost:8000/api/indicators/birate/raw-file/{lifecycle_raw.pk}/",
+                "lifecycleRawSha256": lifecycle_raw.checksum_sha256}
     path = owned / "fixture.json"
     path.write_text(json.dumps(manifest), encoding="utf-8")
     return path
@@ -170,8 +220,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--frontend-root", type=Path)
     parser.add_argument("--set-value", choices=["0", "9"])
+    parser.add_argument("--lifecycle-action", choices=["stage6", "stage7", "reject6", "fail7", "publish7"])
     args = parser.parse_args()
-    if args.set_value is not None:
+    if args.lifecycle_action:
+        lifecycle_action(args.lifecycle_action)
+    elif args.set_value is not None:
         set_value(args.set_value)
     elif args.frontend_root:
         run(args.frontend_root.resolve())

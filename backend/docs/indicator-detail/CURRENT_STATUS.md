@@ -1,26 +1,28 @@
-# Status aktif F6 backend — Batch 2
+# Status aktif F6 backend — Batch 1 dan penyesuaian Batch 2
 
-Tanggal: 2026-11-03. Dokumen ini melengkapi, bukan mengganti, receipt checkpoint historis.
+Tanggal: 2026-11-03. Status ini melengkapi, bukan mengganti, receipt historis.
 
-## Scope yang diteruskan
+## Implementasi saat ini
 
-Pengguna memilih Batch 2 (integrasi dan persiapan branch) sebelum Batch 1 (kandidat impor/review). Karena itu evaluasi hanya berlaku untuk API baca dan koreksi yang sudah diimplementasikan. Tidak ada klaim bahwa lifecycle pembaruan otomatis sudah aman.
+- Fondasi API baca dan empat koreksi audit tetap dipertahankan. Branch F6 `feat/6-detail-indikator-be`, HEAD dasar `032b9aec4de0a5d9d96fe94b638329ab5207b586`; source lifecycle diuji terhadap baseline tersebut; identitas checkpoint baru dicatat terpisah setelah otorisasi.
+- BI, BKPM, fiskal dan BPS menulis `ObservationCandidate`, bukan menimpa observasi publik. Impor identik tidak membuat kandidat berulang; kandidat baru tidak mewarisi persetujuan reviewer lama.
+- Source/Indicator existing yang berbeda dari metadata importer ditolak eksplisit, bukan diam-diam diubah. Publikasi membutuhkan Admin aktif berizin, validasi, pemeriksaan snapshot basis yang belum berubah, dan transaksi atomik atas data, status kandidat dan log sukses.
+- Pending, penolakan, kandidat kedaluwarsa dan kegagalan publikasi tidak mengganti data publik lama. `publish_observations` kini wajib memilih ID kandidat eksplisit dan menggunakan Admin existing; tidak membuat reviewer otomatis atau memublikasikan seluruh tabel.
+- Migration `0005_observation_candidate` diuji pada DB sintetis dan tidak memindahkan/mengubah observasi aktif. Tidak ada migrasi database pengguna. Petunjuk operator: [LIFECYCLE.md](LIFECYCLE.md).
 
-- Branch `feat/6-detail-indikator-be`; checkpoint dasar `652ec018ddad455358a9d552593c11b52c4be03b`.
-- Koreksi Admin memakai tampilan decimal exact tanpa ordering SQL yang menyesatkan; parameter urutan buatan juga dicakup regresi.
-- Receipt `AUDIT_FIXES_VERIFICATION.json` mencatat koreksi dan hash sumber setelah empat temuan audit; `VERIFICATION.json` awal tetap historis.
-- Hasil canonical terakhir yang sudah dieksekusi: 21 test PASS, Django check/drift/scoped lint PASS. Manifest lokal memakai interpreter proyek, pengaturan terisolasi, tanpa bootstrap atau standalone start/readiness.
-- Hasil frontend companion yang masih valid harus dibaca terpisah: F6 40 test dan editorial 7 PASS pada source yang sama; bukti ini bukan eksekusi baru hanya karena dokumen diperbarui.
+## Bukti aktual
 
-## Batas yang belum ditutup
+- F6 canonical baru: 52 test PASS; Django check, migration drift dan lint 19 file terpilih PASS. Tiga writer yang gagal pada canonical sebelumnya telah direproduksi dengan fixture terisolasi, kemudian lulus setelah repair.
+- F7 telah menerima 19 file shared yang cocok byte/text setelah normalisasi line ending. Canonical F7: 73 test ditemukan/dieksekusi oleh runner, 1 SKIP symlink Windows; check/drift/lint dan Node syntax PASS.
+- Integrasi F7 actual FE → Django: 13 pemeriksaan PASS tanpa intersepsi API. Alur baru menahan nilai lama saat staging, reject dan kegagalan transaksi; review CLI eksplisit menerbitkan kandidat, byte RAW tetap cocok dan URL konteks lama ditolak.
+- Kedua canonical dicatat `passed`, exit 0, pada ledger session/root tepat dan dibaca balik read-only. Build/unit/browser FE terpisah tidak diulang pada batch ini karena source FE tidak diubah; bukti lama tidak disebut fresh.
+- Review independen menemukan bypass aksi publikasi observasi legacy. Aksi itu dihapus; crafted Admin POST direproduksi RED lalu tidak dapat memublikasikan tanpa kandidat. Audit lanjutan juga memperbaiki no-op fakta legacy belum direview dan overwrite RAW pada F6; hardening writer F7 yang sudah ada dipakai ulang di fondasi shared, bukan membuat storage baru. Seluruh regresi baru lulus pada canonical akhir. Ini bukan persetujuan publikasi.
 
-- Impor BI/BKPM/fiskal dapat menimpa row published menjadi pending. Writer BPS dapat memperbarui nilai published dengan reviewer lama. Batch 1 untuk staging kandidat/review BELUM DIIMPLEMENTASIKAN; regresi alur kandidat belum dapat dijalankan.
-- Master sumber/observasi mutable; formula/jurnal revisi immutable tidak tersedia. PostgreSQL, migrasi DB pengguna, data resmi dan deployment belum diuji.
-- SQLite menyimpan nilai exact sebagai TEXT; SQL numeric ordering/aggregation generik bukan kontrak yang didukung. Tidak ada float cast pengganti presisi.
-- Perbaikan konsumsi histori presisi/sumber/gap di FE companion masih lokal; publikasi BE tidak otomatis menerbitkannya.
+## Batas dan gate tersisa
 
-## Persiapan publikasi
-
-Stage hanya allowlist deliverable backend dan dokumentasi terkait setelah izin checkpoint. Jangan stage `.hermes/`, path interpreter mesin, environment, RAW pengguna atau `.artifacts/`. Konfigurasi Hermes lokal adalah alat verifikasi, bukan produk yang otomatis dipublikasikan.
-
-F7 harus mewarisi checkpoint F6 terkoreksi. Perubahan dependency, commit lokal, push, PR dan merge shared memiliki izin terpisah. Jangan menulis ulang atau menghapus checkpoint lama. Kandidat boleh direview sebagai API baca dengan batas di atas, bukan dinyatakan siap produksi/refresh otomatis.
+- Kandidat adalah staging/review, bukan jurnal revisi immutable. Source/Indicator/observasi legacy tetap mutable bagi jalur berwenang lain; formula versi dan official verification belum tersedia.
+- SQLite menyimpan decimal exact sebagai TEXT; SQL numeric ordering/aggregation generik tidak didukung. Tes concurrency SQLite membatasi maksimal satu publikasi dari basis sama, tetapi dapat menolak kedua penulis; PostgreSQL dan jaminan progress/retry belum diuji.
+- Provider resmi, migrasi DB pengguna, deployment, standalone startup/readiness dan persetujuan estetika belum dilakukan. Integrasi adalah data sintetis, bukan verifikasi ekonomi/sumber resmi.
+- Warning dashboard Recharts pada fixture angka ekstrem sudah tercatat pada Batch 2 sebelumnya; bukan chart histori F6 dan bukan regresi lifecycle. Dashboard milik rekan tidak diubah. Tidak ada klaim konsol seluruh aplikasi bersih.
+- Pengguna telah mengizinkan checkpoint dan dependency lokal untuk kandidat yang diuji. SHA final serta ancestry harus dicatat pada handoff setelah eksekusi; izin ini tidak mencakup push, PR atau merge shared. Jangan mengubah/menghapus checkpoint lama atau menganggap penyalinan working tree sudah merupakan merge Git.
+- Jangan stage `.hermes/`, `.artifacts/`, interpreter lokal, secret, environment atau RAW. Belum ada push, PR atau merge ke branch shared. FE companion masih memerlukan keputusan publikasi terpisah.
