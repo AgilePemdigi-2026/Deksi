@@ -1,0 +1,22 @@
+# Local synthetic demo only; separate Compose project and database volume.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: backend.settings_demo
+      SECRET_KEY: ${DEKSI_DEMO_SECRET_KEY:?Set a unique local demo key}
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      BPS_API_KEY: ""
+      BPS_API_BASE_URL: ""
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      CSRF_TRUSTED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "127.0.0.1:18080:8000"
+    volumes:
+      - demo_data:/data
+
+volumes:
+  demo_data:
