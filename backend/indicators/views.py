@@ -1,4 +1,6 @@
+import re
 from decimal import Decimal, localcontext
+from io import BytesIO
 from pathlib import Path
 
 from django.http import FileResponse, Http404, JsonResponse
@@ -7,7 +9,8 @@ from django.views.decorators.http import require_GET
 
 from indicators import bps
 from indicators.models import Indicator, Observation
-from indicators.storage import compute_checksum
+from indicators.provenance import matching_raw, public_source_url, source_trace_parameters
+from indicators.storage import verified_raw_bytes
 from indicators.updates import latest_attempt, latest_successful_update, serialize_update_log
 
 FRONTEND_INDICATOR_CODES = ["pdb", "inflasi", "fiskal", "investasi", "birate", "tpt"]
@@ -122,6 +125,7 @@ def serialize_summary_card(indicator: Indicator) -> dict:
     sparkline = [float(value) for value in reversed(sparkline_rows)]
     delta = delta_summary(latest, previous_published(latest))
     source = latest.source
+    raw = matching_raw(latest)
     has_current = latest.observation_date.year >= current_year
     return {
         "id": indicator.code,
@@ -141,8 +145,7 @@ def serialize_summary_card(indicator: Indicator) -> dict:
         "publicationDate": latest.publication_date.isoformat() if latest.publication_date else None,
         "source": source.institution,
         "sourceId": source.source_id,
-        "retrievedAt": (latest.raw_file.retrieved_at.isoformat()
-                        if latest.raw_file and latest.raw_file.retrieved_at else None),
+        "retrievedAt": raw.retrieved_at.isoformat() if raw and raw.retrieved_at else None,
         "delta": delta["delta"],
         "deltaDirection": delta["deltaDirection"],
         "deltaPositive": delta["deltaPositive"],
@@ -151,7 +154,7 @@ def serialize_summary_card(indicator: Indicator) -> dict:
         "changeUnit": delta["changeUnit"],
         "previousPeriod": delta.get("previousPeriod"),
         "sparkline": sparkline,
-        "note": "Nilai resmi berasal dari sumber terintegrasi; daftar sumber tersedia pada Source Trace.",
+        "note": "Nilai dipublikasi dengan metadata sumber; publikasi bukan verifikasi independen angka.",
         "dataAvailabilityNote": (
             "Data terbaru tersedia sampai " + latest.period_label
             if not has_current
@@ -394,8 +397,17 @@ def indicator_trend(request, code: str):
 
 
 def serialize_trace(observation: Observation) -> dict:
-    raw_file = observation.raw_file
+    raw_file = matching_raw(observation)
     trace = {
+        "observationId": observation.pk,
+        "available": True,
+        "definition": observation.indicator.description or None,
+        "revisionId": None,
+        "immutableSnapshot": False,
+        "officialVerification": "unassessed",
+        "valueKind": "derived" if observation.data_type == Observation.DataType.DERIVED_SUM else "unclassified",
+        "calculation": {"available": False, "formula": None, "inputs": None,
+                        "reason": "Formula berversi dan input terikat tidak tersimpan pada observasi ini."},
         "indicatorCode": observation.indicator.code,
         "indicatorName": observation.indicator.name,
         "value": format_decimal(observation.value),
@@ -411,13 +423,13 @@ def serialize_trace(observation: Observation) -> dict:
             "sourceId": observation.source.source_id,
             "sourceName": observation.source.source_name,
             "institution": observation.source.institution,
-            "primaryUrl": observation.source.primary_url,
+            "primaryUrl": public_source_url(observation.source.primary_url),
         },
     }
     if raw_file is not None:
         trace["rawFile"] = {
             "documentName": raw_file.document_name,
-            "sourceUrl": raw_file.source_url,
+            "sourceUrl": public_source_url(raw_file.source_url),
             "checksumSha256": raw_file.checksum_sha256,
             "retrievedAt": raw_file.retrieved_at.isoformat() if raw_file.retrieved_at else None,
             "periodLabel": raw_file.period_label,
@@ -429,24 +441,13 @@ def serialize_trace(observation: Observation) -> dict:
     return trace
 
 
-def serialize_trace_history(indicator: Indicator) -> list[dict]:
+def serialize_trace_history(indicator: Indicator, limit=100, offset=0) -> list[dict]:
     observations = (
         published_observations(indicator)
-        .order_by("-observation_date")
+        .order_by("-observation_date", "-id")
         .select_related("source", "raw_file")
     )
-    traces = []
-    seen_checksums = set()
-    for observation in observations:
-        trace = {**serialize_trace(observation)}
-        checksum = trace.get("rawFile", {}).get("checksumSha256") if trace.get("rawFile") else None
-        if checksum in seen_checksums:
-            trace["rawFile"] = None
-        elif checksum:
-            seen_checksums.add(checksum)
-        trace["value"] = format_decimal(observation.value)
-        traces.append(trace)
-    return traces[:12]
+    return [serialize_trace(row) for row in observations[offset:offset + limit]]
 
 
 @require_GET
@@ -454,7 +455,20 @@ def indicator_source_trace(request, code: str):
     indicator = get_indicator(code)
     if indicator is None:
         return json_error(f"Indikator '{code}' tidak ditemukan", status=404)
-    latest = latest_published(indicator)
+    try:
+        selector, limit, offset = source_trace_parameters(request.GET)
+    except ValueError as exc:
+        return json_error(str(exc), status=400)
+    rows = published_observations(indicator)
+    if selector:
+        matches = list(rows.filter(**selector)[:2])
+        if not matches:
+            return json_error("Konteks observasi tidak ditemukan; tidak dialihkan ke nilai terbaru.", status=404)
+        if len(matches) != 1:
+            return json_error("Konteks observasi ambigu.", status=409)
+        latest = matches[0]
+    else:
+        latest = rows.last()
     if latest is None:
         return json_success(
             {
@@ -464,8 +478,10 @@ def indicator_source_trace(request, code: str):
             }
         )
     trace = serialize_trace(latest)
-    trace["note"] = "Nilai berasal dari dokumen resmi institusi; checksum dipakai untuk verifikasi integritas berkas."
-    trace["history"] = serialize_trace_history(indicator)
+    trace["note"] = "Metadata publikasi bukan verifikasi kebenaran angka; checksum memeriksa integritas berkas saja."
+    trace["history"] = serialize_trace_history(indicator, limit, offset)
+    total = rows.count()
+    trace["pagination"] = {"offset": offset, "limit": limit, "total": total, "hasMore": offset + limit < total}
     return json_success(trace)
 
 
@@ -483,13 +499,20 @@ def raw_file_download(request, code: str, raw_file_id: int):
     )
     if raw_file is None:
         raise Http404("RAW file tidak terkait data yang dipublikasi")
-    stored = Path(raw_file.raw_file.stored_path)
-    if not stored.exists():
-        raise Http404("Berkas RAW tidak tersedia")
-    content = stored.read_bytes()
-    if compute_checksum(content) != raw_file.raw_file.checksum_sha256:
+    if matching_raw(raw_file) is None:
+        raise Http404("RAW file tidak cocok dengan sumber observasi")
+    try:
+        content = verified_raw_bytes(raw_file.raw_file)
+    except OSError:
+        raise Http404("Berkas RAW tidak tersedia") from None
+    except ValueError:
         return json_error("Integritas berkas RAW tidak cocok dengan checksum SHA-256", status=503)
-    response = FileResponse(stored.open("rb"))
-    response["Content-Disposition"] = f'attachment; filename="{Path(raw_file.raw_file.document_name).name}"'
+    name = Path(raw_file.raw_file.document_name.replace("\\", "/")).name
+    filename = re.sub(r"[^A-Za-z0-9._-]", "_", name).strip(".")[:150] or "raw"
+    # Stream exactly the bounded bytes whose digest was checked, not a reopened mutable path.
+    response = FileResponse(BytesIO(content), as_attachment=True, filename=filename,
+                            content_type="application/octet-stream")
     response["X-Checksum-SHA256"] = raw_file.raw_file.checksum_sha256
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "no-store"
     return response
