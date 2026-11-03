@@ -195,6 +195,129 @@ export function useIndicatorCategories() {
 }
 
 // ---------------------------------------------------------------------------
+// Fitur 9 – Daftar Sumber Data / Source Trace (UC-04, publik tanpa login)
+// ---------------------------------------------------------------------------
+
+export type ValueType = "Official Source Value" | "DEKSI-Derived Metric";
+
+export interface SourceEntry {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  primaryUrl: string;
+  description: string;
+  indicators: string[];
+  indicatorCount: number;
+  observationCount: number;
+  available: boolean;
+  latestPeriod: string | null;
+  latestObservationDate: string | null;
+}
+
+export interface SourceIndicatorEntry {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  unit: string;
+  available: boolean;
+  value: string | null;
+  period: string | null;
+  observationDate: string | null;
+  publicationDate: string | null;
+  retrievedAt: string | null;
+  dataType: string | null;
+  valueType: ValueType | null;
+  observationCount: number;
+  note?: string;
+}
+
+export interface SourceDetail extends SourceEntry {
+  indicatorDetails: SourceIndicatorEntry[];
+}
+
+export interface TraceRawFile {
+  documentName: string;
+  sourceUrl: string;
+  checksumSha256: string;
+  retrievedAt: string | null;
+  periodLabel: string;
+  fileSizeBytes: number;
+  downloadUrl: string;
+}
+
+export interface TraceDerived {
+  formula: string;
+  comparisonPeriod: string | null;
+  comparisonObservationDate: string | null;
+  inputValue: string | null;
+  inputUnit: string | null;
+  inputSource: string | null;
+}
+
+export interface SourceTrace {
+  indicatorCode: string;
+  indicatorName: string;
+  available: boolean;
+  valueType?: ValueType;
+  value: string | null;
+  unit: string;
+  period: string | null;
+  periodLabel?: string | null;
+  observationDate: string | null;
+  frequency: string | null;
+  dataType: string | null;
+  institution?: string | null;
+  publicationName?: string | null;
+  publicationDate: string | null;
+  publicationUrl?: string | null;
+  retrievedAt?: string | null;
+  version?: string | null;
+  revision?: string | null;
+  validationStatus?: string;
+  reviewedAt?: string | null;
+  source?: { sourceId: string; sourceName: string; institution: string; primaryUrl: string };
+  rawFile: TraceRawFile | null;
+  derived?: TraceDerived | null;
+  history?: SourceTrace[];
+  note?: string;
+}
+
+export const UNAVAILABLE = "Tidak tersedia";
+
+export function displayOrUnavailable(value: string | null | undefined): string {
+  if (value === null || value === undefined) return UNAVAILABLE;
+  const text = String(value).trim();
+  return text === "" ? UNAVAILABLE : text;
+}
+
+export async function fetchSources(): Promise<SourceEntry[]> {
+  const res = await fetch(`${API_BASE}/sources/`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.sources ?? []) as SourceEntry[];
+}
+
+export async function fetchSourceDetail(sourceId: string): Promise<SourceDetail> {
+  const res = await fetch(`${API_BASE}/sources/${encodeURIComponent(sourceId)}/`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as SourceDetail;
+}
+
+export async function fetchSourceTrace(
+  code: string,
+  params?: { period?: string; observation_date?: string },
+): Promise<SourceTrace> {
+  const query = new URLSearchParams();
+  if (params?.period) query.set("period", params.period);
+  if (params?.observation_date) query.set("observation_date", params.observation_date);
+  const suffix = query.toString() ? `?${query}` : "";
+  const res = await fetch(`${API_BASE}/indicators/${encodeURIComponent(code)}/source-trace/${suffix}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as SourceTrace;
+}
+
+// ---------------------------------------------------------------------------
 // Fitur 8 – Umpan Balik
 // ---------------------------------------------------------------------------
 

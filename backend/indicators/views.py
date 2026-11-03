@@ -400,18 +400,85 @@ def indicator_trend(request, code: str):
     )
 
 
+# ---------------------------------------------------------------------------
+# Fitur 9: Daftar Sumber Data / Source Trace (UC-04)
+# Klasifikasi nilai mengikuti data_type observasi yang tersimpan di DB.
+# Hanya data_type "derived_sum" yang diperlakukan sebagai DEKSI-Derived Metric;
+# sisanya (level, yoy, cumulative_ytd, event) adalah Official Source Value.
+# Tidak ada formula buatan: formula hanya diisi untuk indikator derived yang
+# mekanismenya terdokumentasi di pipeline ingest (BKPM realisasi investasi).
+# ---------------------------------------------------------------------------
+
+DERIVED_DATA_TYPES = {"derived_sum"}
+
+DERIVED_FORMULAS = {
+    "investasi": (
+        "Total = SUM(investasi_rp_juta per baris CSV dalam ZIP triwulan) / 1.000.000 "
+        "→ Rp Triliun (agregat nasional PMA + PMDN per triwulan)"
+    ),
+}
+
+SOURCE_ORDER = ["BPS", "BI", "KEMENKEU", "BKPM"]
+
+
+def value_type_for(observation: Observation) -> str:
+    if observation.data_type in DERIVED_DATA_TYPES:
+        return "DEKSI-Derived Metric"
+    return "Official Source Value"
+
+
+def serialize_derived(observation: Observation) -> dict | None:
+    if observation.data_type not in DERIVED_DATA_TYPES:
+        return None
+    previous = (
+        Observation.objects.filter(
+            indicator=observation.indicator,
+            validation_status=Observation.Status.PUBLISHED,
+            observation_date__lt=observation.observation_date,
+        )
+        .order_by("-observation_date")
+        .select_related("raw_file")
+        .first()
+    )
+    return {
+        "formula": DERIVED_FORMULAS.get(
+            observation.indicator.code,
+            "Agregat deterministik dari berkas RAW sumber (lihat checksum).",
+        ),
+        "comparisonPeriod": previous.period_label if previous else None,
+        "comparisonObservationDate": previous.observation_date.isoformat() if previous else None,
+        "inputValue": format_decimal(previous.value) if previous else None,
+        "inputUnit": (previous.unit or previous.indicator.unit) if previous else None,
+        "inputSource": previous.source.institution if previous else None,
+    }
+
+
 def serialize_trace(observation: Observation) -> dict:
     raw_file = observation.raw_file
+    value_type = value_type_for(observation)
+    publication_url = None
+    if raw_file is not None and (raw_file.source_url or "").startswith("http"):
+        publication_url = raw_file.source_url
+    if not publication_url:
+        publication_url = observation.source.primary_url or None
     trace = {
         "indicatorCode": observation.indicator.code,
         "indicatorName": observation.indicator.name,
+        "valueType": value_type,
         "value": format_decimal(observation.value),
         "unit": observation.unit or observation.indicator.unit,
         "period": observation.period_label,
+        "periodLabel": observation.period_label,
         "observationDate": observation.observation_date.isoformat(),
         "frequency": observation.frequency,
         "dataType": observation.data_type,
+        "institution": observation.source.institution,
+        "publicationName": observation.source.source_name,
         "publicationDate": observation.publication_date.isoformat() if observation.publication_date else None,
+        "publicationUrl": publication_url,
+        "retrievedAt": raw_file.retrieved_at.isoformat() if raw_file and raw_file.retrieved_at else None,
+        "version": raw_file.checksum_sha256[:12] if raw_file else None,
+        "revision": observation.validation_notes or None,
         "validationStatus": observation.validation_status,
         "reviewedAt": observation.reviewed_at.isoformat() if observation.reviewed_at else None,
         "source": {
@@ -433,6 +500,7 @@ def serialize_trace(observation: Observation) -> dict:
         }
     else:
         trace["rawFile"] = None
+    trace["derived"] = serialize_derived(observation)
     return trace
 
 
@@ -461,8 +529,35 @@ def indicator_source_trace(request, code: str):
     indicator = get_indicator(code)
     if indicator is None:
         return json_error(f"Indikator '{code}' tidak ditemukan", status=404)
-    latest = latest_published(indicator)
-    if latest is None:
+    selected: Observation | None = None
+    period = (request.GET.get("period") or "").strip()
+    obs_date = (request.GET.get("observation_date") or "").strip()
+    if period:
+        selected = (
+            published_observations(indicator)
+            .filter(period_label=period)
+            .order_by("-observation_date")
+            .first()
+        )
+        if selected is None:
+            return json_error(
+                f"Periode '{period}' tidak tersedia untuk indikator '{code}'",
+                status=404,
+            )
+    elif obs_date:
+        selected = (
+            published_observations(indicator)
+            .filter(observation_date=obs_date)
+            .first()
+        )
+        if selected is None:
+            return json_error(
+                f"Tanggal observasi '{obs_date}' tidak tersedia untuk indikator '{code}'",
+                status=404,
+            )
+    else:
+        selected = latest_published(indicator)
+    if selected is None:
         return json_success(
             {
                 "indicatorCode": code,
@@ -470,7 +565,8 @@ def indicator_source_trace(request, code: str):
                 "note": "Observasi tervalidasi dan dipublikasi belum tersedia untuk Source Trace.",
             }
         )
-    trace = serialize_trace(latest)
+    trace = serialize_trace(selected)
+    trace["available"] = True
     trace["note"] = "Nilai berasal dari dokumen resmi institusi; checksum dipakai untuk verifikasi integritas berkas."
     trace["history"] = serialize_trace_history(indicator)
     return json_success(trace)
@@ -502,6 +598,153 @@ def raw_file_download(request, code: str, raw_file_id: int):
     response["Content-Disposition"] = f'attachment; filename="{Path(raw_file.raw_file.document_name).name}"'
     response["X-Checksum-SHA256"] = raw_file.raw_file.checksum_sha256
     return response
+
+
+def serialize_source_entry(source: Source) -> dict:
+    published = Observation.objects.filter(
+        source=source,
+        validation_status=Observation.Status.PUBLISHED,
+    ).select_related("indicator")
+    indicator_ids = sorted({o.indicator.code for o in published.only("indicator__code")})
+    # Hitung indikator unik + observasi tanpa memuat semua baris nilai.
+    indicator_codes = list(
+        published.order_by().values_list("indicator__code", flat=True).distinct()
+    )
+    latest = published.order_by("-observation_date").first()
+    return {
+        "sourceId": source.source_id,
+        "sourceName": source.source_name,
+        "institution": source.institution,
+        "primaryUrl": source.primary_url,
+        "description": source.description or "",
+        "indicators": sorted(indicator_codes),
+        "indicatorCount": len(indicator_codes),
+        "observationCount": published.count(),
+        "available": bool(latest),
+        "latestPeriod": latest.period_label if latest else None,
+        "latestObservationDate": latest.observation_date.isoformat() if latest else None,
+        "_legacyIds": indicator_ids,
+    }
+
+
+def ordered_sources():
+    sources = list(Source.objects.all())
+    rank = {sid: i for i, sid in enumerate(SOURCE_ORDER)}
+    return sorted(sources, key=lambda s: (rank.get(s.source_id, 99), s.source_id))
+
+
+@require_GET
+def source_list(request):
+    entries = []
+    for source in ordered_sources():
+        entry = serialize_source_entry(source)
+        entry.pop("_legacyIds", None)
+        entries.append(entry)
+    return json_success({"sources": entries, "count": len(entries)})
+
+
+def get_source_or_404(source_id: str) -> Source | None:
+    return Source.objects.filter(source_id__iexact=source_id).first()
+
+
+def serialize_source_indicator(indicator: Indicator, source: Source) -> dict:
+    latest = (
+        Observation.objects.filter(
+            indicator=indicator,
+            source=source,
+            validation_status=Observation.Status.PUBLISHED,
+        )
+        .order_by("-observation_date")
+        .select_related("raw_file")
+        .first()
+    )
+    count = Observation.objects.filter(
+        indicator=indicator,
+        source=source,
+        validation_status=Observation.Status.PUBLISHED,
+    ).count()
+    if latest is None:
+        return {
+            "id": indicator.code,
+            "code": indicator.code,
+            "name": indicator.name,
+            "category": indicator.category,
+            "unit": indicator.unit,
+            "available": False,
+            "value": None,
+            "period": None,
+            "observationDate": None,
+            "dataType": None,
+            "valueType": None,
+            "observationCount": count,
+            "note": "Belum ada observasi terpublikasi dari sumber ini.",
+        }
+    return {
+        "id": indicator.code,
+        "code": indicator.code,
+        "name": indicator.name,
+        "category": indicator.category,
+        "unit": latest.unit or indicator.unit,
+        "available": True,
+        "value": format_decimal(latest.value),
+        "period": latest.period_label,
+        "observationDate": latest.observation_date.isoformat(),
+        "publicationDate": latest.publication_date.isoformat() if latest.publication_date else None,
+        "retrievedAt": latest.raw_file.retrieved_at.isoformat()
+        if latest.raw_file and latest.raw_file.retrieved_at
+        else None,
+        "dataType": latest.data_type,
+        "valueType": value_type_for(latest),
+        "observationCount": count,
+    }
+
+
+@require_GET
+def source_detail(request, source_id: str):
+    source = get_source_or_404(source_id)
+    if source is None:
+        return json_error(f"Sumber '{source_id}' tidak ditemukan", status=404)
+    entry = serialize_source_entry(source)
+    entry.pop("_legacyIds", None)
+    indicator_codes = entry["indicators"]
+    indicators = []
+    for code in indicator_codes:
+        indicator = Indicator.objects.filter(code=code).first()
+        if indicator is None:
+            continue
+        indicators.append(serialize_source_indicator(indicator, source))
+    entry["indicatorDetails"] = indicators
+    return json_success(entry)
+
+
+@require_GET
+def source_indicators(request, source_id: str):
+    source = get_source_or_404(source_id)
+    if source is None:
+        return json_error(f"Sumber '{source_id}' tidak ditemukan", status=404)
+    codes = list(
+        Observation.objects.filter(
+            source=source,
+            validation_status=Observation.Status.PUBLISHED,
+        )
+        .order_by()
+        .values_list("indicator__code", flat=True)
+        .distinct()
+    )
+    rows = []
+    for code in sorted(codes):
+        indicator = Indicator.objects.filter(code=code).first()
+        if indicator is None:
+            continue
+        rows.append(serialize_source_indicator(indicator, source))
+    return json_success(
+        {
+            "sourceId": source.source_id,
+            "institution": source.institution,
+            "indicators": rows,
+            "count": len(rows),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

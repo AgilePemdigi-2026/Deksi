@@ -256,6 +256,12 @@ export function TrendChart() {
           </span>
           <a
             className="trend-footnote-link"
+            href={`#/sumber-data?indicator=${encodeURIComponent(activeId)}`}
+          >
+            Source Trace {trendMeta.name} ↗
+          </a>
+          <a
+            className="trend-footnote-link"
             href="https://www.bps.go.id/id/statistics-table"
             target="_blank"
             rel="noopener noreferrer"

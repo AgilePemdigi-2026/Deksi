@@ -53,9 +53,10 @@ test('An empty API response remains an explicit empty state', async () => {
   assert.doesNotMatch(html,/class="indicator-card"/);
 });
 
-test('The foundation does not ship a dead detail anchor before feature 6 integration', async () => {
+test('Indicator cards link to live Source Trace (fitur 9), not a dead anchor', async () => {
   const { IndicatorCard } = await load('components/IndicatorCard.tsx');
   const html=render(IndicatorCard,{meta});
   assert.doesNotMatch(html,/href="#detail"/);
-  assert.match(html,/fitur 6/);
+  assert.match(html,/sumber-data\?indicator=/);
+  assert.match(html,/Source Trace/);
 });

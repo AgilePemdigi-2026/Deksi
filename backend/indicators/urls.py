@@ -25,6 +25,15 @@ urlpatterns = [
     path("indicators/dashboard/", views.indicator_dashboard_filter, name="indicator-dashboard-filter"),
     path("indicators/categories/", views.indicator_categories, name="indicator-categories"),
 
+    # ── Fitur 9: Daftar Sumber Data / Source Trace ──────────────────────────
+    path("sources/", views.source_list, name="source-list"),
+    path("sources/<str:source_id>/", views.source_detail, name="source-detail"),
+    path(
+        "sources/<str:source_id>/indicators/",
+        views.source_indicators,
+        name="source-indicators",
+    ),
+
     # ── Fitur 8: Umpan Balik ─────────────────────────────────────────────────
     path("feedback/", feedback_views.submit_feedback, name="feedback-submit"),
     path("feedback/categories/", feedback_views.feedback_categories, name="feedback-categories"),
