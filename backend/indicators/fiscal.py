@@ -1,9 +1,8 @@
-from django.conf import settings
 
-from .models import Indicator, Observation, RawFile, Source
-from .storage import save_raw
 from . import kemenkeu
-
+from .lifecycle import ensure_import_master, stage_observation
+from .models import Indicator, RawFile, Source
+from .storage import save_raw
 
 KEMENKEU_META = {
     "source_name": "APBN Kinerja dan Tindak Lanjut (APBN KiTa)",
@@ -12,7 +11,8 @@ KEMENKEU_META = {
 }
 
 METRIC_INDICATORS = [
-    ("pendapatan_negara", "Pendapatan Negara (Realisasi Kumulatif)", "Fiskal & Keuangan Negara", "Rp Triliun", "end", 3),
+    ("pendapatan_negara", "Pendapatan Negara (Realisasi Kumulatif)",
+     "Fiskal & Keuangan Negara", "Rp Triliun", "end", 3),
     ("belanja_negara", "Belanja Negara (Realisasi Kumulatif)", "Fiskal & Keuangan Negara", "Rp Triliun", "end", 4),
     ("defisit_apbn", "Defisit APBN (Nominal)", "Fiskal & Keuangan Negara", "Rp Triliun", "end", 5),
     ("defisit_pdb", "Defisit APBN", "Fiskal & Keuangan Negara", "% PDB", "end", 5),
@@ -22,13 +22,14 @@ INDICATOR_CODE_OVERRIDES = {"defisit_pdb": "fiskal"}
 
 
 def get_kemenkeu_source() -> Source:
-    source, _ = Source.objects.update_or_create(
+    source = ensure_import_master(Source,
         source_id="KEMENKEU",
         defaults={
             "source_name": KEMENKEU_META["source_name"],
             "institution": KEMENKEU_META["institution"],
             "primary_url": KEMENKEU_META["primary_url"],
-            "description": "Publikasi APBN KiTa (PDF resmi Kemenkeu), realisasi kumulatif pendapatan, belanja, defisit.",
+            "description": ("Publikasi APBN KiTa (PDF resmi Kemenkeu), "
+                            "realisasi kumulatif pendapatan, belanja, defisit."),
         },
     )
     return source
@@ -37,7 +38,7 @@ def get_kemenkeu_source() -> Source:
 def get_fiscal_indicators() -> dict[str, Indicator]:
     result = {}
     for code, name, category, unit, aggregation, order in METRIC_INDICATORS:
-        result[code], _ = Indicator.objects.update_or_create(
+        result[code] = ensure_import_master(Indicator,
             code=INDICATOR_CODE_OVERRIDES.get(code, code),
             defaults={
                 "name": name,
@@ -70,21 +71,10 @@ def ingest_kita_pdf_url(url: str) -> dict:
         indicator = indicators.get(identifier)
         if indicator is None:
             continue
-        observation, _ = Observation.objects.update_or_create(
-            indicator=indicator,
-            source=source,
-            observation_date=parsed.cumulative_until,
-            data_type="cumulative_ytd",
-            defaults={
-                "period_label": parsed.period_label,
-                "frequency": "monthly",
-                "value": metric.value,
-                "unit": metric.unit,
-                "publication_date": parsed.publication_date,
-                "raw_file": raw_file,
-                "validation_status": Observation.Status.PENDING,
-            },
-        )
+        stage_observation(indicator_id=indicator.pk, source_id=source.pk,
+            observation_date=parsed.cumulative_until, data_type="cumulative_ytd", period_label=parsed.period_label,
+            frequency="monthly", value=metric.value, unit=metric.unit,
+            publication_date=parsed.publication_date, raw_file_id=raw_file.pk)
         stored.append(f"{identifier}={metric.value} {metric.unit}")
     return {
         "document_name": document_name,

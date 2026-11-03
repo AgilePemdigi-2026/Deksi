@@ -1,0 +1,121 @@
+{
+  "recorded_at": "2026-11-03T23:29:11.162059+07:00",
+  "scope": "Batch1 safe import/review lifecycle; Batch2 actual F7 integration; working tree, not a commit or official verification",
+  "branch": "feat/6-detail-indikator-be",
+  "head_before_new_checkpoint": "032b9aec4de0a5d9d96fe94b638329ab5207b586",
+  "canonical": {
+    "command": "hermes verify --json",
+    "session_id": "20261027_184820_c16859",
+    "ok": true,
+    "phase_count": 5,
+    "ledger_event": {
+      "id": 44,
+      "created_at": "2026-11-03T16:26:16.766146+00:00",
+      "status": "passed",
+      "exit_code": 0,
+      "command": "hermes verify"
+    },
+    "local_log": "backend/.artifacts/lifecycle-canonical.json"
+  },
+  "backend_tests": {
+    "total": 52,
+    "passed": 52,
+    "skipped": 0,
+    "skip_reason": null
+  },
+  "django_check": "PASS",
+  "migration_drift": "PASS",
+  "ruff": {
+    "status": "PASS",
+    "scoped_files": [
+      "backend/indicators/admin.py",
+      "backend/indicators/bps.py",
+      "backend/indicators/fiscal.py",
+      "backend/indicators/ingest.py",
+      "backend/indicators/lifecycle.py",
+      "backend/indicators/management/commands/fetch_kemenkeu.py",
+      "backend/indicators/management/commands/ingest_datasets.py",
+      "backend/indicators/management/commands/publish_observations.py",
+      "backend/indicators/management/commands/sync_bps.py",
+      "backend/indicators/migrations/0005_observation_candidate.py",
+      "backend/indicators/models.py",
+      "backend/indicators/storage.py",
+      "backend/indicators/tests/test_admin_exact_value.py",
+      "backend/indicators/tests/test_candidate_review.py",
+      "backend/indicators/tests/test_import_command_logs.py",
+      "backend/indicators/tests/test_import_lifecycle.py",
+      "backend/indicators/tests/test_import_raw_safety.py",
+      "backend/indicators/tests/test_import_writers.py",
+      "backend/indicators/tests/test_lifecycle_transactions.py"
+    ]
+  },
+  "shared_lifecycle_matching_files": [
+    "backend/docs/indicator-detail/LIFECYCLE_PLAN.md",
+    "backend/indicators/admin.py",
+    "backend/indicators/bps.py",
+    "backend/indicators/fiscal.py",
+    "backend/indicators/ingest.py",
+    "backend/indicators/lifecycle.py",
+    "backend/indicators/management/commands/fetch_kemenkeu.py",
+    "backend/indicators/management/commands/ingest_datasets.py",
+    "backend/indicators/management/commands/publish_observations.py",
+    "backend/indicators/management/commands/sync_bps.py",
+    "backend/indicators/migrations/0005_observation_candidate.py",
+    "backend/indicators/models.py",
+    "backend/indicators/storage.py",
+    "backend/indicators/tests/test_candidate_review.py",
+    "backend/indicators/tests/test_import_command_logs.py",
+    "backend/indicators/tests/test_import_lifecycle.py",
+    "backend/indicators/tests/test_import_raw_safety.py",
+    "backend/indicators/tests/test_import_writers.py",
+    "backend/indicators/tests/test_lifecycle_transactions.py"
+  ],
+  "actual_f7_integration": {
+    "executed_in": "paired F7 lane",
+    "not_a_F6_standalone_browser_run": true
+  },
+  "review": {
+    "independent": "Read-only review found legacy Observation Admin publish bypass; repaired by removal, verified crafted POST cannot publish",
+    "parent_additional_repairs": [
+      "Unreviewed identical legacy facts must still stage",
+      "Existing F7 content-addressed RAW writer adopted in shared F6 to preserve active bytes and refuse corrupt deduplication"
+    ],
+    "red": "18 tests, 6 failure events (three status subtests in one method, legacy publish bypass, two RAW defects); logs retained",
+    "harness_correction": "Compare DataUpdateLog count against seeded baseline, not empty DB assumption",
+    "post_repair": "Final full canonical passes"
+  },
+  "source_sha256_after_final_execution": {
+    "backend/backend/test_settings_indicators.py": "9bb8aadaa7e8951cab07744881a0c6dd3d7f6930a556392a8cd7cfe98262aefa",
+    "backend/indicators/admin.py": "89fffccd72433cf8686a88ca2a546259d79f96584e92509debfa0ba196b9e548",
+    "backend/indicators/bps.py": "7421f1653c0acf5cab855a37d05c45ad613c3fb8196f58e601c2abb38615ee16",
+    "backend/indicators/fields.py": "2555cbd68df58a84f043baf6c30ff0f0f36eed73aa5436179a263aaaf4d6cc7f",
+    "backend/indicators/fiscal.py": "2b6b51cd011ee167d39dd5e820be3c5f8fd729da93f2f15e6301af451afb9e14",
+    "backend/indicators/ingest.py": "e4e008ee138fa2b06cbd404eb7963bbe762d1f4357f578090e43e088544007a9",
+    "backend/indicators/lifecycle.py": "6299fee8087ad36e8a5dec4e183be4b6194ccdaad482585e0206afe6f0a13864",
+    "backend/indicators/management/commands/fetch_kemenkeu.py": "b7279815cbcc93b6b147a1c9e628420b2791aaff3c03e3cb00c513c6c1d6b0de",
+    "backend/indicators/management/commands/ingest_datasets.py": "9c36c30d9de573622195c503bec59bdd3e517bbeba50517cdf541010568453a9",
+    "backend/indicators/management/commands/publish_observations.py": "70f7cdcf5f44421358d677bea30c7b6da98f8f1b9fb73857d3fdabeb13d7b4fc",
+    "backend/indicators/management/commands/sync_bps.py": "ed733bbcc64a6f6d6c205165e9e2da1502ce20b7e73c4f4524e52fd068fb27d5",
+    "backend/indicators/migrations/0005_observation_candidate.py": "a29696ad02797eab5b19fa7e10187424cba0e7841f52685620c038f51a6ffaa4",
+    "backend/indicators/models.py": "18e36cacde5a0354cd51d128993e1a34c6e7c6c2f0608f1cb06f8287180de3ff",
+    "backend/indicators/storage.py": "f8f35d7bf2f33997cca7af3bd8a2e83a27bb4511bc8da94feaa81f874dae9f82",
+    "backend/indicators/tests/support.py": "faa488060bcbcae885d5d4f4a28b6c7c4c2eda0bc1451588355f00d50d3b4801",
+    "backend/indicators/tests/test_candidate_review.py": "b740e80bf79e7aadfe6a51cfdfba9b2c355ba4d148d4fb25599b44a211f48b03",
+    "backend/indicators/tests/test_import_command_logs.py": "ed10966e6dca731dd2e0d28f2976f53d2cbdc91cf233a5cbd46b2c8c8af53b4e",
+    "backend/indicators/tests/test_import_lifecycle.py": "9ec2d44f506c15315ea0be20dc07c76cf1f13a3ec854092728173b30bfc6d613",
+    "backend/indicators/tests/test_import_raw_safety.py": "5e9134a578f6284ee43b32a1c869e2f137f06e3526cb770b74e98366f2abd8ac",
+    "backend/indicators/tests/test_import_writers.py": "cca384dc6b60127175202847dbfac19444266f9b2736466a557e1cc2c0501642",
+    "backend/indicators/tests/test_lifecycle_transactions.py": "9f1754b568926233f55aad67c8733d091647bd3c842a46c818a9a886bf9a68c0",
+    "backend/indicators/views.py": "10e828833e48fedc209a1fc9741903e3e1541f1f405af539f4647c35124a57fa"
+  },
+  "not_reexecuted": [
+    "FE unit/fixture browser/build/lint; sources unchanged, historical receipts only"
+  ],
+  "limits": [
+    "No user DB migration, official provider, PostgreSQL, deployment or human visual approval",
+    "Candidate staging is not immutable revision/formula history",
+    "SQLite contention may refuse both writers; no guaranteed retry/progress claim",
+    "Existing extreme-fixture dashboard Recharts tick-key warning remains; no uncaught JS exception is not warning-free console",
+    "New local commits/dependency require separate exact-checkpoint approval; no push/PR/shared merge"
+  ]
+}

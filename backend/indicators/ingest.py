@@ -4,14 +4,15 @@ from decimal import Decimal
 from pathlib import Path
 
 from . import parsing
-from .models import Indicator, Observation, RawFile, Source
+from .lifecycle import ensure_import_master, stage_observation
+from .models import Indicator, RawFile, Source
 from .storage import save_raw_from_path
 
 BI_SOURCE, _ = None, None
 
 
 def get_or_create_source(source_id, source_name, institution, primary_url, description=""):
-    source, _ = Source.objects.update_or_create(
+    source = ensure_import_master(Source,
         source_id=source_id,
         defaults={
             "source_name": source_name,
@@ -24,7 +25,7 @@ def get_or_create_source(source_id, source_name, institution, primary_url, descr
 
 
 def get_or_create_indicator(code, name, category, unit, aggregation_kind, sort_order):
-    indicator, _ = Indicator.objects.update_or_create(
+    indicator = ensure_import_master(Indicator,
         code=code,
         defaults={
             "name": name,
@@ -40,21 +41,7 @@ def get_or_create_indicator(code, name, category, unit, aggregation_kind, sort_o
 def upsert_bi_observations(obs_dicts: list[dict]):
     count = 0
     for obs in obs_dicts:
-        _, _created = Observation.objects.update_or_create(
-            indicator_id=obs["indicator_id"],
-            source_id=obs["source_id"],
-            observation_date=obs["observation_date"],
-            data_type=obs.get("data_type", "level"),
-            defaults={
-                "period_label": obs["period_label"],
-                "frequency": obs["frequency"],
-                "value": obs["value"],
-                "unit": obs["unit"],
-                "publication_date": obs.get("publication_date"),
-                "raw_file_id": obs.get("raw_file_id"),
-                "validation_status": Observation.Status.PENDING,
-            },
-        )
+        stage_observation(**obs)
         count += 1
     return count
 
@@ -142,20 +129,9 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
                 4,
             )
             value_rp_triliun = (total / Decimal(1000000)).normalize()
-            _, _created = Observation.objects.update_or_create(
-                indicator=indicator,
-                source=bkpm_source,
-                observation_date=quarter_date,
-                data_type="derived_sum",
-                defaults={
-                    "period_label": period_label,
-                    "frequency": "quarterly",
-                    "value": value_rp_triliun,
-                    "unit": "Rp Triliun",
-                    "raw_file": raw_file,
-                    "validation_status": Observation.Status.PENDING,
-                },
-            )
+            stage_observation(indicator_id=indicator.pk, source_id=bkpm_source.pk,
+                observation_date=quarter_date, data_type="derived_sum", period_label=period_label,
+                frequency="quarterly", value=value_rp_triliun, unit="Rp Triliun", raw_file_id=raw_file.pk)
             created_bkpm += 1
             if is_new:
                 raw_file.parse_status = RawFile.ParseStatus.PARSED
