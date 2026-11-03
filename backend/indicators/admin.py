@@ -95,3 +95,33 @@ class DataUpdateLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+# ---------------------------------------------------------------------------
+# Fitur 8: Umpan Balik
+# ---------------------------------------------------------------------------
+from indicators.feedback_model import Feedback  # noqa: E402
+
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = (
+        "id", "category", "sender_name", "sender_email",
+        "related_indicator_code", "related_period",
+        "status", "created_at",
+    )
+    list_filter = ("status", "category")
+    search_fields = ("description", "sender_name", "sender_email", "related_indicator_code")
+    readonly_fields = ("ip_address", "created_at", "updated_at")
+    ordering = ("-created_at",)
+    actions = ("action_mark_resolved", "action_mark_in_review")
+
+    @admin.action(description="Tandai sebagai Diselesaikan")
+    def action_mark_resolved(self, request, queryset):
+        updated = queryset.update(status=Feedback.Status.RESOLVED)
+        self.message_user(request, f"{updated} umpan balik ditandai sebagai Diselesaikan.")
+
+    @admin.action(description="Tandai sebagai Sedang Ditinjau")
+    def action_mark_in_review(self, request, queryset):
+        updated = queryset.update(status=Feedback.Status.IN_REVIEW)
+        self.message_user(request, f"{updated} umpan balik ditandai sebagai Sedang Ditinjau.")
