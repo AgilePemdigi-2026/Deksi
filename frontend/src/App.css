@@ -1,4 +1,3 @@
-@import "./styles/shell.css";
-@import "./styles/indicator.css";
-@import "./styles/trend.css";
-@import "./styles/insight.css";
+@import "./styles/editorial-landing.css";
+@import "./styles/editorial-dashboard.css";
+@import "./styles/sources.css";

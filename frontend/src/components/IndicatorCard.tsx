@@ -1,20 +1,21 @@
 import type { IndicatorMeta } from "../data/indicators";
 
-const directionGlyph = (meta: IndicatorMeta) => {
+const directionGlyph = (meta: Pick<IndicatorMeta, 'deltaDirection'>) => {
   if (meta.deltaDirection === "up") return "▲";
   if (meta.deltaDirection === "down") return "▼";
   return "●";
 };
 
 const Sparkline = ({ points, color }: { points: number[]; color: string }) => {
+  if (!points.length) return <p className="history-unavailable">Histori belum tersedia.</p>;
   const width = 220;
   const height = 46;
   const min = Math.min(...points);
   const max = Math.max(...points);
   const span = max - min || 1;
-  const step = width / (points.length - 1);
+  const step = points.length > 1 ? width / (points.length - 1) : 0;
   const coords = points.map((p, i) => {
-    const x = i * step;
+    const x = points.length === 1 ? width / 2 : i * step;
     const y = height - 6 - ((p - min) / span) * (height - 12);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
@@ -45,7 +46,7 @@ const Sparkline = ({ points, color }: { points: number[]; color: string }) => {
   );
 };
 
-export function IndicatorCard({ meta }: { meta: IndicatorMeta }) {
+export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> & { id: string } }) {
   return (
     <article className="indicator-card">
       <div className="indicator-head">
@@ -73,10 +74,13 @@ export function IndicatorCard({ meta }: { meta: IndicatorMeta }) {
       <p className="indicator-note">{meta.note}</p>
       <footer className="indicator-footer">
         <span className="indicator-source">
-          {meta.source} • Rilis: {meta.sourceDate}
+          {meta.source} • Observasi: {meta.sourceDate}
         </span>
-        <a className="indicator-link" href="#detail">
-          Lihat Detail →
+        <a
+          className="source-trace-link"
+          href={`#/sumber-data?indicator=${encodeURIComponent(meta.id)}`}
+        >
+          Source Trace ↗
         </a>
       </footer>
     </article>

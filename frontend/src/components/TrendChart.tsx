@@ -120,7 +120,7 @@ export function TrendChart() {
       <div className="trend-card">
         <div className="trend-head">
           <div>
-            <h2 className="trend-title">⚡ Tren Ekonomi Indonesia</h2>
+            <h2 className="trend-title">Tren Ekonomi Indonesia</h2>
             <p className="trend-sub">{trendMeta.description}</p>
           </div>
         </div>
@@ -254,6 +254,12 @@ export function TrendChart() {
               ? ` Data terbaru tersedia sampai ${trend.dataAvailableUntil}.`
               : ""}
           </span>
+          <a
+            className="trend-footnote-link"
+            href={`#/sumber-data?indicator=${encodeURIComponent(activeId)}`}
+          >
+            Source Trace {trendMeta.name} ↗
+          </a>
           <a
             className="trend-footnote-link"
             href="https://www.bps.go.id/id/statistics-table"

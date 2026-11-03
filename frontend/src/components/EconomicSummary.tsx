@@ -1,4 +1,5 @@
 import type { SummaryCard } from "../api";
+import type { IndicatorId } from "../data/indicators";
 import { IndicatorCard } from "./IndicatorCard";
 
 const CARD_COLORS: Record<string, string> = {
@@ -20,7 +21,7 @@ export const formatDateID = (iso?: string | null): string => {
 };
 
 const toCardMeta = (card: SummaryCard) => ({
-  id: card.id,
+  id: (card.id in CARD_COLORS ? card.id : "pdb") as IndicatorId,
   category: card.category || "Indikator Ekonomi",
   name: card.name,
   value: card.value ?? "-",
@@ -32,9 +33,9 @@ const toCardMeta = (card: SummaryCard) => ({
   note: card.dataAvailabilityNote
     ? `${card.note} ${card.dataAvailabilityNote}`
     : card.note,
-  source: card.source || "Sumber resmi",
+  source: card.source || "Sumber belum tersedia",
   sourceDate: formatDateID(card.observationDate) || "belum tersedia",
-  sparkline: card.sparkline?.length ? card.sparkline : [0],
+  sparkline: card.sparkline ?? [],
   sparklineColor: CARD_COLORS[card.id] ?? "#2563eb",
 });
 
@@ -53,13 +54,14 @@ export function EconomicSummary({
         <div>
           <h2 className="section-title">Indikator Ekonomi Utama</h2>
           <p className="section-sub">
-            Metrik fundamental makroekonomi terkini dengan pembaruan otomatis
+            Nilai, periode, satuan, dan sumber mengikuti respons API DEKSI.
           </p>
         </div>
-        <span className="section-badge">⟳ Sinkronisasi API Resmi</span>
+        <span className="section-badge">Respons API DEKSI</span>
       </div>
       {loading && <p className="summary-loading">Memuat data dari backend DEKSI…</p>}
       {!loading && error && <p className="summary-error">{error}</p>}
+      {!loading && !error && cards.length === 0 && <p className="summary-empty">Belum ada indikator pada respons API. Tidak ada nilai contoh yang disisipkan.</p>}
       <div className="summary-grid">
         {cards.map((card) => (
           <IndicatorCard key={card.id} meta={toCardMeta(card)} />

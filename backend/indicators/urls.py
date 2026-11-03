@@ -1,12 +1,16 @@
 from django.urls import path
 
 from indicators import views
+from indicators import feedback_views
 
 
 urlpatterns = [
+    # ── Sistem ──────────────────────────────────────────────────────────────
     path("status/", views.system_status, name="system-status"),
     path("system/update-status/", views.update_status, name="update-status"),
     path("system/bps-status/", views.bps_status, name="bps-status"),
+
+    # ── Indikator ────────────────────────────────────────────────────────────
     path("indicators/", views.indicator_summary, name="indicator-summary"),
     path("indicators/latest-periods/", views.latest_periods, name="latest-periods"),
     path("indicators/<str:code>/trend/", views.indicator_trend, name="indicator-trend"),
@@ -16,4 +20,21 @@ urlpatterns = [
         views.raw_file_download,
         name="indicator-raw-file",
     ),
+
+    # ── Fitur 5: Filter Dashboard ────────────────────────────────────────────
+    path("indicators/dashboard/", views.indicator_dashboard_filter, name="indicator-dashboard-filter"),
+    path("indicators/categories/", views.indicator_categories, name="indicator-categories"),
+
+    # ── Fitur 9: Daftar Sumber Data / Source Trace ──────────────────────────
+    path("sources/", views.source_list, name="source-list"),
+    path("sources/<str:source_id>/", views.source_detail, name="source-detail"),
+    path(
+        "sources/<str:source_id>/indicators/",
+        views.source_indicators,
+        name="source-indicators",
+    ),
+
+    # ── Fitur 8: Umpan Balik ─────────────────────────────────────────────────
+    path("feedback/", feedback_views.submit_feedback, name="feedback-submit"),
+    path("feedback/categories/", feedback_views.feedback_categories, name="feedback-categories"),
 ]
