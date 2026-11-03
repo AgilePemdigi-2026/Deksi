@@ -10,7 +10,7 @@ from indicators.tests.support import IndicatorCase
 
 class DetailPublicationTests(IndicatorCase):
     def test_raw_download_also_requires_recorded_review(self):
-        with tempfile.TemporaryDirectory(dir=os.environ["TMPDIR"], prefix="deksi-f6-raw-") as directory:
+        with tempfile.TemporaryDirectory(dir=os.environ["HERMES_TEST_SCRATCH"], prefix="deksi-f6-raw-") as directory:
             content = b"SYNTHETIC RAW NOT PUBLIC"
             path = Path(directory) / "test.txt"
             path.write_bytes(content)
@@ -40,6 +40,13 @@ class DetailPublicationTests(IndicatorCase):
         self.assertEqual(self.client.post("/api/indicators/").status_code, 405)
         self.observation()
         response = self.client.get("/api/indicators/inflasi/trend/", HTTP_AUTHORIZATION="invalid")
+        self.assertEqual(response.status_code, 200)
+
+    def test_trace_query_count_does_not_grow_per_history_row(self):
+        for year in range(1990, 1994):
+            self.observation(observation_date=date(year, 1, 1))
+        with self.assertNumQueries(4):
+            response = self.client.get("/api/indicators/inflasi/source-trace/")
         self.assertEqual(response.status_code, 200)
 
 

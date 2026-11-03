@@ -25,4 +25,4 @@ python manage.py makemigrations --check --dry-run --settings=backend.test_settin
 ruff check indicators/views.py indicators/models.py indicators/fields.py indicators/tests indicators/migrations/0004_exact_observation_decimal.py backend/test_settings_indicators.py
 ```
 
-Test settings never read `.env` and default to an in-memory SQLite test DB. Fixtures explicitly use `UJI SINTETIS`. Source-data accuracy, immutable revisions, official verification and production deployment are separate acceptance gates; no fake formula/input/version or AI output is generated. See [plan](PLAN.md) and `VERIFICATION.json` for actual local evidence.
+Test settings never read `.env` and default to an in-memory SQLite test DB. Set `HERMES_TEST_SCRATCH` to an explicitly permitted scratch directory before running tests; the RAW test never relies on the process's system-temp default. Fixtures explicitly use `UJI SINTETIS`. Source-data accuracy, immutable revisions, official verification and production deployment are separate acceptance gates; no fake formula/input/version or AI output is generated. See [plan](PLAN.md) and `VERIFICATION.json` for actual local evidence.

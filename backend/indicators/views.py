@@ -38,7 +38,7 @@ def published_observations(indicator: Indicator):
             reviewed_at__isnull=False,
         )
         .order_by("observation_date", "id")
-        .select_related("source", "raw_file")
+        .select_related("indicator", "source", "raw_file")
     )
 
 
