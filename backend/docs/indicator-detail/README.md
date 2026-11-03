@@ -1,5 +1,7 @@
 # F6 — public detail API backend
 
+> Current working-tree status: [CURRENT_STATUS.md](CURRENT_STATUS.md). The original `PLAN.md` and `VERIFICATION.json` describe earlier checkpoints; they are historical evidence, not the final publication verdict.
+
 Branch: `feat/6-detail-indikator-be`. Base: main `0e92899ce54f85440fe920ca457dfd91f747e1aa` (not the older `be` scaffold).
 
 ## Contract

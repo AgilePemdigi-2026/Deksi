@@ -1,5 +1,7 @@
 # F7 — public Source Trace backend
 
+> Current working-tree status and deferred lifecycle gate: [CURRENT_STATUS.md](CURRENT_STATUS.md). Earlier `VERIFICATION.json` and `EVALUATION.md` remain historical receipts.
+
 Branch: `feat/7-source-trace-be`, stacked on F6 `652ec018ddad455358a9d552593c11b52c4be03b`. This is a backend delta over the actual React-compatible `main` tree, not the old `be` scaffold. No push, PR or merge is part of this local delivery.
 
 ## Public HTTP contract
@@ -30,14 +32,14 @@ ruff check indicators/views.py indicators/models.py indicators/fields.py indicat
 
 ## Actual frontend integration
 
-Use a separate worktree of `feat/7-source-trace-fe` at `94a05cd1fe5044d3d7e0f71ad6d0487edd5f921f` with its existing dependencies. The backend branch's inherited frontend is not that feature frontend. Run from `backend/`:
+Use the separate `feat/7-source-trace-fe` worktree based on `94a05cd1fe5044d3d7e0f71ad6d0487edd5f921f`, including its local exact-value/source/calendar-gap companion repairs and existing dependencies. Those repairs are not yet published. The backend branch's inherited frontend is not that feature frontend. Run from `backend/`:
 
 ```
 python indicators/tests/run_frontend_integration.py --frontend-root <absolute-feature-7-frontend-directory>
 ```
 
-The runner requires existing Node/Vite and Chrome, free loopback ports 8000 and 5196, and `HERMES_TEST_SCRATCH`. It migrates a fresh owned SQLite DB, seeds clearly marked UJI SINTETIS records, starts real Django and unchanged React, and uses a disposable browser without API interception. It exercises public Dashboard → Detail → Source Trace → return, historical selection/reload beyond the old 12-row window, exact display/zero, shared RAW, safe text rendering, browser/CORS download digest, actual disk-corruption refusal, actual DB-value-change context refusal, empty/malformed routes and 390/768/1440 layouts. Successful and failed checks are kept separately in `.artifacts/`; no source-site acquisition occurs. Only task-owned fixture values/files are mutated, then the DB/profile and owned processes are cleaned up.
+The runner requires existing Node/Vite and Chrome, free loopback ports 8000 and 5196, and `HERMES_TEST_SCRATCH`. It migrates a fresh owned SQLite DB, seeds clearly marked UJI SINTETIS records, starts real Django and the paired React working tree, and uses a disposable browser without API interception. It exercises public Dashboard → Detail → Source Trace → return, historical selection/reload beyond the old 12-row window, exact display/zero, shared RAW, safe text rendering, browser/CORS download digest, actual disk-corruption refusal, actual DB-value-change context refusal, empty/malformed routes and 390/768/1440 layouts. Successful and failed checks are kept separately in `.artifacts/`; no source-site acquisition occurs. Only task-owned fixture values/files are mutated, then the DB/profile and owned processes are cleaned up.
 
-The published FE's unit suites/build/lint are also run separately. Runtime/network integration does not prove human visual approval, official economic-data correctness, ingestion correctness or production readiness. The original mutable ingestion/review lifecycle, immutable revision journal and versioned formula/input storage are not implemented by these read-API changes. A future ingestion update overwriting the same live observation cannot be represented as a preserved historical revision; the FE context guard refuses changed content rather than fabricating a snapshot.
+The paired FE's unit suites/build/lint are also run separately. Runtime/network integration does not prove human visual approval, official economic-data correctness, ingestion correctness or production readiness. The original mutable ingestion/review lifecycle, immutable revision journal and versioned formula/input storage are not implemented by these read-API changes. A future ingestion update overwriting the same live observation cannot be represented as a preserved historical revision; the FE context guard refuses changed content rather than fabricating a snapshot.
 
-See [F6 foundation](../indicator-detail/README.md), [scoped plan](../indicator-detail/PLAN.md), and the final `VERIFICATION.json` for actual commands, source hashes, counts, known OS skip and remaining gates. Canonical Hermes recognition is separate: its generic `python manage.py test` resolved the global interpreter without Django; direct project-interpreter tests and the real loopback browser run provide the application evidence. Bootstrap/installation was not run to silence the reminder.
+See [F6 foundation](../indicator-detail/README.md), [scoped plan](../indicator-detail/PLAN.md), and [current status](CURRENT_STATUS.md) for evidence boundaries and remaining gates. The original `VERIFICATION.json` retains its checkpoint's commands, hashes and counts. The earlier generic-Python recognition failure has since been resolved by authorized worktree-local recipes: canonical results and exact root/session ledger readback passed. These recipes intentionally perform no bootstrap installation or standalone start/readiness phase; the real loopback run supplies separate exercised-runtime evidence.

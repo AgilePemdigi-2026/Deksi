@@ -74,9 +74,23 @@ def seed(owned):
     Observation.objects.create(indicator=indicator, source=source, observation_date=date(2026, 1, 31),
         period_label="DRAFT UJI", frequency="monthly", data_type="yoy", value=Decimal(999), unit="%",
         validation_status="pending")
+    alternate = Source.objects.create(source_id="ALT_TEST_ONLY", source_name="Dataset ALTERNATIF UJI",
+        institution="INSTANSI ALTERNATIF UJI", primary_url="https://example.test/alternate")
+    exact_value = "999999999999999999.999999"
+    for code, month, value, row_source in [
+        ("pdb", 1, exact_value, source),
+        ("fiskal", 1, "1", source), ("fiskal", 2, "2", alternate),
+        ("investasi", 1, "1", source), ("investasi", 3, "3", source),
+    ]:
+        Observation.objects.create(indicator=Indicator.objects.get(code=code), source=row_source,
+            observation_date=date(2000, month, calendar.monthrange(2000, month)[1]),
+            period_label=f"{months[month - 1]} 2000 UJI", frequency="monthly", data_type="level",
+            value=Decimal(value), unit="%", validation_status="published",
+            reviewed_by=reviewer, reviewed_at=timezone.now())
     manifest = {"synthetic": True, "rawPath": raw.stored_path, "rawSha256": raw.checksum_sha256,
                 "rawContent": payload.decode(), "rawUrl": f"http://localhost:8000/api/indicators/inflasi/raw-file/{raw.pk}/",
-                "oldestValueDisplay": "2,123456", "oldestPeriod": "Februari 1998", "rows": 24}
+                "oldestValueDisplay": "2,123456", "oldestPeriod": "Februari 1998", "rows": 24,
+                "exactValue": exact_value, "exactDisplay": "999.999.999.999.999.999,999999"}
     path = owned / "fixture.json"
     path.write_text(json.dumps(manifest), encoding="utf-8")
     return path

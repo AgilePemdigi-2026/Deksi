@@ -22,12 +22,17 @@ class IndicatorAdmin(admin.ModelAdmin):
 class ObservationAdmin(admin.ModelAdmin):
     list_display = (
         "indicator", "source", "observation_date", "period_label",
-        "frequency", "data_type", "value", "unit", "validation_status",
+        "frequency", "data_type", "display_value", "unit", "validation_status",
         "publication_date", "reviewed_by", "reviewed_at",
     )
     list_filter = ("validation_status", "frequency", "data_type", "source", "indicator")
     search_fields = ("indicator__code", "period_label", "unit")
     actions = ("action_validate", "action_publish")
+
+    @admin.display(description="Nilai (presisi sumber)")
+    def display_value(self, obj):
+        # A callable without ordering also blocks crafted ?o=... lexical sorting on SQLite TEXT.
+        return format(obj.value, "f")
 
     def action_validate(self, request, queryset):
         from indicators.validate import validate_one

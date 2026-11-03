@@ -161,6 +161,29 @@ try {
     await wait('document.querySelector("h1")?.textContent === "Halaman tidak ditemukan."')
     assert.equal(requests.filter(r=>r.url.includes('localhost:8000/api/')).length,before)
   })
+  await check('Exact history survives actual Django JSON through table and SVG tooltip without rounding', async () => {
+    await go('/indikator/pdb'); await ready()
+    assert.equal(await js('document.querySelector(".fd-history tbody tr td:nth-child(3)").textContent'),fixture.exactDisplay)
+    assert((await js('document.querySelector(".fd-point title").textContent')).includes(fixture.exactDisplay))
+    assert.equal(await js('document.querySelectorAll(".fd-point").length'),1)
+  })
+  await check('Actual mixed-source rows refuse one chart and retain both source identities', async () => {
+    await go('/indikator/fiskal'); await ready()
+    assert((await js('document.querySelector(".fd-chart-empty").textContent')).includes('Sumber histori tidak konsisten'))
+    assert.equal(await js('document.querySelectorAll(".fd-line").length'),0)
+    assert.deepEqual(await js('[...document.querySelectorAll(".fd-history tbody tr td:last-child")].map(e=>e.textContent)'),['TEST_ONLY','ALT_TEST_ONLY'])
+  })
+  await check('Actual January–March monthly history has two isolated segments and no invented February or zero', async () => {
+    await go('/indikator/investasi'); await ready()
+    assert.equal(await js('document.querySelectorAll(".fd-point").length'),2)
+    assert.deepEqual(await js('[...document.querySelectorAll(".fd-line")].map(e=>e.points.numberOfItems)'),[1,1])
+    assert.deepEqual(await js('[...document.querySelectorAll(".fd-history tbody tr td:nth-child(3)")].map(e=>e.textContent)'),['1','3'])
+    for(const width of [390,768,1440]) {
+      await go('/indikator/investasi',width); await ready()
+      await js('document.querySelector(".fd-history details").open=true')
+      assert(await js('document.documentElement.scrollWidth <= document.documentElement.clientWidth'))
+    }
+  })
   await check('Real-API source page remains readable at 390/768/1440; no source-link fetch or console exception', async () => {
     for(const width of [390,768,1440]) {
       await go(currentURL,width); await ready()

@@ -1,5 +1,7 @@
 # Final evaluation — backend F6/F7
 
+> Historical checkpoint evaluation. Later audit repairs and canonical-verification results are described in [CURRENT_STATUS.md](CURRENT_STATUS.md). Counts and canonical-unverified statements below are retained as history, not the current readiness verdict. Batch 1 importer/review lifecycle remains deferred.
+
 Evaluated locally on 2026-11-03. No push/PR/merge. F6 remains a standalone backend branch; F7 inherits its verified checkpoint and contains the Source Trace delta only.
 
 ## Findings repaired with executed regressions
