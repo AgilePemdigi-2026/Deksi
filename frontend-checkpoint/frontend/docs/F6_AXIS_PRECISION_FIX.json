@@ -1,0 +1,104 @@
+{
+  "checked_at": "2026-11-03T08:18:26.671576+00:00",
+  "scope": "F6 chart-label precision only; display formatting, not economic calculations",
+  "branch": "feat/7-source-trace-fe",
+  "head": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+  "red": {
+    "exit_code": 1,
+    "failed_tests": 1,
+    "log": ".artifacts/axis-precision-red.log",
+    "cause": "All distinct scale values rendered as 5"
+  },
+  "green": {
+    "exit_code": 0,
+    "unit_counts": {
+      "F6": {
+        "tests": 33,
+        "pass": 33,
+        "fail": 0,
+        "skipped": 0
+      },
+      "F7": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    "logs": [
+      ".artifacts/axis-precision-unit.log",
+      ".artifacts/axis-precision-f7.log"
+    ],
+    "checked_ranges": [
+      "positive close decimals",
+      "negative close decimals",
+      "large close numbers",
+      "small scientific numbers",
+      "ordinary 0/1/2 remains concise",
+      "source string values unchanged"
+    ]
+  },
+  "example": {
+    "source_values": [
+      "5.000001",
+      "5.000002"
+    ],
+    "labels": [
+      "5,000002",
+      "5,0000015",
+      "5,000001"
+    ]
+  },
+  "build": {
+    "exit_code": 0,
+    "log": ".artifacts/axis-precision-build.log",
+    "bundle_warning_above_500_kB": true
+  },
+  "lint": {
+    "exit_code": 0,
+    "warnings": [
+      "src/components/EconomicSummary.tsx:15:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.",
+      "src/api.ts:107:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.",
+      "src/components/TrendChart.tsx:106:38: warning react-hooks(exhaustive-deps): React hook useMemo depends on `supported`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`."
+    ],
+    "log": ".artifacts/axis-precision-lint.log"
+  },
+  "source_sha256": {
+    "frontend/package-lock.json": "cd89db4feffc5fe26f45845f4030878c79fdac9b8081dfab5924f43d3d55646a",
+    "frontend/package.json": "5f347dd58101f13bb52ae9c0060436997cce47096092a1bf428d1f75a3d26cdf",
+    "frontend/src/api.ts": "ab32d65702ee201bbc364f0eb848c35e230c17d597744c675c32a4c4c3f85b6b",
+    "frontend/src/App.tsx": "7e8cd369dba8587658ffe5e61015c8a16fd336aac925a9879eb1d1c8ca3a7d54",
+    "frontend/src/features/indicators/api.ts": "05f42ba37cefba1301a8e62fe2ea79e1d4d5ad8ba86edf29b6c8bc16cd357c76",
+    "frontend/src/features/indicators/data.ts": "6fba3e313c95f5aac76ddbbec93e06e887d7d0300e03804655276a9317627fc5",
+    "frontend/src/features/indicators/DetailPage.tsx": "4c3ca3ea4114e7884cb2a4a7c4a839a70f73d52074f9774e3b0a449ede859ab7",
+    "frontend/src/features/indicators/features.css": "be4661f7e3ab876080a005b0b506aa45774f3b8dc2766f9e05e61773226c12bd",
+    "frontend/src/features/indicators/source-trace.css": "65fb8ce372576fc0122da0b33baa0fbbc24eb02375134fbf8eb8e3c49baf4ac9",
+    "frontend/src/features/indicators/source.ts": "51254defa75c590f598a5f7e9b7f336619294b6ce1ff0665a659d2ea1adddd1b",
+    "frontend/src/features/indicators/SourceTracePage.tsx": "7f406ad938587cb8812a1e0b4edc1ef7cdbf99b556f250d7971f465d9d39a74f",
+    "frontend/src/features/indicators/types.ts": "994ebf9152ce47f3733db8732a49c9776df5dc3cec11987b28a392805488898e",
+    "frontend/src/features/indicators/useDetailData.ts": "5e786773dc7123b70c75fac04fa28a4d56f474818dc07f499e5b2030326ddaea",
+    "frontend/src/index.css": "c6ae5ea91997ecddd50e1c95615a854716287a1cbc8f5627b055f73bfde84a11",
+    "frontend/tests/browser.test.mjs": "f1935b0781924d9c902ff3629ad5c039bac4f891c3dd57527ff4a9a8a41f307d",
+    "frontend/tests/editorial.test.mjs": "e95d3178f9592747f372bbad3186268855651f6275e08275962018af19085cb2",
+    "frontend/tests/indicator-api.test.mjs": "3f46ee96d2508bfa5a9a0b24e9d133534ae0b2ed3e1631d02b237c304e3b42e0",
+    "frontend/tests/indicator-browser.test.mjs": "0c7198b352162183d5d8118946dfee4f96bbe6fde192dea0081474422d801c9c",
+    "frontend/tests/indicator-data.test.mjs": "bf5e57dc45b9c47ea591e3ed76f023538c4d6e7ccd49921ed0a282456c82a7b0",
+    "frontend/tests/indicator-fixtures.mjs": "692ccc4ff2bc8ed8c2ebc01d57c9db885b783b69d5f2a909af011df1df1e6b63",
+    "frontend/tests/indicator-pages.test.mjs": "12925e01fa82d59b1037d750185c15a27314e15cc35f8ae8414926cd270806d7",
+    "frontend/tests/source-trace.test.mjs": "8dbb8e622ba32740d7a3c2d90ef90081f3fdc6bf257a7353ac9fa6bfc4b0dea2"
+  },
+  "source_digest": "baa69ce8e4fb587225d26b016aca6f8645ea1f67c6ef57d30e19b11bc02ada53",
+  "logs_sha256": {
+    "axis-precision-red.log": "00d597a91ed488156d12077435c7a71c2157029ee0e4f8bcceb67ce5fb376b95",
+    "axis-precision-unit.log": "5efe40dff85ea754a71d58ffe1c3890690a2f4541829c6b002cb3e473c658fa2",
+    "axis-precision-f7.log": "dbe14a20a89cb72d1e12feb7a5eb277860f935b5121210240cfd4062509f06bc",
+    "axis-precision-build.log": "81eb88e63f64bdc97532abbebf582fb04be26042e2ef6868e317610f3eb55ba5",
+    "axis-precision-lint.log": "b35efd7ba07ba217338285084b2849b85d5c463e060a146ff3f74de497cfedd3"
+  },
+  "limits": {
+    "browser": "Not rerun for this formatter-only patch; current execution covers geometry, actual SSR page render and build, not browser visual acceptance",
+    "live_api": "Not exercised; backend unchanged",
+    "git": "No commit/push/PR/merge; original F6 checkpoint unchanged",
+    "prior_receipt": "F6_F7_REVIEW_FIXES.json remains historical for the previous patch; use these source hashes for current files"
+  }
+}

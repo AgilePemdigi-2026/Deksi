@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: backend.settings_docker
+      SECRET_KEY: ${DEKSI_SECRET_KEY:?Set DEKSI_SECRET_KEY to a unique local development key}
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      BPS_API_KEY: ${BPS_API_KEY:-}
+      BPS_API_BASE_URL: ${BPS_API_BASE_URL:-}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      CSRF_TRUSTED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - backend_data:/data
+
+volumes:
+  backend_data:

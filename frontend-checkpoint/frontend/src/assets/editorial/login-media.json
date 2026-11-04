@@ -1,0 +1,29 @@
+{
+  "login_image": "login-economic.webp",
+  "sources": [
+    {
+      "page": "https://www.pexels.com/photo/jakarta-s-bustling-financial-district-skyline-35808558/",
+      "original_dimensions": [
+        4672,
+        7008
+      ]
+    },
+    {
+      "page": "https://www.pexels.com/photo/a-person-holding-indonesian-money-8463694/",
+      "original_dimensions": [
+        5184,
+        3456
+      ]
+    }
+  ],
+  "role": "decorative editorial collage of Jakarta business district and rupiah",
+  "dimensions": [
+    1920,
+    2560
+  ],
+  "palette": "neutral monochrome #dadada paper",
+  "source_rights": "Pexels License; comply with source terms, no endorsement implied",
+  "license_page": "https://www.pexels.com/license/",
+  "image_sha256": "54d0c30b26a5347750f518d369ec4bf8c17df93c7a9310d59dcaa79a7265bf87",
+  "upscaling": false
+}

@@ -1,0 +1,10 @@
+-r ../requirements.txt
+
+# Bootstrap imports used by the existing Django settings.
+django-cors-headers==4.9.0
+django-environ==0.14.0
+httpx==0.28.1
+
+# Approved Admin authentication protection and local lint tooling.
+django-axes==9.0.0
+ruff==0.17.3
