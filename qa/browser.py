@@ -40,6 +40,9 @@ class Chrome:
         self.blocked = []
         self.errors = []
         self.requests = []
+        self.rules = []
+        self.held = []
+        self.faults = []
         self.allowed_origin = allowed_origin
         self.profile = Path(profile)
         self.artifacts = Path(artifacts)
@@ -63,8 +66,17 @@ class Chrome:
         while time.monotonic() < deadline:
             active = self.profile / "DevToolsActivePort"
             if active.exists():
-                self.debug_port = int(active.read_text().splitlines()[0])
-                break
+                try:
+                    # Windows can expose this file while Chrome still holds its
+                    # exclusive write handle; a partial file is not readiness.
+                    lines = active.read_text().splitlines()
+                    if len(lines) >= 2 and lines[1].startswith('/devtools/'):
+                        port = int(lines[0])
+                        if 0 < port <= 65535:
+                            self.debug_port = port
+                            break
+                except (OSError, ValueError):
+                    pass  # Retry only within the existing 15-second startup budget.
             if self.process.poll() is not None:
                 raise RuntimeError("Owned isolated Chrome exited")
             time.sleep(0.1)
@@ -95,6 +107,23 @@ class Chrome:
             denied_path = parsed.path in ("/api/status/", "/api/system/bps-status/")
             if (origin == self.allowed_origin and not denied_path) or parsed.scheme in ("data", "blob", "about"):
                 self.requests.append({"url": url, "method": params["request"]["method"]})
+                for rule in self.rules:
+                    if rule["match"] in url:
+                        action = rule["action"]
+                        self.faults.append({"url": url, "action": action})
+                        if action == "hold":
+                            self.held.append(params["requestId"])
+                        elif action == "mock-contract":
+                            self._send("Fetch.fulfillRequest", {"requestId": params["requestId"], "responseCode": 200,
+                                "responseHeaders": [{"name": "Content-Type", "value": "application/json"}],
+                                "body": base64.b64encode(json.dumps(rule["payload"]).encode()).decode()})
+                        elif action == "503":
+                            self._send("Fetch.fulfillRequest", {"requestId": params["requestId"], "responseCode": 503,
+                                "responseHeaders": [{"name": "Content-Type", "value": "application/json"}],
+                                "body": base64.b64encode(b'{"code":"reset_unavailable","error":"SYNTHETIC fault injection"}').decode()})
+                        else:
+                            self._send("Fetch.failRequest", {"requestId": params["requestId"], "errorReason": "Failed"})
+                        return
                 self._send("Fetch.continueRequest", {"requestId": params["requestId"]})
             else:
                 self.blocked.append({"url": url, "reason": "outside task origin or provider-probe path"})
@@ -103,14 +132,23 @@ class Chrome:
             self.errors.append(params.get("exceptionDetails", {}).get("text", "runtime exception"))
 
     def call(self, method, params=None):
+        deadline = time.monotonic() + 30
+        original_timeout = self.ws.gettimeout()
         current = self._send(method, params or {})
-        while True:
-            data = json.loads(self.ws.recv())
-            if data.get("id") == current:
-                if "error" in data:
-                    raise RuntimeError(f"CDP {method}: {data['error']}")
-                return data.get("result", {})
-            self.event(data)
+        try:
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError(f"CDP {method} exceeded the 30-second command deadline")
+                self.ws.settimeout(min(original_timeout or remaining, remaining))
+                data = json.loads(self.ws.recv())
+                if data.get("id") == current:
+                    if "error" in data:
+                        raise RuntimeError(f"CDP {method}: {data['error']}")
+                    return data.get("result", {})
+                self.event(data)
+        finally:
+            self.ws.settimeout(original_timeout)
 
     def js(self, expression):
         response = self.call("Runtime.evaluate", {
@@ -131,6 +169,12 @@ class Chrome:
     def screenshot(self, name):
         png = self.call("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False})
         (self.artifacts / name).write_bytes(base64.b64decode(png["data"]))
+
+    def release(self):
+        self.rules.clear()
+        for request_id in self.held:
+            self._send("Fetch.continueRequest", {"requestId": request_id})
+        self.held.clear()
 
     def click(self, selector):
         literal = json.dumps(selector)

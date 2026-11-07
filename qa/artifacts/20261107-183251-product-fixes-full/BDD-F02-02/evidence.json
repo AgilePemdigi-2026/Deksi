@@ -1,0 +1,360 @@
+{
+  "scenario": "BDD-F02-02 - Form meminta koreksi email malformed",
+  "api_mocked": false,
+  "database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3",
+  "backend_live_url": "http://localhost:63550",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    ]
+  ],
+  "fixture": {
+    "label": "SYNTHETIC ONLY",
+    "human_review": false,
+    "expected_value": "1234.50",
+    "period": "Q1 2025"
+  },
+  "frontend_url": "http://127.0.0.1:63551",
+  "ports": {
+    "frontend": 63551,
+    "chrome_debug": 63553
+  },
+  "extended_actual": {
+    "path": "/admin/forgot-password",
+    "body": "Lewati ke pemulihan akun\nDEKSI\nDashboard publik\n\nDATA\nDEKSI\n\nDEKSI\n\nPEMULIHAN AKUN ADMIN\n\nLupa kata sandi?\n\nMasukkan email akun Admin untuk meminta tautan pemulihan.\n\nEmail akun Admin\nMasukkan alamat email yang valid.\nKirim tautan reset\n\n\u2196\nKembali ke Login\n\nPemulihan hanya untuk akun Admin. Permintaan diterima tidak menjamin email sudah tiba.\n\nDEKSI \u00b7 Deteksi Ekonomi Indonesia\n\nPublik tanpa akun \u2197\nTentang pemulihan akun"
+  },
+  "final_dom": {
+    "path": "/admin/forgot-password",
+    "body": "Lewati ke pemulihan akun\nDEKSI\nDashboard publik\n\nDATA\nDEKSI\n\nDEKSI\n\nPEMULIHAN AKUN ADMIN\n\nLupa kata sandi?\n\nMasukkan email akun Admin untuk meminta tautan pemulihan.\n\nEmail akun Admin\nMasukkan alamat email yang valid.\nKirim tautan reset\n\n\u2196\nKembali ke Login\n\nPemulihan hanya untuk akun Admin. Permintaan diterima tidak menjamin email sudah tiba.\n\nDEKSI \u00b7 Deteksi Ekonomi Indonesia\n\nPublik tanpa akun \u2197\nTentang pemulihan akun"
+  },
+  "browser_requests": [
+    {
+      "url": "http://127.0.0.1:63551/admin/forgot-password",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/@vite/client",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/main.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/@react-refresh",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/.artifacts/vite/deps/react.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/.artifacts/vite/deps/react-dom_client.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/index.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/App.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/.artifacts/vite/deps/react_jsx-dev-runtime.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/node_modules/vite/dist/client/env.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/.artifacts/vite/deps/react-DgVJeC5g.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/App.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/Dashboard.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/LoginPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/ForgotPasswordPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/ResetPasswordPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/recoveryClient.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/auth.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/data.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/DetailPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/SourceTracePage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/features.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/.artifacts/vite/deps/react-dom-CFuoV50Q.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/components/EditorialLanding.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/components/DashboardFilter.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/components/FeedbackForm.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/api.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/hooks.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/model.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/DashboardTrend.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/hero-business.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/stat-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/feature-logistics.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/portrait-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-skyline.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-port.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-food.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-harvest.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-bank.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/activity-distribution.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/prototype-base.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/prototype-dashboard.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/team-features.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/dashboard.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/RecoveryLayout.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/recovery.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/login-economic.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/validation.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/login.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/source.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/useDetailData.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/indicators/source-trace.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/hero-business.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/stat-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/feature-logistics.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/portrait-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-skyline.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-port.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-food.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-harvest.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-bank.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/activity-distribution.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/filter.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/feedback.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/dashboard/client.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/api.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/features/admin/recovery.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/login-economic.webp",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/inter-tight.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/archivo.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/favicon.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/inter-tight.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/prototype-2/archivo.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/inter-tight-latin.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:63551/src/assets/editorial/inter-tight-latin.woff2",
+      "method": "GET"
+    }
+  ],
+  "browser_blocked": [],
+  "browser_runtime_errors": [],
+  "fault_injections": [],
+  "browser_driver": "Chrome/CDP real, NON-Selenium",
+  "server_requests": [],
+  "status": "Status.passed",
+  "cleanup": {
+    "chrome_process_stopped": true,
+    "vite_process_stopped": true
+  }
+}

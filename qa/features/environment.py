@@ -20,6 +20,15 @@ def before_scenario(context, scenario):
     context.evidence = {"scenario": scenario.name, "api_mocked": False}
     context.cleanup_results = {}
     entries.clear()
+    context.overrides = []
+    scenario_id = scenario.name.split(" - ")[0]
+    candidate_contracts = {
+        "BDD-F07-04": "Q03: candidate contract executed; human acceptance remains pending",
+        "BDD-F08-08": "Q04: advisory context candidate executed; human acceptance remains pending",
+        "BDD-X-03": "Q02: populated historical flow executed; empty-year coordination remains pending",
+    }
+    if scenario_id in candidate_contracts:
+        context.evidence["human_review_pending"] = candidate_contracts[scenario_id]
 
 
 def django_ready(context):
@@ -39,9 +48,11 @@ def after_scenario(context, scenario):
     if context.browser:
         try:
             context.browser.screenshot("browser-final.png")
+            context.evidence["final_dom"] = context.browser.js("({path:location.pathname,body:document.body.innerText})")
             context.evidence.update({"browser_requests": context.browser.requests,
                                      "browser_blocked": context.browser.blocked,
                                      "browser_runtime_errors": context.browser.errors,
+                                     "fault_injections": context.browser.faults,
                                      "browser_driver": "Chrome/CDP real, NON-Selenium"})
         except Exception as exc:
             context.evidence["capture_error"] = type(exc).__name__
@@ -58,6 +69,8 @@ def after_scenario(context, scenario):
         context.cleanup_results["vite_process_stopped"] = context.vite.poll() is not None
     if context.vite_log:
         context.vite_log.close()
+    for override in reversed(context.overrides):
+        override.disable() if hasattr(override, "disable") else override.stop()
     context.evidence["server_requests"] = list(entries)
     context.evidence["status"] = str(scenario.status)
     context.evidence["cleanup"] = context.cleanup_results

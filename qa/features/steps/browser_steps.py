@@ -1,11 +1,13 @@
 """Additional browser paths use real DOM input, original React and test Django HTTP."""
 from decimal import Decimal
+from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
 from behave import given, when, then
 from django.contrib.auth import get_user_model
 
 from indicators.feedback_model import Feedback
+from indicators.models import Observation
 from journal import entries
 PASSWORD = "SYNTHETIC-Bdd-Original-9472!"
 
@@ -80,6 +82,12 @@ def assert_detail(context):
 def source_fixture(context):
     browser_fixture(context)
     navigate_detail(context)
+    # A stays selected in Detail while a competing newer published B appears.
+    a = context.observation
+    Observation.objects.create(indicator=a.indicator, source=a.source, frequency=a.frequency,
+        data_type=a.data_type, unit=a.unit, observation_date=date(2025, 6, 30),
+        period_label="Q2 2025 SYNTHETIC NEWER B", value="9876.50", validation_status="published",
+        reviewed_by=a.reviewed_by, reviewed_at=a.reviewed_at)
 
 
 @when("pengunjung memilih Source Trace")
@@ -99,7 +107,12 @@ def assert_trace(context):
     body = browser.js("document.body.innerText")
     assert "Q1 2025" in body and "SYNTHETIC institution" in body
     assert "1.234,5" in body and "triliun rupiah" in body
-    hits = [e for e in entries if e["path"].endswith("/source-trace/") and "observationDate=2025-03-31" in e["query"]]
+    assert browser.js("document.querySelector('.ft-value-period').textContent") == "Q1 2025"
+    assert browser.js("document.querySelector('.ft-value').textContent") == "1.234,5"
+    # This FE loads real trace history then binds the selected observation client-side.
+    # The scenario requires four selectors on navigation, not an invented API request shape.
+    assert all(value in body for value in ("2025-03-31", "quarterly", "level", "SYNTHETIC_BDD"))
+    hits = [e for e in entries if e["path"].endswith("/source-trace/")]
     assert hits and all(e["status"] == 200 for e in hits)
     context.evidence["bound_trace_url"] = url
 

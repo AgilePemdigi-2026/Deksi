@@ -1,0 +1,1197 @@
+{
+  "generated_at": "2026-11-07T18:37:11.023227+07:00",
+  "run": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full",
+  "suite_id": "sprint1-as-built-v2.1-local-fixes",
+  "backend_checkpoint": "d9c673fac84992b91c160bfaa4f0de33a8ce548b",
+  "frontend_checkpoint": "e35d97899d345f18a3341bc19beba431f94179d9",
+  "frontend_local_overlay": {
+    "branch": "fix/sprint1-bdd-layout-empty-year",
+    "status": "Uncommitted local product fixes explicitly authorized by user; not present in published checkpoint",
+    "files": [
+      "frontend/src/features/dashboard/Dashboard.tsx",
+      "frontend/src/features/dashboard/dashboard.css"
+    ],
+    "original_manifest": "as-built-manifest.v2-original.json"
+  },
+  "catalogue_scenarios": 72,
+  "catalogue_status": {
+    "passed": 72
+  },
+  "all_status": {
+    "passed": 73
+  },
+  "step_status": {
+    "passed": 219
+  },
+  "by_layer": {
+    "browser-real-React-Django": {
+      "passed": 35
+    },
+    "api-real-view-disposable-db": {
+      "passed": 27
+    },
+    "browser-labelled-fault-injection": {
+      "passed": 10
+    }
+  },
+  "by_feature": {
+    "F01": {
+      "passed": 8
+    },
+    "F02": {
+      "passed": 8
+    },
+    "F03": {
+      "passed": 8
+    },
+    "F04": {
+      "passed": 8
+    },
+    "F05": {
+      "passed": 8
+    },
+    "F06": {
+      "passed": 8
+    },
+    "F07": {
+      "passed": 8
+    },
+    "F08": {
+      "passed": 8
+    },
+    "X": {
+      "passed": 8
+    }
+  },
+  "source_hashes_match": {
+    "bdd_settings.py": true,
+    "browser.py": true,
+    "journal.py": true,
+    "report_results.py": true,
+    "run_bdd.py": true,
+    "features\\environment.py": true,
+    "tests\\test_browser_startup.py": true,
+    "tests\\test_suite_contracts.py": true,
+    "features\\steps\\api_steps.py": true,
+    "features\\steps\\asbuilt_steps.py": true,
+    "features\\steps\\browser_steps.py": true,
+    "features\\steps\\pilot_steps.py": true,
+    "features\\steps\\zz_remaining_steps.py": true
+  },
+  "cleanup": {
+    "disposable_run_directory_removed": true,
+    "product_db_used": false
+  },
+  "scenarios": [
+    {
+      "id": "REG-EMPTY-YEAR-DETAIL",
+      "name": "REG-EMPTY-YEAR-DETAIL - Tahun tanpa observasi tidak diam-diam membuka nilai terbaru",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\REG-EMPTY-YEAR-DETAIL\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F01-01",
+      "name": "BDD-F01-01 - Admin aktif berhasil masuk",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F01-02",
+      "name": "BDD-F01-02 - Akun non-Admin tidak memperoleh sesi Admin",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F01-03",
+      "name": "BDD-F01-03 - Password salah tidak memberi keberhasilan palsu",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F01-04",
+      "name": "BDD-F01-04 - Lockout mengikuti kebijakan kandidat",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F01-05",
+      "name": "BDD-F01-05 - Sesi kedaluwarsa tidak tetap terautentikasi",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F01-06",
+      "name": "BDD-F01-06 - Logout membatalkan sesi server",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F01-07",
+      "name": "BDD-F01-07 - Login tanpa CSRF ditolak",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F01-08",
+      "name": "BDD-F01-08 - Gangguan Login bukan kredensial salah atau sukses",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F01-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:57174/api/auth/login/",
+          "action": "fail"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F02-01",
+      "name": "BDD-F02-01 - Email dikenal dan tidak dikenal mendapat acknowledgement generik",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F02-02",
+      "name": "BDD-F02-02 - Form meminta koreksi email malformed",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F02-03",
+      "name": "BDD-F02-03 - Token kedaluwarsa dan token terpakai ditolak",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F02-04",
+      "name": "BDD-F02-04 - Password konfirmasi tidak cocok",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F02-05",
+      "name": "BDD-F02-05 - Reset lengkap melalui email locmem",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F02-06",
+      "name": "BDD-F02-06 - Password tidak memenuhi policy tidak mengubah akun",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F02-07",
+      "name": "BDD-F02-07 - Reset default disabled tidak mengirim email",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F02-08",
+      "name": "BDD-F02-08 - Hasil confirm tidak pasti tidak diulang otomatis",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F02-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:61611/api/auth/password-reset/confirm/",
+          "action": "503"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F03-01",
+      "name": "BDD-F03-01 - Ringkasan dapat dibaca tanpa Login",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F03-02",
+      "name": "BDD-F03-02 - Ringkasan mengikuti identitas pengukuran",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F03-03",
+      "name": "BDD-F03-03 - Nol sah tidak disamakan dengan data hilang",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F03-04",
+      "name": "BDD-F03-04 - Pembaruan gagal mempertahankan last-valid",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F03-05",
+      "name": "BDD-F03-05 - Draft dan published tanpa review tidak bocor",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F03-06",
+      "name": "BDD-F03-06 - Tanggal sumber bukan waktu halaman dibuka",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F03-07",
+      "name": "BDD-F03-07 - Loading tidak memakai angka demo",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:62001/api/indicators/dashboard/",
+          "action": "hold"
+        },
+        {
+          "url": "http://127.0.0.1:62001/api/indicators/dashboard/",
+          "action": "hold"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F03-08",
+      "name": "BDD-F03-08 - Error berbeda dari ringkasan kosong",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F03-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:65381/api/indicators/dashboard/",
+          "action": "fail"
+        },
+        {
+          "url": "http://127.0.0.1:65381/api/indicators/dashboard/",
+          "action": "fail"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F04-01",
+      "name": "BDD-F04-01 - Histori mengirim desimal exact",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F04-02",
+      "name": "BDD-F04-02 - Seri tidak sebanding tidak disambung",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F04-03",
+      "name": "BDD-F04-03 - Agregasi deterministik sesuai oracle",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F04-04",
+      "name": "BDD-F04-04 - Pilihan frekuensi mengikuti backend",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F04-05",
+      "name": "BDD-F04-05 - Gap kalender tidak menjadi observasi nol",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F04-06",
+      "name": "BDD-F04-06 - Histori kosong memberi empty state",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F04-07",
+      "name": "BDD-F04-07 - Respons indikator lama tidak mengganti pilihan baru",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:51774/api/indicators/pdb/trend/",
+          "action": "hold"
+        },
+        {
+          "url": "http://127.0.0.1:51774/api/indicators/pdb/trend/",
+          "action": "hold"
+        },
+        {
+          "url": "http://127.0.0.1:51774/api/indicators/pdb/trend/",
+          "action": "hold"
+        },
+        {
+          "url": "http://127.0.0.1:51774/api/indicators/pdb/trend/",
+          "action": "hold"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F04-08",
+      "name": "BDD-F04-08 - Grafik gagal memberi error dan retry",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F04-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:57345/api/indicators/pdb/trend/",
+          "action": "fail"
+        },
+        {
+          "url": "http://127.0.0.1:57345/api/indicators/pdb/trend/",
+          "action": "fail"
+        },
+        {
+          "url": "http://127.0.0.1:57345/api/indicators/pdb/trend/",
+          "action": "fail"
+        },
+        {
+          "url": "http://127.0.0.1:57345/api/indicators/pdb/trend/",
+          "action": "fail"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F05-01",
+      "name": "BDD-F05-01 - Filter tahun memilih observasi pada tahun itu",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F05-02",
+      "name": "BDD-F05-02 - Ringkasan dan histori mengikuti filter",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F05-03",
+      "name": "BDD-F05-03 - Tahun kosong tidak fallback ke terbaru",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F05-04",
+      "name": "BDD-F05-04 - Rentang kosong tetap memperlihatkan filter aktif",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F05-05",
+      "name": "BDD-F05-05 - Tahun di luar domain ditolak",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F05-06",
+      "name": "BDD-F05-06 - Parameter berulang dan kategori asing ditolak",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F05-07",
+      "name": "BDD-F05-07 - Reset filter kembali ke konteks terbaru",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F05-08",
+      "name": "BDD-F05-08 - Request filter lama tidak menimpa pilihan aktif",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F05-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:60987/api/indicators/dashboard/?year=2024",
+          "action": "hold"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-01",
+      "name": "BDD-F06-01 - Detail langsung dan dari kartu konsisten",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "ASBUILT-F06-02",
+      "name": "ASBUILT-F06-02 - Kode asing tetap anonim dan tidak memperoleh angka PDB",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\ASBUILT-F06-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-03",
+      "name": "BDD-F06-03 - Perubahan poin persentase tidak menjadi persen relatif",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-04",
+      "name": "BDD-F06-04 - Tanpa fakta kausal tidak ada narasi sebab akibat",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-05",
+      "name": "BDD-F06-05 - Metadata rilis yang hilang tetap hilang",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-06",
+      "name": "BDD-F06-06 - Grafik detail mempunyai alternatif dan gap",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-07",
+      "name": "BDD-F06-07 - Detail meneruskan selector observasi ke trace",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F06-08",
+      "name": "BDD-F06-08 - Pergantian detail tidak dicemari respons lama",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F06-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:65246/api/indicators/?code=pdb",
+          "action": "hold"
+        },
+        {
+          "url": "http://127.0.0.1:65246/api/indicators/?code=pdb",
+          "action": "hold"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F07-01",
+      "name": "BDD-F07-01 - Selector lengkap tidak fallback ke terbaru",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F07-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F07-02",
+      "name": "BDD-F07-02 - Selector parsial ditolak",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F07-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "ASBUILT-F07-03",
+      "name": "ASBUILT-F07-03 - Keterbatasan klasifikasi dan formula mengikuti API nyata",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\ASBUILT-F07-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F07-04",
+      "name": "BDD-F07-04 - Provenance belum immutable tidak diklaim versi beku",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F07-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": "Q03: candidate contract executed; human acceptance remains pending",
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F07-05",
+      "name": "BDD-F07-05 - Konten sumber berbahaya tidak dieksekusi",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F07-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F07-06",
+      "name": "BDD-F07-06 - RAW checksum rusak tidak diunduh",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F07-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F07-07",
+      "name": "BDD-F07-07 - Metadata parsial tetap dapat dibaca",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F07-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "ASBUILT-F07-08",
+      "name": "ASBUILT-F07-08 - Rincian error trace mempertahankan sebab dan tidak memasang provenance pengganti",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\ASBUILT-F07-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [
+        {
+          "url": "http://127.0.0.1:59042/api/indicators/pdb/source-trace/",
+          "action": "fail"
+        },
+        {
+          "url": "http://127.0.0.1:59042/api/indicators/pdb/source-trace/",
+          "action": "fail"
+        }
+      ],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F08-01",
+      "name": "BDD-F08-01 - Feedback anonim berhasil dikirim",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F08-02",
+      "name": "BDD-F08-02 - Publik tidak dapat menentukan status Admin",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F08-03",
+      "name": "BDD-F08-03 - Batas panjang deskripsi kandidat",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F08-04",
+      "name": "BDD-F08-04 - Identitas opsional tidak menjadi kewajiban akun",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F08-05",
+      "name": "BDD-F08-05 - Feedback tanpa CSRF tidak tersimpan",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F08-06",
+      "name": "BDD-F08-06 - Payload malformed tidak tersimpan",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F08-07",
+      "name": "BDD-F08-07 - Kegagalan simpan tidak memberi konfirmasi sukses",
+      "status": "passed",
+      "layer": "browser-labelled-fault-injection",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-F08-08",
+      "name": "BDD-F08-08 - Konteks advisory bukan binding revisi",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-F08-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": "Q04: advisory context candidate executed; human acceptance remains pending",
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-X-01",
+      "name": "BDD-X-01 - Dashboard publik sebelum dan sesudah Login",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-01\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-X-02",
+      "name": "BDD-X-02 - Pencabutan role Admin ditegakkan",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-02\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-X-03",
+      "name": "BDD-X-03 - Ringkasan detail trace membawa identitas yang sama",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-03\\evidence.json",
+      "errors": [],
+      "human_review_pending": "Q02: populated historical flow executed; empty-year coordination remains pending",
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-X-04",
+      "name": "BDD-X-04 - Feedback setelah Login memakai CSRF yang berlaku",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-04\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-X-05",
+      "name": "BDD-X-05 - Alur utama dapat dioperasikan keyboard",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-05\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-X-06",
+      "name": "BDD-X-06 - Konten penting tetap terbaca pada viewport kecil",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-06\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    },
+    {
+      "id": "BDD-X-07",
+      "name": "BDD-X-07 - Tes tidak memakai database atau provider kerja",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-07\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-X-08",
+      "name": "BDD-X-08 - Input sensitif tidak masuk URL atau storage",
+      "status": "passed",
+      "layer": "browser-real-React-Django",
+      "evidence": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183251-product-fixes-full\\BDD-X-08\\evidence.json",
+      "errors": [],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {
+        "chrome_process_stopped": true,
+        "vite_process_stopped": true
+      }
+    }
+  ],
+  "product_exit_code": 0,
+  "driver": "Chrome/CDP NON-Selenium",
+  "visual_approval": "PENDING",
+  "contract_acceptance": "Q01-Q09 remain draft/open; execution is not approval",
+  "scope_limit": "Synthetic fixtures and candidate contracts; not full-SRS conformance, SMTP, official ingestion, production or OS-sandbox proof",
+  "acceptance_gaps_retained": [
+    "Unknown-indicator dedicated not-found banner",
+    "Source Trace prominent not-found versus network state",
+    "Official classification API/adapter/UI support",
+    "Q01-Q09 and full SRS/human visual acceptance remain open"
+  ]
+}

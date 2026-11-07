@@ -1,0 +1,16 @@
+{
+  "evidence_records": 73,
+  "owned_ports_checked": 165,
+  "owned_ports_still_listening": [],
+  "disposable_databases_removed": true,
+  "baseline_and_asbuilt_features_unchanged": true,
+  "product_hashes_match_manifest": true,
+  "frontend_changes": [
+    "frontend/src/features/dashboard/Dashboard.tsx",
+    "frontend/src/features/dashboard/dashboard.css"
+  ],
+  "frontend_branch": "fix/sprint1-bdd-layout-empty-year",
+  "backend_clean": true,
+  "success_DTO_mocks": 0,
+  "limits": "Synthetic disposable data, CDP not Selenium; no human visual acceptance or OS sandbox claim"
+}

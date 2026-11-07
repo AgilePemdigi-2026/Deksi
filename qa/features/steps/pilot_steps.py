@@ -152,7 +152,7 @@ def empty_year_detail(context):
         if browser.js("location.pathname !== '/' && document.body.innerText.includes('Q1 2025')"):
             break
         time.sleep(0.1)
-    context.evidence["empty_year_after_navigation"] = browser.js("({url:location.href,body:document.body.innerText})")
+    context.evidence["empty_year_after_navigation"] = browser.js("({url:location.href,body:document.body.innerText,status:document.querySelector('.p2-navigation-status')?.textContent,year:document.querySelector('#filter-year')?.value})")
 
 
 @then("navigasi mempertahankan konteks kosong atau memberi penolakan eksplisit tanpa menampilkan nilai terbaru tahun 2025")
@@ -161,3 +161,6 @@ def assert_empty_year_context(context):
     assert not ("/indikator/pdb" in actual["url"] and "Q1 2025" in actual["body"]), (
         "PRODUCT GAP: empty 2024 filter silently navigated to latest Q1 2025; " + actual["url"]
     )
+    if actual["url"].rstrip('/') == context.frontend_url:
+        assert actual['year'] == '2024' and '2024' in actual['status']
+        assert 'belum tersedia' in actual['status'] and 'Detail tidak dibuka' in actual['status']

@@ -26,3 +26,32 @@ Tanggal: 4 November 2026 (UTC+07). Izin: user mengizinkan area BDD terpisah, fix
 - Pisahkan parser PASS, API Django client, browser E2E nyata, mock NOT RUN, visual review PENDING dan acceptance produksi NOT TESTED.
 - Jika gagal produk: simpan FAIL dan bug; tidak repair produk. Jika harness salah: perbaiki hanya QA, simpan kegagalan awal dan rerun terarah.
 - Teardown semua server/proses milik run; jangan menyentuh port/proses/container lain. Source worktree dibandingkan terhadap commit untuk membuktikan tidak ada edit produk.
+
+## Ekspansi dan hasil — 7 November 2026
+
+Instruksi lanjutan pengguna meminta penanganan skenario skipped/failed. Batas tanpa perbaikan produk, install, publikasi atau perubahan lane lain tetap berlaku.
+
+1. **Ekspansi bindings dan diagnosis harness:** seluruh 72 skenario baseline kini terikat, ditambah regresi tahun kosong. Tiga kasus berlabel needs_confirmation dijalankan sebagai kontrak kandidat, tanpa menutup review Q02/Q03/Q04. Kasus official diberi label success DTO mock, bukan dipromosikan menjadi E2E backend. Perbaikan hanya pada QA: wait/navigation, oracle query/timestamp/focus, backlog test server dan startup Chrome file race. Log gagal awal dipertahankan.
+2. **Run lengkap dan handoff:** `qa/artifacts/20261107-003936-sprint1-verified` menghasilkan 68 PASS / 4 FAIL dari baseline 72, ditambah satu regresi FAIL. Tidak ada skenario atau langkah skipped/undefined pada run ini; 214 langkah PASS dan 5 FAIL. Exit runner 1 tetap dipertahankan. Unit harness tambahan 2 PASS dan ruff F PASS adalah bukti terpisah. Lihat RESULTS.md, README.md, FE_HANDOFF.md dan receipt run.
+
+Stop teknis: implementasi dan eksekusi baseline tersedia; kegagalan tersisa tercatat, tidak diperbaiki pada produk. Kedua worktree pinned clean, 9 file feature baseline byte-identical, database/proses/165 port milik run dibersihkan. Koordinasi pemilik frontend baru berupa handoff lokal, belum pesan terkirim; acceptance manusia, SRS penuh, Selenium dan produksi tidak diklaim selesai.
+
+## Penyesuaian as-built v2 — 7 November 2026
+
+Instruksi pengguna: "sesuaikan bdd dengan fitur dan dashboard asli", lalu "lanjutkan". Scope tetap QA, bukan perbaikan produk atau publikasi.
+
+1. **Pemetaan aplikasi aktual:** baca kontrol/routing React serta kontrak Django; source integration masih pada checkpoint yang sama. Buat `qa/features/as-built/` (72 skenario), `as-built-manifest.json` dan `AS_BUILT_ALIGNMENT.md`. Pertahankan 69 skenario dan ganti tiga observasi as-built dengan ID baru, bukan menulis ulang hasil baseline. Klasifikasi official mock hanya tinggal di suite baseline; as-built memeriksa unclassified/formula unavailable melalui backend nyata. Rincian HTTP/transport dibuka lewat kontrol aplikasi yang sebenarnya, sedangkan gap banner not-found/state utama tetap dicatat sebagai acceptance terbuka.
+2. **Verifikasi:** tiga skenario baru PASS pada run terarah; kontrol baseline not-found masih FAIL sesuai requirement lama. Tujuh unit harness/katalog PASS, termasuk RED→GREEN deadline keseluruhan command CDP, dan ruff F PASS. Dua run foreground terpotong batas tool (420 dan 360 detik); disimpan sebagai INTERRUPTED dan tidak dianggap hasil suite lengkap. Resource scratch keduanya dibersihkan setelah dipastikan tidak ada proses pemilik yang hidup. Run final dilanjutkan sebagai proses terpantau agar batas command tidak memotongnya; hasil akhir hanya boleh diambil setelah `run.json`, `behave.json` lengkap dan `cleanup.json` tersedia.
+
+Pemeriksaan statis terpisah `qa/as-built-static-verification.json` mengonfirmasi 72 ID, sembilan feature as-built, sembilan baseline tidak berubah, 17 source pin cocok dan kedua worktree produk clean. Ini bukan bukti seluruh aplikasi PASS. Kegagalan tahun kosong dan overflow tetap guard yang aktif; pengurangan jumlah FAIL pada katalog baru tidak berarti gap produk lama diperbaiki. Lihat `RESULTS_BASELINE_V1.md` untuk hasil baseline historis dan RESULTS.md untuk laporan akhir yang sudah dieksekusi.
+
+**Penutupan eksekusi aktual:** proses final `proc_c02414e0b7b5` sudah exited, exit 1. Run `20261107-131142-as-built-final` lengkap: katalog as-built 72 = 71 PASS / 1 FAIL; dengan regresi 73 = 71 PASS / 2 FAIL. Seluruh 219 langkah mendapat hasil (217 PASS / 2 FAIL), tanpa skipped/undefined. Reporter exit 0 memvalidasi 72 ID, hash dan ketiadaan DTO sukses mock. Receipt cleanup tersedia; 165 port milik run tidak lagi listening, DB disposable dihapus dan source produk tetap clean. Dua FAIL adalah overflow desktop dan tahun kosong → Detail terbaru. Penyesuaian QA selesai; perbaikan produk, gap acceptance lama, koordinasi pemilik FE dan persetujuan manusia tetap bukan pekerjaan yang diklaim selesai.
+
+## Perbaikan dua FAIL — izin lanjutan 7 November 2026
+
+Pengguna meminta memperbaiki FAIL atau menghapus jika di luar fitur. Pemeriksaan menunjukkan keduanya relevan dengan dashboard, filter dan Detail, sehingga **tidak ada tes dihapus**. Izin ini menggantikan batas no-product-edits hanya untuk dua perbaikan lokal tersebut, bukan lane sesi lain atau publikasi.
+
+1. **Implementasi minimal:** branch lokal `fix/sprint1-bdd-layout-empty-year` dari base FE yang sama. Ubah hanya Dashboard.tsx (guard tahun kosong dan tombol hero tanpa kartu) dan dashboard.css (max-width artboard, bukan overflow hidden). Simpan manifest v2 sebelum mengunci hash overlay v2.1. Pertahankan seluruh feature baseline/as-built dan bukti RED sebelumnya; perkuat oracle regresi agar penolakan harus eksplisit serta menyebut tahun.
+2. **Verifikasi selesai:** targeted tiga skenario PASS, termasuk konteks historis valid. Run penuh `20261107-183251-product-fixes-full`, proses `proc_ca035f0dae46`, exit 0: **72/72 katalog PASS, dengan regresi 73/73 PASS, 219/219 langkah PASS, 0 FAIL/skipped/undefined**. Reporter exit 0; hash/manifest/cleanup cocok, tanpa DTO sukses mock. Frontend Sprint 1 95 test PASS, QA 7 PASS, build PASS, ruff F PASS; Oxlint exit 0 dengan empat warning pada file yang tidak disentuh. Backend tetap clean, frontend hanya dua file perubahan, DB disposable dihapus dan 165 port milik run tidak listening.
+
+Kandidat masih lokal belum commit/push/PR atau diterapkan ke lane pemilik FE. Export `PRODUCT_FIXES.patch` cocok dengan kandidat melalui reverse-apply check. Hasil sebelum perbaikan dipertahankan di RESULTS_AS_BUILT_V2_BEFORE_FIXES.md; hasil sekarang di RESULTS.md. Gap acceptance lama, review SRS/visual/manusia dan pengiriman handoff tetap belum ditutup.

@@ -1,0 +1,47 @@
+{
+  "scenario": "BDD-F08-08 - Konteks advisory bukan binding revisi",
+  "api_mocked": false,
+  "human_review_pending": "Q04: advisory context candidate executed; human acceptance remains pending",
+  "database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3",
+  "backend_live_url": "http://localhost:52942",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    ]
+  ],
+  "acceptance_gate": "Q04 OPEN: this verifies advisory storage only, not immutable revision binding",
+  "server_requests": [
+    {
+      "method": "GET",
+      "path": "/api/feedback/categories/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/feedback/",
+      "query": "",
+      "status": 201,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    }
+  ],
+  "status": "Status.passed",
+  "cleanup": {}
+}

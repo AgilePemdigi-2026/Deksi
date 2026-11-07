@@ -1,0 +1,577 @@
+{
+  "scenario": "BDD-F05-07 - Reset filter kembali ke konteks terbaru",
+  "api_mocked": false,
+  "database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3",
+  "backend_live_url": "http://localhost:64173",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    ]
+  ],
+  "fixture": {
+    "label": "SYNTHETIC ONLY",
+    "human_review": false,
+    "expected_value": "1234.50",
+    "period": "Q1 2025"
+  },
+  "frontend_url": "http://127.0.0.1:64174",
+  "ports": {
+    "frontend": 64174,
+    "chrome_debug": 64178
+  },
+  "extended_actual": {
+    "path": "/",
+    "body": "Lewati ke ringkasan ekonomi\nBeranda\nIndikator\nTren\nFeedback\n\nPERIODE OBSERVASI /\nQ1 2025\n\nAdmin\nDATA\nDEKSI\n(ID)\n\n\u25cf (TENTANG)\n\nIndikator ekonomi dalam konteks,\ndengan sumber yang bisa ditelusuri.\n\nLihat Data\nDEKSI\nObservasi\nPeriode\nSumber\n\n1\n\nIndikator tersedia pada respons\n\n\u25c7\nPDB\n\u25c7\nInflasi\n\u25c7\nFiskal\n\u25c7\nInvestasi\n\u25c7\nBI-Rate\n\u25c7\nPengangguran\nTelusuri data\n\nQ1 2025\n\n1.234,5\n\ntriliun rupiah\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\n\u2197\nRespons API\n\nAkses publik\n\u25cf tanpa akun\n\nKonteks indikator\nquarterly\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\nDATA DALAM KONTEKS\n\nGULIR KE BAWAH\n\u2193\n\nPERIODE / SATUAN / SUMBER\n\nEkonomi lebih mudah dipahami saat\nangka dibaca bersama konteksnya.\nTelusuri periode, satuan, dan sumber\nsebelum menarik kesimpulan.\n\nBukan hanya angka yang terlihat.\nPerhatikan juga yang belum tersedia.\n\n01 / MEMBACA EKONOMI\nDEKSI \u00b7 RESPONS API\nAngka. Lalu\nkonteksnya.\n\nIkhtisar, indikator dan jejak sumber.\nSatu tempat untuk membaca gambaran besarnya.\n\nPILIHAN TAHUN\nTerbaru per indikator\n\nPEMBARUAN TERSIMPAN\nBelum tersedia\n\nSTATUS DATA\nSesuai respons API\n\nPeriode tiap indikator dapat berbeda. Timestamp pembaruan global bukan tanggal rilis semua angka. Status publikasi dan nama institusi bukan bukti verifikasi resmi. Tidak ada angka atau narasi demo pengganti.\n\nIKHTISAR INDIKATOR\n\nNilai ekonomi dibaca bersama satuan, periode dan jenis pengukurannya.\n\nNarasi analisis terverifikasi belum disediakan kontrak API Sprint 1. Angka tidak ditafsirkan otomatis sebagai kondisi baik atau buruk.\n\nCara membaca data ini \u2197\n\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\n1.234,5\ntriliun rupiah \u00b7 Q1 2025\n\n02 / INDIKATOR UTAMA\n\nEnam sudut pandang.\nCari indikator atau institusi\n\u2315\nKATEGORI:\nSemua\nPDB\nInflasi\nFiskal\nInvestasi\nMoneter\nTenaga Kerja\nTAHUN:\nTerbaru (semua tahun)\n2026\n2025\n2024\n2023\n2022\n2021\n2020\n2019\n2018\n2017\n\n6 indikator pada pilihan ini\n\nNilai kosong bukan nol.\n\n01 / PDB\n\nTERSEDIA DI API\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\n1.234,5\n\ntriliun rupiah \u00b7 Q1 2025\n\n+11.12% vs SYNTHETIC Q1 2024\n\nData terbaru tersedia sampai Q1 2025\nSYNTHETIC institution, no official verification\nRilis: 2025-04-30\nDetail \u2197\nSource Trace angka ini \u2197\n\n02 / Inflasi\n\nBELUM TERSEDIA\ninflasi\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n03 / Fiskal\n\nBELUM TERSEDIA\nfiskal\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n04 / Investasi\n\nBELUM TERSEDIA\ninvestasi\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n05 / Moneter\n\nBELUM TERSEDIA\nbirate\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n06 / Tenaga Kerja\n\nBELUM TERSEDIA\ntpt\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n03 / DERET WAKTU\nBACA PERIODE, BUKAN HANYA ARAH\nEkonomi,\ndalam gerak.\n\nPDB\n\n1.234,5\n\nQ1 2025 \u00b7 triliun rupiah\n\nlevel\nINDIKATOR\nPDB\nInflasi\nFiskal\nInvestasi\nBI-Rate\nPengangguran\nPERIODE PENAYANGAN\nPeriode asli\nKuartalan\nBulanan\nTahunan\nRENTANG\n3 tahun\n5 tahun\n10 tahun\nSemua\n\nSatuan: triliun rupiah\n\nEkspor JSON \u2193\n\nGunakan panah kiri/kanan, Home dan End pada titik grafik. Tabel dan ekspor mempertahankan string presisi API. Rentang mengikuti tanggal observasi terakhir, bukan tanggal hari ini.\n\n1.234,5\n1.172,8\n1.111\nSYNTHETIC Q1 2024\nQ1 2025\nOBSERVASI TERPILIH\nQ1 2025\n2025-03-31\nNILAI / SATUAN\n1.234,5 triliun rupiah\nJENIS / SUMBER\nlevel\nSYNTHETIC_BDD\n\nKet: Data triwulanan sesuai frekuensi sumber asli BI/BKPM/BPS, tidak dipaksa menjadi bulanan. Geometri menggunakan pendekatan numerik. Tidak ada target kebijakan atau rata-rata rentang buatan. Garis diputus pada gap kalender yang dikenali; seri sumber, satuan, frekuensi dan jenis data berbeda tidak digabungkan.\n\nSource Trace titik terpilih \u2197\nDetail indikator \u2197\nTabel histori (2 observasi)\n\n04 / MEMBACA KONTEKS\n\nLebih dari sebuah angka.\n\nPanduan membaca.\nBukan narasi AI atau diagnosis ekonomi.\n\n01 / KONTEKS\n\nPeriode bukan tanggal rilis.\n\nTanggal observasi, publikasi dan waktu akuisisi tidak saling menggantikan. Nilai lama tidak otomatis menggambarkan kondisi terkini.\n\n02 / KONTEKS\n\nSatuan menentukan makna.\n\nPersen, poin persentase dan nilai nominal berbeda. Kenaikan angka tidak diberi label baik atau buruk tanpa analisis yang ditinjau.\n\n03 / KONTEKS\n\nSumber mengikuti observasi.\n\nSource Trace diikat pada angka, periode, satuan dan sumber terpilih. URL institusi serta checksum bukan verifikasi resmi angka.\n\n05 / DARI ANGKA KE SUMBER\n\nBisa dibaca.\nBisa ditelusuri.\n\nPisahkan nilai, periode, publikasi, dan interpretasi. Nama institusi saja belum membuktikan sebuah angka sudah diverifikasi.\n\nBuka Source Trace dari kartu atau titik histori yang sama. Tidak ada katalog atau manajemen sumber Sprint 2 yang ditambahkan.\n\nPilih angka untuk ditelusuri \u2197\nBaca metodologi \u2197\nEkonomi,\nbeserta\nkonteks\ndatanya.\n\nAngka mengikuti respons API.\nPeriksa periode tiap observasi.\nVerifikasi resmi tidak diasumsikan.\n\n\u2733\n\nBelum tersedia\n\ninflasi \u00b7 Periode belum tersedia\n\n1\n\nIndikator tersedia pada respons\n\nDEKSI\nPERIODE / SATUAN / SUMBER\n\nTidak menyiratkan dukungan institusi\natau verifikasi resmi angka.\n\n06 / UMPAN BALIK\n\nBantu perbaiki pembacaan.\n\nSampaikan koreksi atau saran. Identitas opsional, tanpa akun. Kiriman menunggu review pengelola.\n\nKATEGORI *\n\u2014 Pilih kategori \u2014\nKesalahan Data\nMetodologi / Penjelasan\nVisualisasi\nSumber Data\nLainnya\nDESKRIPSI *\n\n0 / 2.000 karakter\n\nINDIKATOR TERKAIT (opsional)\nPERIODE TERKAIT (opsional)\nIDENTITAS PENGIRIM (opsional)\nKirim Umpan Balik\nDEKSI \u2197\n\nDeteksi Ekonomi Indonesia.\nData, konteks dan sumber dibaca bersama.\n\nPublik tanpa akun. Foto ilustratif tidak menyiratkan afiliasi, dukungan atau akurasi ekonomi.\n\nSPRINT 1\nRingkasan indikator \u2197\nGrafik tren \u2197\nDetail & Source Trace \u2197\nFeedback \u2197\nTRANSPARANSI & AKSES\nCara membaca data \u2197\nPrivasi & ilustrasi \u2197\nLogin Admin \u2197\nReset Password \u2197\n\nDEKSI \u00b7 Periode dan sumber mengikuti API.\n\nKembali ke atas \u2191"
+  },
+  "final_dom": {
+    "path": "/",
+    "body": "Lewati ke ringkasan ekonomi\nBeranda\nIndikator\nTren\nFeedback\n\nPERIODE OBSERVASI /\nQ1 2025\n\nAdmin\nDATA\nDEKSI\n(ID)\n\n\u25cf (TENTANG)\n\nIndikator ekonomi dalam konteks,\ndengan sumber yang bisa ditelusuri.\n\nLihat Data\nDEKSI\nObservasi\nPeriode\nSumber\n\n1\n\nIndikator tersedia pada respons\n\n\u25c7\nPDB\n\u25c7\nInflasi\n\u25c7\nFiskal\n\u25c7\nInvestasi\n\u25c7\nBI-Rate\n\u25c7\nPengangguran\nTelusuri data\n\nQ1 2025\n\n1.234,5\n\ntriliun rupiah\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\n\u2197\nRespons API\n\nAkses publik\n\u25cf tanpa akun\n\nKonteks indikator\nquarterly\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\nDATA DALAM KONTEKS\n\nGULIR KE BAWAH\n\u2193\n\nPERIODE / SATUAN / SUMBER\n\nEkonomi lebih mudah dipahami saat\nangka dibaca bersama konteksnya.\nTelusuri periode, satuan, dan sumber\nsebelum menarik kesimpulan.\n\nBukan hanya angka yang terlihat.\nPerhatikan juga yang belum tersedia.\n\n01 / MEMBACA EKONOMI\nDEKSI \u00b7 RESPONS API\nAngka. Lalu\nkonteksnya.\n\nIkhtisar, indikator dan jejak sumber.\nSatu tempat untuk membaca gambaran besarnya.\n\nPILIHAN TAHUN\nTerbaru per indikator\n\nPEMBARUAN TERSIMPAN\nBelum tersedia\n\nSTATUS DATA\nSesuai respons API\n\nPeriode tiap indikator dapat berbeda. Timestamp pembaruan global bukan tanggal rilis semua angka. Status publikasi dan nama institusi bukan bukti verifikasi resmi. Tidak ada angka atau narasi demo pengganti.\n\nIKHTISAR INDIKATOR\n\nNilai ekonomi dibaca bersama satuan, periode dan jenis pengukurannya.\n\nNarasi analisis terverifikasi belum disediakan kontrak API Sprint 1. Angka tidak ditafsirkan otomatis sebagai kondisi baik atau buruk.\n\nCara membaca data ini \u2197\n\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\n1.234,5\ntriliun rupiah \u00b7 Q1 2025\n\n02 / INDIKATOR UTAMA\n\nEnam sudut pandang.\nCari indikator atau institusi\n\u2315\nKATEGORI:\nSemua\nPDB\nInflasi\nFiskal\nInvestasi\nMoneter\nTenaga Kerja\nTAHUN:\nTerbaru (semua tahun)\n2026\n2025\n2024\n2023\n2022\n2021\n2020\n2019\n2018\n2017\n\n6 indikator pada pilihan ini\n\nNilai kosong bukan nol.\n\n01 / PDB\n\nTERSEDIA DI API\nPDB SYNTHETIC BDD \u2014 bukan data resmi\n\n1.234,5\n\ntriliun rupiah \u00b7 Q1 2025\n\n+11.12% vs SYNTHETIC Q1 2024\n\nData terbaru tersedia sampai Q1 2025\nSYNTHETIC institution, no official verification\nRilis: 2025-04-30\nDetail \u2197\nSource Trace angka ini \u2197\n\n02 / Inflasi\n\nBELUM TERSEDIA\ninflasi\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n03 / Fiskal\n\nBELUM TERSEDIA\nfiskal\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n04 / Investasi\n\nBELUM TERSEDIA\ninvestasi\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n05 / Moneter\n\nBELUM TERSEDIA\nbirate\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n06 / Tenaga Kerja\n\nBELUM TERSEDIA\ntpt\n\nBelum tersedia\n\nSatuan belum tersedia \u00b7 Periode belum tersedia\n\nSparkline belum tersedia. Tidak ada garis atau nol pengganti.\n\nPembanding belum tersedia.\n\nIndikator belum terdefinisi di database.\nInstitusi belum tersedia\nRilis: Belum tersedia\nDetail \u2197\nSource Trace angka ini \u2197\n\n03 / DERET WAKTU\nBACA PERIODE, BUKAN HANYA ARAH\nEkonomi,\ndalam gerak.\n\nPDB\n\n1.234,5\n\nQ1 2025 \u00b7 triliun rupiah\n\nlevel\nINDIKATOR\nPDB\nInflasi\nFiskal\nInvestasi\nBI-Rate\nPengangguran\nPERIODE PENAYANGAN\nPeriode asli\nKuartalan\nBulanan\nTahunan\nRENTANG\n3 tahun\n5 tahun\n10 tahun\nSemua\n\nSatuan: triliun rupiah\n\nEkspor JSON \u2193\n\nGunakan panah kiri/kanan, Home dan End pada titik grafik. Tabel dan ekspor mempertahankan string presisi API. Rentang mengikuti tanggal observasi terakhir, bukan tanggal hari ini.\n\n1.234,5\n1.172,8\n1.111\nSYNTHETIC Q1 2024\nQ1 2025\nOBSERVASI TERPILIH\nQ1 2025\n2025-03-31\nNILAI / SATUAN\n1.234,5 triliun rupiah\nJENIS / SUMBER\nlevel\nSYNTHETIC_BDD\n\nKet: Data triwulanan sesuai frekuensi sumber asli BI/BKPM/BPS, tidak dipaksa menjadi bulanan. Geometri menggunakan pendekatan numerik. Tidak ada target kebijakan atau rata-rata rentang buatan. Garis diputus pada gap kalender yang dikenali; seri sumber, satuan, frekuensi dan jenis data berbeda tidak digabungkan.\n\nSource Trace titik terpilih \u2197\nDetail indikator \u2197\nTabel histori (2 observasi)\n\n04 / MEMBACA KONTEKS\n\nLebih dari sebuah angka.\n\nPanduan membaca.\nBukan narasi AI atau diagnosis ekonomi.\n\n01 / KONTEKS\n\nPeriode bukan tanggal rilis.\n\nTanggal observasi, publikasi dan waktu akuisisi tidak saling menggantikan. Nilai lama tidak otomatis menggambarkan kondisi terkini.\n\n02 / KONTEKS\n\nSatuan menentukan makna.\n\nPersen, poin persentase dan nilai nominal berbeda. Kenaikan angka tidak diberi label baik atau buruk tanpa analisis yang ditinjau.\n\n03 / KONTEKS\n\nSumber mengikuti observasi.\n\nSource Trace diikat pada angka, periode, satuan dan sumber terpilih. URL institusi serta checksum bukan verifikasi resmi angka.\n\n05 / DARI ANGKA KE SUMBER\n\nBisa dibaca.\nBisa ditelusuri.\n\nPisahkan nilai, periode, publikasi, dan interpretasi. Nama institusi saja belum membuktikan sebuah angka sudah diverifikasi.\n\nBuka Source Trace dari kartu atau titik histori yang sama. Tidak ada katalog atau manajemen sumber Sprint 2 yang ditambahkan.\n\nPilih angka untuk ditelusuri \u2197\nBaca metodologi \u2197\nEkonomi,\nbeserta\nkonteks\ndatanya.\n\nAngka mengikuti respons API.\nPeriksa periode tiap observasi.\nVerifikasi resmi tidak diasumsikan.\n\n\u2733\n\nBelum tersedia\n\ninflasi \u00b7 Periode belum tersedia\n\n1\n\nIndikator tersedia pada respons\n\nDEKSI\nPERIODE / SATUAN / SUMBER\n\nTidak menyiratkan dukungan institusi\natau verifikasi resmi angka.\n\n06 / UMPAN BALIK\n\nBantu perbaiki pembacaan.\n\nSampaikan koreksi atau saran. Identitas opsional, tanpa akun. Kiriman menunggu review pengelola.\n\nKATEGORI *\n\u2014 Pilih kategori \u2014\nKesalahan Data\nMetodologi / Penjelasan\nVisualisasi\nSumber Data\nLainnya\nDESKRIPSI *\n\n0 / 2.000 karakter\n\nINDIKATOR TERKAIT (opsional)\nPERIODE TERKAIT (opsional)\nIDENTITAS PENGIRIM (opsional)\nKirim Umpan Balik\nDEKSI \u2197\n\nDeteksi Ekonomi Indonesia.\nData, konteks dan sumber dibaca bersama.\n\nPublik tanpa akun. Foto ilustratif tidak menyiratkan afiliasi, dukungan atau akurasi ekonomi.\n\nSPRINT 1\nRingkasan indikator \u2197\nGrafik tren \u2197\nDetail & Source Trace \u2197\nFeedback \u2197\nTRANSPARANSI & AKSES\nCara membaca data \u2197\nPrivasi & ilustrasi \u2197\nLogin Admin \u2197\nReset Password \u2197\n\nDEKSI \u00b7 Periode dan sumber mengikuti API.\n\nKembali ke atas \u2191"
+  },
+  "browser_requests": [
+    {
+      "url": "http://127.0.0.1:64174/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/@vite/client",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/main.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/@react-refresh",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/.artifacts/vite/deps/react.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/.artifacts/vite/deps/react-dom_client.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/index.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/App.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/.artifacts/vite/deps/react_jsx-dev-runtime.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/node_modules/vite/dist/client/env.mjs",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/.artifacts/vite/deps/react-DgVJeC5g.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/App.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/Dashboard.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/LoginPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/ForgotPasswordPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/ResetPasswordPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/recoveryClient.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/auth.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/data.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/DetailPage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/SourceTracePage.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/features.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/.artifacts/vite/deps/react-dom-CFuoV50Q.js?v=954e7049",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/components/EditorialLanding.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/login-economic.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/validation.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/login.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/components/DashboardFilter.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/components/FeedbackForm.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/api.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/hooks.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/model.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/DashboardTrend.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/hero-business.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/stat-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/feature-logistics.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/portrait-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-skyline.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-port.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-food.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-harvest.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-bank.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/activity-distribution.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/prototype-base.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/prototype-dashboard.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/team-features.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/dashboard.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/recovery.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/RecoveryLayout.tsx",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/source.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/useDetailData.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/indicators/source-trace.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/hero-business.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/stat-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/feature-logistics.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/portrait-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-skyline.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-port.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-food.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-harvest.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-market.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-bank.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-agriculture.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/activity-distribution.webp?import",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/filter.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/feedback.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/dashboard/client.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/api.ts",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/features/admin/recovery.css",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/hero-business.webp",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/stat-market.webp",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/feature-logistics.webp",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/inter-tight.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/archivo.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/inter-tight.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/prototype-2/archivo.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/categories/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/pdb/trend/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/?code=pdb",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/pdb/trend/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/pdb/source-trace/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/feedback/categories/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/dashboard/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/?code=pdb",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/categories/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/pdb/trend/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/pdb/trend/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/pdb/source-trace/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/feedback/categories/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/dashboard/",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/favicon.svg",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/inter-tight-latin.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/src/assets/editorial/inter-tight-latin.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/dashboard/?category=PDB",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/dashboard/?category=PDB&year=2024",
+      "method": "GET"
+    },
+    {
+      "url": "http://127.0.0.1:64174/api/indicators/dashboard/",
+      "method": "GET"
+    }
+  ],
+  "browser_blocked": [],
+  "browser_runtime_errors": [],
+  "fault_injections": [],
+  "browser_driver": "Chrome/CDP real, NON-Selenium",
+  "server_requests": [
+    {
+      "method": "GET",
+      "path": "/api/indicators/categories/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/pdb/trend/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/pdb/trend/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/feedback/categories/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/pdb/source-trace/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/",
+      "query": "code=pdb",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/dashboard/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/dashboard/",
+      "query": "category=PDB",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/dashboard/",
+      "query": "category=PDB&year=2024",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/dashboard/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    }
+  ],
+  "status": "Status.passed",
+  "cleanup": {
+    "chrome_process_stopped": true,
+    "vite_process_stopped": true
+  }
+}

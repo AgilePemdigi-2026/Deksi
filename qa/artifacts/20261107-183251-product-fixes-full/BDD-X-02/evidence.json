@@ -1,0 +1,87 @@
+{
+  "scenario": "BDD-X-02 - Pencabutan role Admin ditegakkan",
+  "api_mocked": false,
+  "database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3",
+  "backend_live_url": "http://localhost:53997",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    ]
+  ],
+  "server_requests": [
+    {
+      "method": "GET",
+      "path": "/api/auth/csrf/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session/",
+      "query": "",
+      "status": 403,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/indicators/feedback/",
+      "query": "",
+      "status": 302,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/indicators/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    }
+  ],
+  "status": "Status.passed",
+  "cleanup": {}
+}

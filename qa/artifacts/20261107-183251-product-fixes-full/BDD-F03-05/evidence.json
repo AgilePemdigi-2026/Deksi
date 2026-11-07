@@ -1,0 +1,44 @@
+{
+  "scenario": "BDD-F03-05 - Draft dan published tanpa review tidak bocor",
+  "api_mocked": false,
+  "database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3",
+  "backend_live_url": "http://localhost:50067",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    ]
+  ],
+  "fixture": {
+    "label": "SYNTHETIC ONLY",
+    "human_review": false,
+    "expected_value": "1234.50",
+    "period": "Q1 2025"
+  },
+  "api": {
+    "path": "/api/indicators/?code=pdb",
+    "status": 200,
+    "value": "1234.5",
+    "private_markers_absent": true,
+    "transport": "Django test client, real views/database, CSRF enforced"
+  },
+  "server_requests": [
+    {
+      "method": "GET",
+      "path": "/api/indicators/",
+      "query": "code=pdb",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    }
+  ],
+  "status": "Status.passed",
+  "cleanup": {}
+}

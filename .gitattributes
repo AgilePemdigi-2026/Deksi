@@ -1,0 +1,4 @@
+# Keep QA/spec receipt bytes stable across checkouts; source hashes are byte-based.
+/qa/** -text
+/frontend-checkpoint/frontend/src/features/dashboard/Dashboard.tsx -text
+/frontend-checkpoint/frontend/src/features/dashboard/dashboard.css -text

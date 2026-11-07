@@ -1,0 +1,18 @@
+{
+  "scenario": "BDD-X-07 - Tes tidak memakai database atau provider kerja",
+  "api_mocked": false,
+  "database": "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3",
+  "backend_live_url": "http://localhost:59220",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\Pongo\\AppData\\Local\\hermes\\cache\\scratch\\deksi-bdd-w7ok58xe\\test.sqlite3"
+    ]
+  ],
+  "isolation_child_receipt": "E:\\Deksi-BDD-Sprint1\\qa\\artifacts\\20261107-183611-safety-child",
+  "boundary": "Task-owned DB and .env rejection checked; Python audit hook is not an OS sandbox",
+  "server_requests": [],
+  "status": "Status.passed",
+  "cleanup": {}
+}

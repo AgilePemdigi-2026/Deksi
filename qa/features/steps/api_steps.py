@@ -558,5 +558,5 @@ def assert_revoked(context):
     assert context.public_response.status_code == 200
 
 
-# BDD-X-07 remains undefined: whole-run isolation must be asserted against a completed
-# run receipt, not substituted with a small fixture deletion that could falsely pass.
+# BDD-X-07 is bound in zz_remaining_steps: a separate child-run receipt verifies
+# owned database/profile cleanup; Python audit hooks are not an OS sandbox.
