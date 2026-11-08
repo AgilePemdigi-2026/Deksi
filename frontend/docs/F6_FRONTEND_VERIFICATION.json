@@ -1,0 +1,109 @@
+{
+  "recorded_at": "2026-11-02T15:53:36.163611+00:00",
+  "scope": "F6 frontend port; F7 and backend not implemented in this batch",
+  "branch": "feat/6-detail-indikator-fe",
+  "base": "505e97116f132c8630ec08d07525b8aec9e00536",
+  "head": "505e97116f132c8630ec08d07525b8aec9e00536",
+  "commit_created": false,
+  "pushed": false,
+  "checkpoint_source_digest": "56c0a4cf0d3d402f6a9695a6b603c949d2f715a2707379c594cba870c04a9d48",
+  "source_sha256": {
+    "frontend/package.json": "7c4350541154e137662ae30ea2dacb49a85dcaad06f4ac02adf2ac4c74278d78",
+    "frontend/src/App.tsx": "83ee24913f7190e4a86cbff0d9d70c10e8819321d6c0794aace3df01d274f91e",
+    "frontend/src/api.ts": "ab32d65702ee201bbc364f0eb848c35e230c17d597744c675c32a4c4c3f85b6b",
+    "frontend/src/components/IndicatorCard.tsx": "bbd245a5503111fcd3445dafdf1a8c73d9baf447d440dca3c13c429b6a1d02b2",
+    "frontend/src/features/indicators/DetailPage.tsx": "6d2bfe1e0051155527e66be960717773774d7512f8e6ae099cd0d94218694a41",
+    "frontend/src/features/indicators/api.ts": "2c9077e09d3554d768c393eb197ac1f5c4d2552085f364f53cd734b7490d9a9a",
+    "frontend/src/features/indicators/data.ts": "19e3372ea5da4a0cbeead83198a179db95d3cae6867b06003326ab7e4ccbe5e2",
+    "frontend/src/features/indicators/features.css": "a04b8ac6147809e074ce5e4a7d817b78c56bb1012b3ccc16a248170c19527e35",
+    "frontend/src/features/indicators/types.ts": "373e2b25a7bdebcb5ed88866f40512b8e1a0461994fd27c7566cb77fd8fcd429",
+    "frontend/tests/editorial.test.mjs": "e95d3178f9592747f372bbad3186268855651f6275e08275962018af19085cb2",
+    "frontend/tests/indicator-api.test.mjs": "18b5cfe6f50bde611e1c6b04940e7291b2f06670a79d1c1a846d7bac92884122",
+    "frontend/tests/indicator-browser.test.mjs": "c3b3211a8606a949e8125fe741d4c052c86340087d39d1d549cff3c241b46433",
+    "frontend/tests/indicator-data.test.mjs": "54e19bc9e35a1237f043ebd7601d412620cbc4b6af9cfb17d3156b8dd62dac72",
+    "frontend/tests/indicator-fixtures.mjs": "cf7bb67e4d2e2cbc7a20a120a45876d085cf2dc92c47503bd7d54908055cdfce",
+    "frontend/tests/indicator-pages.test.mjs": "cfba8343b4969957a17ebea8c2bf80177171bd12e475cad62fa65d52300dd807"
+  },
+  "changed_files_before_handoff_docs": [
+    "frontend/docs/F6_F7_AUDIT_PLAN.md",
+    "frontend/docs/F6_F7_BATCH1_EVIDENCE.json",
+    "frontend/package.json",
+    "frontend/src/App.tsx",
+    "frontend/src/api.ts",
+    "frontend/src/components/IndicatorCard.tsx",
+    "frontend/src/features/indicators/DetailPage.tsx",
+    "frontend/src/features/indicators/api.ts",
+    "frontend/src/features/indicators/data.ts",
+    "frontend/src/features/indicators/features.css",
+    "frontend/src/features/indicators/types.ts",
+    "frontend/tests/editorial.test.mjs",
+    "frontend/tests/indicator-api.test.mjs",
+    "frontend/tests/indicator-browser.test.mjs",
+    "frontend/tests/indicator-data.test.mjs",
+    "frontend/tests/indicator-fixtures.mjs",
+    "frontend/tests/indicator-pages.test.mjs"
+  ],
+  "verification": {
+    "feature_unit": {
+      "passed": 26,
+      "exit_code": 0
+    },
+    "editorial_unit": {
+      "passed": 7,
+      "exit_code": 0
+    },
+    "feature_browser": {
+      "check_groups": 8,
+      "exit_code": 0,
+      "synthetic_api": true,
+      "runtime_errors": 0,
+      "confirmed_aborted_interceptions": 5
+    },
+    "editorial_browser": {
+      "check_groups": 5,
+      "exit_code": 0,
+      "synthetic_api": true
+    },
+    "build": {
+      "exit_code": 0,
+      "warning": "Bundle over 500 kB; no warning threshold changed"
+    },
+    "lint": {
+      "exit_code": 0,
+      "warnings": 3,
+      "feature_warnings": 0
+    },
+    "preview_http": {
+      "origin": "http://127.0.0.1:5186",
+      "detail": 200,
+      "tsx_module": 200,
+      "feature_css": 200
+    },
+    "protected_tracked_diff": "PASS",
+    "old_checkpoint_worktree_clean": true,
+    "owned_browser_profile_cleanup": "PASS"
+  },
+  "preview_process": {
+    "session_id": "proc_6e048f2cbf3a",
+    "pid": 26824,
+    "persistent_across_session": false
+  },
+  "human_visual_acceptance": "PENDING",
+  "api_live_integration": "NOT_PROVEN; no backend started or changed",
+  "f7_gate": "Separate permission for exact local F6 checkpoint commit needed before dependent branch; no push permission",
+  "prior_harness_failures": [
+    "Enter event missing CR text",
+    "Scrollbar gutter invalid width-equality assertion",
+    "Reload readiness raced old document",
+    "Nested selector quoting",
+    "Expected aborted interceptions misclassified; now accepted only with matching Network.loadingFailed canceled evidence"
+  ],
+  "log_sha256": {
+    "editorial-unit-final.log": "8cab32f223f7f65b4087a77add1383008fc1a3893942e5924e2946a1802de031",
+    "indicator-unit-final.log": "97071c01a2f93dcb3232f7396553c9617d65d92083d18bd98ff77ad25921cd98",
+    "feature6-build-final.log": "ff2ccdae889f4c0d0d8ad42fccc38bfa3df0a556d8a6bb6dafd3a0c3e6182670",
+    "feature6-lint-final.log": "4d7d3e1943d3b31edf68c584376615ad904283fde647c559806cd03accb0df28",
+    "indicator-browser-final.log": "c35a3bd752d55fe4cf032f7f74b2a5990b89a2745651cf0af5b647b8357e9f67",
+    "editorial-browser-final.log": "ec2e42e2de9f64420af233c648696484152494f6619bd0379945ec56f8e880ce"
+  }
+}

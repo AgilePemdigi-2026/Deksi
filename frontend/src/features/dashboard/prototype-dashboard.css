@@ -1,0 +1,165 @@
+/* Additive Prototype 2 vocabulary: original visual CSS stays byte-identical. */
+.deksi-extension{font-family:'Inter Tight',sans-serif;font-size:clamp(15px,calc(18 * var(--u)),22px);line-height:1.5;letter-spacing:-.018em}
+.deksi-extension *, .deksi-extension *:before,.deksi-extension *:after{box-sizing:border-box}
+.deksi-extension [hidden]{display:none!important}
+.deksi-extension button,.deksi-extension input{font:inherit}
+.deksi-extension button,.deksi-extension a,.deksi-extension input{outline-offset:5px}
+.deksi-extension :focus-visible{outline:2px solid currentColor}
+.deksi-extension button{cursor:pointer}
+.deksi-extension button:disabled{cursor:not-allowed;opacity:.45}
+.deksi-extension a{color:inherit;text-decoration:none}
+.deksi-extension p,.deksi-extension h2,.deksi-extension h3{margin:0}
+.deksi-extension .dash-container{width:calc(1302 * var(--u));max-width:calc(100% - 48px);margin:0 auto}
+.dash-paper{background:#dadada;color:#111}
+.dash-ink{background:#000;color:#f4f4f4}
+.deksi-extension .dash-eyebrow{display:flex;justify-content:space-between;gap:24px;font-size:clamp(10px,calc(12 * var(--u)),15px);letter-spacing:.065em;line-height:1.4}
+.deksi-extension .dash-kicker{display:block;font-size:clamp(10px,calc(12 * var(--u)),15px);letter-spacing:.065em;line-height:1.4;font-weight:500}
+.deksi-extension .dash-display{font-family:'Archivo',sans-serif;font-weight:640;font-variation-settings:'wdth' 104;letter-spacing:-.068em;font-size:clamp(48px,calc(84 * var(--u)),106px);line-height:.97}
+.deksi-extension .dash-section-title{font-family:'Archivo',sans-serif;font-weight:580;font-variation-settings:'wdth' 100;font-size:clamp(33px,calc(49 * var(--u)),64px);line-height:1.03;letter-spacing:-.055em;margin-top:20px}
+.deksi-extension .dash-intro{font-size:clamp(16px,calc(21 * var(--u)),27px);line-height:1.4;max-width:29em}
+.deksi-extension .dash-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.deksi-extension .dash-text-button{color:inherit;background:none;border:0;border-bottom:1px solid currentColor;padding:8px 0;display:inline-flex;align-items:center;justify-content:space-between;gap:22px;text-align:left;font-size:clamp(13px,calc(16 * var(--u)),19px);line-height:1.3}
+.deksi-extension .dash-text-button span{font-size:1.5em;line-height:1;transition:transform .2s}
+.deksi-extension .dash-text-button:hover span{transform:translate(2px,-2px)}
+.deksi-extension .dash-pill{display:inline-flex;align-items:center;gap:24px;padding:12px 18px;border:1px solid currentColor;border-radius:6px;color:inherit;background:transparent;font-size:clamp(13px,calc(15 * var(--u)),18px);transition:translate .2s,background .2s}
+.deksi-extension .dash-pill:hover{translate:0 -1px;background:rgba(128,128,128,.12)}
+.deksi-extension .dash-chip{display:inline-block;border:1px solid currentColor;border-radius:3px;padding:4px 7px;font-size:clamp(9px,calc(10 * var(--u)),12px);line-height:1.3;letter-spacing:.025em;font-weight:500}
+.deksi-extension .dash-overview{padding:calc(88 * var(--u)) 0 calc(96 * var(--u))}
+.deksi-extension .dash-overview-heading{display:grid;grid-template-columns:1.4fr 1fr;gap:64px;align-items:end;margin:calc(65 * var(--u)) 0 calc(52 * var(--u))}
+.deksi-extension .dash-metadata{display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;border-top:1px solid #1115;border-bottom:1px solid #1115;padding:22px 0}
+.deksi-extension .dash-metadata span{display:block;font-size:11px;letter-spacing:.06em;opacity:.65;margin-bottom:8px}
+.deksi-extension .dash-metadata strong{font-size:clamp(14px,calc(18 * var(--u)),22px);font-weight:500}
+.deksi-extension .dash-disclaimer{font-size:clamp(12px,calc(13 * var(--u)),16px);line-height:1.6;max-width:100ch;margin-top:20px;opacity:.7}
+.deksi-extension .dash-summary-grid{display:grid;grid-template-columns:1.9fr 1fr;gap:calc(108 * var(--u));margin-top:calc(66 * var(--u))}
+.deksi-extension .dash-summary-copy{font-size:clamp(18px,calc(23 * var(--u)),29px);line-height:1.52;margin:24px 0}
+.deksi-extension .dash-summary-copy p+p{margin-top:24px}
+.deksi-extension .dash-callouts{align-self:start}
+.deksi-extension .dash-callout{border-top:1px solid #1115;padding:19px 0 24px}
+.deksi-extension .dash-callout strong{display:block;font-family:'Archivo',sans-serif;font-weight:550;font-size:clamp(34px,calc(44 * var(--u)),55px);line-height:1.1;letter-spacing:-.055em;margin:10px 0}
+.deksi-extension .dash-callout small{display:block;font-size:12px;line-height:1.5;opacity:.65}
+.deksi-extension .dash-catalogue{padding:0 0 calc(110 * var(--u))}
+.deksi-extension .dash-section-top{display:flex;justify-content:space-between;gap:42px;align-items:end;padding-top:36px;border-top:1px solid #1115}
+.deksi-extension .dash-search{display:flex;align-items:center;gap:12px;border-bottom:1px solid #1118;min-width:240px;width:calc(350 * var(--u));max-width:100%;padding:12px 0}
+.deksi-extension .dash-search svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5}
+.deksi-extension .dash-search input{width:100%;min-width:0;background:none;border:0;color:inherit;padding:0;font-size:15px;line-height:1.5;border-radius:0}
+.deksi-extension .dash-search input::placeholder{color:#1119}
+.deksi-extension .dash-catalogue-caption{display:flex;justify-content:space-between;gap:22px;font-size:12px;line-height:1.4;margin:35px 0 20px;opacity:.68}
+.deksi-extension .dash-indicator-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #1116}
+.deksi-extension .dash-indicator{display:flex;flex-direction:column;padding:26px 26px 29px 0;min-width:0;border-bottom:1px solid #1115}
+.deksi-extension .dash-indicator:nth-child(3n+2),.deksi-extension .dash-indicator:nth-child(3n+3){padding-left:26px;border-left:1px solid #1113}
+.deksi-extension .dash-card-top{display:flex;justify-content:space-between;align-items:start;gap:12px;min-height:40px}
+.deksi-extension .dash-card-top .dash-kicker{font-size:10px;line-height:1.4}
+.deksi-extension .dash-card-top .dash-chip{font-size:9px;white-space:nowrap}
+.deksi-extension .dash-indicator h3{font-size:clamp(20px,calc(25 * var(--u)),31px);font-weight:500;line-height:1.2;letter-spacing:-.04em}
+.deksi-extension .dash-card-value{font-family:'Archivo',sans-serif;font-size:clamp(38px,calc(53 * var(--u)),64px);font-weight:550;font-variation-settings:'wdth' 100;line-height:1.08;letter-spacing:-.06em;margin:22px 0 6px;white-space:nowrap}
+.deksi-extension .dash-card-period{font-size:12px;min-height:36px;line-height:1.5;opacity:.7}
+.deksi-extension .dash-spark{display:block;width:100%;height:78px;margin:13px 0 16px;overflow:visible}
+.deksi-extension .dash-no-history{display:flex;align-items:center;min-height:78px;font-size:12px;line-height:1.5;opacity:.65;border-bottom:1px solid #1112;margin:13px 0 16px}
+.deksi-extension .dash-card-note{font-size:clamp(13px,calc(15 * var(--u)),18px);line-height:1.5;flex:1}
+.deksi-extension .dash-card-reference{display:block;font-size:11px;line-height:1.5;opacity:.65;margin-top:14px}
+.deksi-extension .dash-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid #1113;margin-top:22px;padding-top:15px;font-size:11px;line-height:1.5}
+.deksi-extension .dash-card-bottom .dash-text-button{font-size:12px;white-space:nowrap;gap:12px}
+.deksi-extension .dash-empty{padding:65px 0;border-top:1px solid #1115}
+.deksi-extension .dash-empty h3{font-size:32px;font-weight:500;letter-spacing:-.045em}
+.deksi-extension .dash-empty p{margin:12px 0 24px}
+.deksi-extension .dash-trend{padding:calc(88 * var(--u)) 0 calc(104 * var(--u))}
+.deksi-extension .dash-trend-heading{display:flex;justify-content:space-between;gap:42px;align-items:end;margin:54px 0}
+.deksi-extension .dash-selected-value{text-align:right;min-width:180px}
+.deksi-extension .dash-selected-value>strong{display:block;font-family:'Archivo',sans-serif;font-weight:550;font-size:clamp(46px,calc(69 * var(--u)),86px);line-height:1.1;letter-spacing:-.07em;margin:10px 0}
+.deksi-extension .dash-selected-value>p{font-size:15px;line-height:1.5}
+.deksi-extension .dash-selected-value .dash-chip{margin-top:14px;opacity:.7}
+.deksi-extension .dash-controls{display:flex;flex-wrap:wrap;align-items:start;gap:24px 38px;padding:24px 0 29px;border-top:1px solid #fff4;border-bottom:1px solid #fff4}
+.deksi-extension .dash-control-group{min-width:0}
+.deksi-extension .dash-control-group:first-child{flex-basis:100%}
+.deksi-extension .dash-control-group .dash-kicker{font-size:10px;opacity:.6;margin-bottom:12px}
+.deksi-extension .dash-pills{display:flex;flex-wrap:wrap;gap:5px}
+.deksi-extension .dash-pills button{background:transparent;border:1px solid #fff4;border-radius:999px;padding:9px 15px;color:#f4f4f4;font-size:13px;line-height:1.4;transition:background .2s,color .2s}
+.deksi-extension .dash-pills button:hover{border-color:#f4f4f4}
+.deksi-extension .dash-pills button[aria-pressed=true]{background:#f4f4f4;color:#111;border-color:#f4f4f4}
+.deksi-extension .dash-chart-toolbar{display:flex;justify-content:space-between;align-items:center;gap:24px;font-size:12px;line-height:1.5;margin-top:30px}
+.deksi-extension .dash-chart-toolbar>div{display:flex;gap:24px;align-items:center}
+.deksi-extension .dash-chart-toolbar .dash-text-button{font-size:12px}
+.deksi-extension .dash-guide{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.5}
+.deksi-extension .dash-guide input{accent-color:#f4f4f4;width:14px;height:14px;margin:0}
+.deksi-extension .dash-chart-description{font-size:12px;line-height:1.5;color:#aaa;max-width:85ch;margin-top:17px}
+.deksi-extension .dash-chart-shell{position:relative;margin-top:16px;min-height:330px}
+.deksi-extension #trend-svg{display:block;width:100%;height:410px;overflow:visible;touch-action:pan-y}
+.deksi-extension #trend-svg text{fill:#a9a9a9;font-family:'Inter Tight',sans-serif;font-size:11px;letter-spacing:0}
+.deksi-extension #trend-svg .dash-zero{stroke:#fff7}
+.deksi-extension #trend-svg .dash-grid{stroke:#fff2;stroke-width:1}
+.deksi-extension #trend-svg .dash-line{fill:none;stroke:#f4f4f4;stroke-width:2.3;stroke-linejoin:round;stroke-linecap:round}
+.deksi-extension #trend-svg .dash-point{fill:#000;stroke:#f4f4f4;stroke-width:1.8;cursor:pointer}
+.deksi-extension #trend-svg .dash-point[aria-pressed=true]{fill:#f4f4f4;stroke:#000;stroke-width:2.5;filter:drop-shadow(0 0 3px #fff5)}
+.deksi-extension #trend-svg .dash-point:focus{outline:none;stroke:#fff;stroke-width:4}
+.deksi-extension .dash-chart-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;border:1px solid #fff3;border-radius:5px}
+.deksi-extension .dash-chart-empty h3{font-size:28px;font-weight:400;line-height:1.2;letter-spacing:-.04em}
+.deksi-extension .dash-chart-empty p{font-size:14px;line-height:1.6;max-width:60ch;color:#aaa;margin-top:18px}
+.deksi-extension .dash-point-panel{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:22px;padding:22px;border:1px solid #fff4;border-radius:6px;margin-top:14px;min-height:94px}
+.deksi-extension .dash-point-panel .dash-kicker{font-size:10px;color:#aaa;margin-bottom:7px}
+.deksi-extension .dash-point-panel strong{font-weight:500;font-size:clamp(16px,calc(21 * var(--u)),25px);line-height:1.3;display:block;overflow-wrap:anywhere}
+.deksi-extension .dash-point-panel small{display:block;font-size:11px;line-height:1.5;color:#aaa;margin-top:6px}
+.deksi-extension .dash-chart-note{font-size:12px;line-height:1.6;color:#aaa;max-width:100ch;margin-top:22px;white-space:pre-line}
+.deksi-extension .dash-chart-actions{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:24px}
+.deksi-extension .dash-chart-actions .dash-text-button{font-size:13px}
+.deksi-extension .dash-history{border-top:1px solid #fff4;margin-top:30px}
+.deksi-extension .dash-history summary{padding:22px 0;cursor:pointer;font-size:15px}
+.deksi-extension .dash-table-scroll{overflow-x:auto;max-width:100%}
+.deksi-extension .dash-history table{width:100%;min-width:570px;border-collapse:collapse;text-align:left;font-size:13px;line-height:1.5}
+.deksi-extension .dash-history caption{text-align:left;font-size:12px;color:#aaa;padding-bottom:14px}
+.deksi-extension .dash-history th,.deksi-extension .dash-history td{padding:13px 15px 13px 0;border-bottom:1px solid #fff2;vertical-align:top}
+.deksi-extension .dash-history th{font-weight:500}
+.deksi-extension .dash-insights{padding:calc(90 * var(--u)) 0 calc(100 * var(--u))}
+.deksi-extension .dash-insights .dash-section-top{border-top:0;padding-top:0}
+.deksi-extension .dash-insight-list{margin-top:55px}
+.deksi-extension .dash-insight{display:grid;grid-template-columns:70px 1.05fr 1.4fr;gap:35px;border-top:1px solid #1115;padding:35px 0}
+.deksi-extension .dash-insight-index{font-size:12px;letter-spacing:.03em}
+.deksi-extension .dash-insight h3{font-family:'Archivo',sans-serif;font-weight:520;font-size:clamp(25px,calc(32 * var(--u)),40px);line-height:1.1;letter-spacing:-.045em}
+.deksi-extension .dash-insight-subtitle{font-size:14px;line-height:1.5;margin-top:15px}
+.deksi-extension .dash-insight .dash-chip{margin-top:18px;opacity:.65}
+.deksi-extension .dash-insight-body{font-size:clamp(14px,calc(17 * var(--u)),21px);line-height:1.6}
+.deksi-extension .dash-insight-support{border-top:1px solid #1113;padding-top:17px;margin-top:19px;font-size:14px;line-height:1.6}
+.deksi-extension .dash-insight-source{display:block;font-size:11px;margin:20px 0 9px;opacity:.65}
+.deksi-extension .dash-provenance{padding:calc(90 * var(--u)) 0 calc(85 * var(--u));border-top:1px solid #fff3}
+.deksi-extension .dash-provenance-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:65px;margin-top:45px;align-items:start}
+.deksi-extension .dash-provenance .dash-display{font-size:clamp(40px,calc(66 * var(--u)),84px)}
+.deksi-extension .dash-large-copy{font-size:clamp(21px,calc(27 * var(--u)),34px);line-height:1.35;letter-spacing:-.035em}
+.deksi-extension .dash-muted{color:#aaa;font-size:14px;line-height:1.6;margin-top:23px}
+.deksi-extension .dash-source-buttons{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.deksi-extension.dash-footer{padding:calc(70 * var(--u)) 0 24px}
+.deksi-extension .dash-footer-main{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:65px}
+.deksi-extension .dash-wordmark{display:flex;justify-content:space-between;align-items:center;font-family:'Archivo',sans-serif;font-size:45px;font-weight:640;font-variation-settings:'wdth' 104;line-height:1;letter-spacing:-.06em;max-width:260px;margin-bottom:25px}
+.deksi-extension .dash-footer-main>div>p{font-size:15px;line-height:1.6}
+.deksi-extension .dash-footer-main h2{font-size:11px;letter-spacing:.05em;line-height:1.4;font-weight:500;margin-bottom:20px}
+.deksi-extension .dash-footer-main button,.deksi-extension #institution-links a{display:block;text-align:left;background:none;border:0;color:inherit;font-size:14px;line-height:1.5;margin-top:10px;padding:0}
+.deksi-extension .dash-footer-fine{font-size:11px!important;line-height:1.6!important;opacity:.65;margin-top:22px!important}
+.deksi-extension .dash-footer-bottom{display:flex;justify-content:space-between;align-items:center;gap:25px;flex-wrap:wrap;border-top:1px solid #1114;margin-top:55px;padding-top:22px;font-size:11px;line-height:1.5}
+.deksi-extension .dash-footer-bottom button{background:none;color:inherit;border:0;padding:0;text-align:left;font-size:11px}
+@media(min-width:1920px){.deksi-extension .dash-container{max-width:1736px}}
+@media(max-width:1050px) and (min-width:761px){.deksi-extension .dash-card-value{font-size:39px}.deksi-extension .dash-indicator{padding-right:15px}.deksi-extension .dash-indicator:nth-child(3n+2),.deksi-extension .dash-indicator:nth-child(3n+3){padding-left:15px}.deksi-extension .dash-card-top{display:block}.deksi-extension .dash-card-top .dash-chip{margin:7px 0}.deksi-extension .dash-card-bottom{display:block}.deksi-extension .dash-card-bottom .dash-text-button{margin-top:9px}.deksi-extension .dash-footer-main{gap:30px}}
+@media(max-width:760px){
+ .deksi-extension .dash-container{width:auto;max-width:none;margin:0 calc(24 * var(--u))}
+ .deksi-extension .dash-eyebrow{font-size:10px;gap:15px}.deksi-extension .dash-eyebrow>span:last-child{text-align:right;max-width:19ch}
+ .deksi-extension .dash-overview,.deksi-extension .dash-trend,.deksi-extension .dash-insights,.deksi-extension .dash-provenance{padding:70px 0}
+ .deksi-extension .dash-overview-heading{grid-template-columns:1fr;gap:28px;margin:45px 0 35px}
+ .deksi-extension .dash-display{font-size:clamp(43px,11.8vw,76px)}
+ .deksi-extension .dash-section-title{font-size:clamp(31px,8.7vw,50px)}
+ .deksi-extension .dash-metadata{grid-template-columns:1fr 1fr;gap:20px}.deksi-extension .dash-metadata>p:last-child{grid-column:1/-1}
+ .deksi-extension .dash-summary-grid{grid-template-columns:1fr;gap:36px;margin-top:38px}
+ .deksi-extension .dash-summary-copy{font-size:20px;line-height:1.5}
+ .deksi-extension .dash-callouts{display:grid;grid-template-columns:1fr;gap:0}.deksi-extension .dash-callout{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;padding:18px 0}.deksi-extension .dash-callout strong{margin:0;font-size:34px;grid-column:2;grid-row:1/3;text-align:right;align-self:center}.deksi-extension .dash-callout small{grid-column:1;font-size:10px}
+ .deksi-extension .dash-catalogue{padding-bottom:70px}.deksi-extension .dash-section-top{align-items:start;flex-direction:column;gap:27px}
+ .deksi-extension .dash-search{width:100%;min-width:0}.deksi-extension .dash-catalogue-caption{font-size:11px;flex-wrap:wrap;gap:7px;margin-top:24px}
+ .deksi-extension .dash-indicator-grid{grid-template-columns:1fr}.deksi-extension .dash-indicator,.deksi-extension .dash-indicator:nth-child(3n+2),.deksi-extension .dash-indicator:nth-child(3n+3){padding:27px 0;border-left:0}
+ .deksi-extension .dash-indicator h3{font-size:24px}.deksi-extension .dash-card-top{min-height:30px}.deksi-extension .dash-card-top .dash-chip{font-size:9px}.deksi-extension .dash-card-value{font-size:51px;margin-top:17px}.deksi-extension .dash-card-period{min-height:0}
+ .deksi-extension .dash-card-note{font-size:15px}.deksi-extension .dash-card-bottom .dash-text-button{font-size:13px}
+ .deksi-extension .dash-trend-heading{align-items:start;flex-direction:column;gap:35px;margin:42px 0 32px}.deksi-extension .dash-selected-value{text-align:left}.deksi-extension .dash-selected-value>strong{font-size:55px}.deksi-extension .dash-selected-value .dash-chip{margin-top:8px}
+ .deksi-extension .dash-controls{gap:23px}.deksi-extension .dash-pills button{font-size:12px;padding:8px 11px}.deksi-extension .dash-chart-toolbar{align-items:start;flex-direction:column;gap:10px}.deksi-extension .dash-chart-toolbar>div{width:100%;justify-content:space-between;gap:10px}.deksi-extension .dash-guide{font-size:11px}
+ .deksi-extension #trend-svg{height:330px}.deksi-extension .dash-chart-shell{min-height:330px}.deksi-extension .dash-point-panel{grid-template-columns:1fr 1fr;padding:18px;gap:19px}.deksi-extension .dash-point-panel>div:last-child{grid-column:1/-1}.deksi-extension .dash-point-panel strong{font-size:18px}
+ .deksi-extension .dash-insight-list{margin-top:30px}.deksi-extension .dash-insight{grid-template-columns:1fr;gap:18px}.deksi-extension .dash-insight h3{font-size:29px}.deksi-extension .dash-insight-body{font-size:16px}.deksi-extension .dash-insight-index{font-size:11px}.deksi-extension .dash-insight .dash-chip{font-size:10px;margin-top:12px}
+ .deksi-extension .dash-provenance-grid{grid-template-columns:1fr;gap:33px;margin-top:33px}.deksi-extension .dash-provenance .dash-display{font-size:43px}.deksi-extension .dash-large-copy{font-size:23px}
+ .deksi-extension .dash-footer-main{grid-template-columns:1fr;gap:38px}.deksi-extension.dash-footer{padding:55px 0 24px}.deksi-extension .dash-footer-bottom{margin-top:38px;align-items:start;flex-direction:column;gap:17px}.deksi-extension .dash-footer-fine{max-width:45ch}
+}
+.data-dialog .mini-button{width:auto;min-height:36px;padding:8px 12px;margin:14px 10px 0 0;font-size:13px;line-height:1.4}
+.data-dialog .dialog-footer a{text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+@media(max-width:760px){.deksi-extension .dash-pills button,.deksi-extension .dash-pill{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.deksi-extension *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

@@ -2,6 +2,9 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from indicators.feedback_model import Feedback  # noqa: F401
+from indicators.fields import ObservationDecimalField
+
 
 class Source(models.Model):
     class AcquisitionMethod(models.TextChoices):
@@ -158,7 +161,7 @@ class Observation(models.Model):
     period_label = models.CharField(max_length=100)
     frequency = models.CharField(max_length=12, choices=Frequency.choices)
     data_type = models.CharField(max_length=20, choices=DataType.choices)
-    value = models.DecimalField(max_digits=24, decimal_places=6)
+    value = ObservationDecimalField(max_digits=24, decimal_places=6)
     unit = models.CharField(max_length=50)
     publication_date = models.DateField(null=True, blank=True)
     validation_status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
@@ -173,6 +176,30 @@ class Observation(models.Model):
 
     def __str__(self) -> str:
         return f"{self.indicator.code} {self.period_label} = {self.value} {self.unit}"
+
+class ObservationCandidate(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending"
+        PUBLISHED = "published"
+        REJECTED = "rejected"
+
+    indicator = models.ForeignKey(Indicator, on_delete=models.PROTECT)
+    source = models.ForeignKey(Source, on_delete=models.PROTECT)
+    payload = models.JSONField()
+    base_snapshot = models.JSONField()
+    fingerprint = models.CharField(max_length=64, unique=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"Kandidat {self.pk}: {self.indicator.code} ({self.status})"
+
 
 class DataUpdateLog(models.Model):
     class Status(models.TextChoices):

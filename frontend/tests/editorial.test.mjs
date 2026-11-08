@@ -61,6 +61,13 @@ test('Indicator cards link to live Source Trace (fitur 9), not a dead anchor', a
   assert.match(html,/Source Trace/);
 });
 
+test('The integrated card uses a real detail route rather than a dead anchor', async () => {
+  const { IndicatorCard } = await load('components/IndicatorCard.tsx');
+  const html=render(IndicatorCard,{meta});
+  assert.doesNotMatch(html,/href="#detail"/);
+  assert.match(html,/href="\/indikator\/pdb"/);
+});
+
 test('Admin sources page exposes an Edit entry point per source', async () => {
   const { AdminSourcesPage } = await load('components/AdminSourcesPage.tsx');
   const html = render(AdminSourcesPage);

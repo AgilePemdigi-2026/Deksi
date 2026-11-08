@@ -16,7 +16,7 @@ import {
   submitFeedback,
   type FeedbackPayload,
   type FeedbackResult,
-} from "../api";
+} from "../features/dashboard/feedback";
 
 interface Props {
   /** Kode indikator yang sedang dilihat user, opsional untuk pra-isi field terkait. */
@@ -35,7 +35,7 @@ const EMPTY_PAYLOAD: FeedbackPayload = {
 };
 
 export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: Props) {
-  const feedbackCategories = useFeedbackCategories();
+  const { categories: feedbackCategories, error: categoryError, retry: retryCategories } = useFeedbackCategories();
 
   const [payload, setPayload] = useState<FeedbackPayload>({
     ...EMPTY_PAYLOAD,
@@ -74,7 +74,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
   // ── Submit ──────────────────────────────────────────────────────────────
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (result.status === "loading" || !validate()) return;
 
     setResult({ id: null, status: "loading", message: "" });
 
@@ -127,6 +127,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
       noValidate
       aria-label="Form umpan balik"
     >
+      {categoryError && <p role="alert">{categoryError} <button type="button" onClick={retryCategories}>Muat kategori lagi</button></p>}
       {/* Error dari server */}
       {result.status === "error" && (
         <div className="feedback-form__server-error" role="alert">

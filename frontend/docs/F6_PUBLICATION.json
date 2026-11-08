@@ -1,0 +1,75 @@
+{
+  "checked_at": "2026-11-03T08:59:00.239212+00:00",
+  "branch": "feat/6-detail-indikator-fe",
+  "base": "505e97116f132c8630ec08d07525b8aec9e00536",
+  "checkpoint": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+  "scope": "Standalone F6 corrections promoted from reviewed F7 worktree before publishing separate feature branches",
+  "write_paths": [
+    "frontend/src/features/indicators/DetailPage.tsx",
+    "frontend/src/features/indicators/api.ts",
+    "frontend/src/features/indicators/data.ts",
+    "frontend/src/features/indicators/types.ts",
+    "frontend/tests/indicator-api.test.mjs",
+    "frontend/tests/indicator-data.test.mjs",
+    "frontend/tests/indicator-pages.test.mjs",
+    "frontend/docs/F6_PUBLICATION.md",
+    "frontend/docs/F6_PUBLICATION.json"
+  ],
+  "source_sha256": {
+    "frontend/src/features/indicators/DetailPage.tsx": "614d4251d93e232310caf733a820b528789ccf9a84a2856fb7ee55c4e546ae0c",
+    "frontend/src/features/indicators/api.ts": "98ae55faa6301eb26df22ae57c63fd196bbb166bfa537a45ff647625e44866c2",
+    "frontend/src/features/indicators/data.ts": "f483cf75938638debf1a3d5fde365c9492f8930a65f2fb9f129cf45123948c1a",
+    "frontend/src/features/indicators/types.ts": "081e11d846e095bcb3ec28fb3ac09ecb0cb7a5efcd6734783f1de12901888759",
+    "frontend/tests/indicator-api.test.mjs": "afcbdddfb9d0c6cd56634dfca6af180873f0c23801f8a0f8d11dc4a40b3ef902",
+    "frontend/tests/indicator-data.test.mjs": "6d925bf1af2384607d7c550bda484a9a61fd3ef1701483c16ccf85f14ccba0f2",
+    "frontend/tests/indicator-pages.test.mjs": "41f26a4002e08014e72c79ecf7715089ddee3269753ab7393e400e2797b5bb4e"
+  },
+  "equivalence_to_reviewed_F7": "Shared helpers/API/types and added test logic match; History component matches; F6 disabled F7 link and existing loader retained intentionally",
+  "unit": {
+    "F6": {
+      "tests": 33,
+      "pass": 33,
+      "fail": 0,
+      "skipped": 0
+    },
+    "editorial": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "browser": {
+    "groups": 8,
+    "errors": [],
+    "receipt": ".artifacts/feature6-browser/verification.json",
+    "exit_code": 0,
+    "scope": "Synthetic API, real disposable browser; standalone F6 intentionally disables F7 navigation"
+  },
+  "build": {
+    "exit_code": 0,
+    "bundle_warning_above_500_kB": true
+  },
+  "lint": {
+    "exit_code": 0,
+    "existing_warnings": [
+      "src/components/EconomicSummary.tsx:15:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.",
+      "src/api.ts:107:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.",
+      "src/components/TrendChart.tsx:106:38: warning react-hooks(exhaustive-deps): React hook useMemo depends on `supported`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`."
+    ]
+  },
+  "logs_sha256": {
+    "publication-build.log": "7cce33a02b647e40e60db6b44721a38f7ac07438ea1d3d004c92c3819211612e",
+    "publication-editorial-unit.log": "190b807f699d6c95e5c97bfa15aa5a3262791e31c45b0346a02440bafb8527df",
+    "publication-f6-browser.log": "c35a3bd752d55fe4cf032f7f74b2a5990b89a2745651cf0af5b647b8357e9f67",
+    "publication-f6-unit.log": "f1a8ad703a7dda5ec0a20adfd32bfd2e902f11c638efac7808690d601b2c973c",
+    "publication-lint.log": "b35efd7ba07ba217338285084b2849b85d5c463e060a146ff3f74de497cfedd3"
+  },
+  "publication_authorization": "User authorized separate commits, dependency update and push of two feature branches; no PR/shared-branch merge/force push",
+  "limits": [
+    "Real API integration not established",
+    "F7 not included in standalone F6",
+    "Remote CI is separate from local tests",
+    "No backend or Login changes"
+  ]
+}

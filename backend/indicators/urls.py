@@ -1,9 +1,6 @@
 from django.urls import path
 
-from indicators import views
-from indicators import feedback_views
-from indicators import source_admin_views
-
+from indicators import dashboard_views, feedback_views, source_admin_views, views
 
 urlpatterns = [
     # ── Sistem ──────────────────────────────────────────────────────────────
@@ -21,10 +18,10 @@ urlpatterns = [
         views.raw_file_download,
         name="indicator-raw-file",
     ),
-
-    # ── Fitur 5: Filter Dashboard ────────────────────────────────────────────
-    path("indicators/dashboard/", views.indicator_dashboard_filter, name="indicator-dashboard-filter"),
-    path("indicators/categories/", views.indicator_categories, name="indicator-categories"),
+    path("indicators/dashboard/", dashboard_views.indicator_dashboard_filter, name="indicator-dashboard-filter"),
+    path("indicators/categories/", dashboard_views.indicator_categories, name="indicator-categories"),
+    path("feedback/", feedback_views.submit_feedback, name="feedback-submit"),
+    path("feedback/categories/", feedback_views.feedback_categories, name="feedback-categories"),
 
     # ── Fitur 9: Daftar Sumber Data / Source Trace ──────────────────────────
     path("sources/", views.source_list, name="source-list"),
@@ -34,10 +31,6 @@ urlpatterns = [
         views.source_indicators,
         name="source-indicators",
     ),
-
-    # ── Fitur 8: Umpan Balik ─────────────────────────────────────────────────
-    path("feedback/", feedback_views.submit_feedback, name="feedback-submit"),
-    path("feedback/categories/", feedback_views.feedback_categories, name="feedback-categories"),
 
     # ── Fitur 10-11: Kelola Sumber Data (Admin, session auth + staf) ─────────
     path("admin/session/", source_admin_views.admin_session, name="admin-session"),

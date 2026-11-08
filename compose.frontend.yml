@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      DEKSI_PUBLIC_API_TARGET: http://host.docker.internal:18080
+      DEKSI_AUTH_API_TARGET: http://host.docker.internal:18080
+    ports:
+      - "127.0.0.1:5174:5173"

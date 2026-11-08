@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 
-from indicators import fiscal
-from indicators import kemenkeu
-from indicators.updates import record_update_failure, record_update_success
+from indicators import fiscal, kemenkeu
+from indicators.updates import record_update_failure
 
 
 class Command(BaseCommand):
@@ -54,17 +54,12 @@ class Command(BaseCommand):
                     url, scrap_dir=options["scrap_dir"],
                     no_scrap_copy=options["no_scrap_copy"],
                 )
-            except kemenkeu.KitaError as exc:
+            except (kemenkeu.KitaError, ValidationError) as exc:
                 record_update_failure("APBN KiTa Kemenkeu", updated_by=user, message=f"{url}: {exc}")
                 self.stderr.write(self.style.ERROR(f"Ekstraksi dibatalkan: {exc}"))
                 failed += 1
                 continue
-            record_update_success(
-                "APBN KiTa Kemenkeu",
-                updated_by=user,
-                observation_count=len(summary["metrics"]),
-                message=f"Metadata APBN KiTa {summary['period_label']} berhasil diambil.",
-            )
+            self.stdout.write("Perubahan menunggu review Admin; data publik belum diganti.")
             self.stdout.write(self.style.SUCCESS(f"Dokumen      : {summary['document_name']}"))
             self.stdout.write(self.style.SUCCESS(f"Periode      : {summary['period_label']}"))
             self.stdout.write(self.style.SUCCESS(f"Rilis data   : {summary['publication_date']}"))
@@ -75,7 +70,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Arsip        : {summary['scrap_copy']['pdf']}"))
             ok += 1
         self.stdout.write(f"Selesai: {ok} berhasil, {failed} gagal dari {len(urls)} URL.")
-        self.stdout.write("Langkah berikut: validate_observations, lalu publish_observations.")
+        self.stdout.write("Langkah berikut: review kandidat, lalu publikasi oleh Admin.")
         if failed:
             raise SystemExit(2)
 
