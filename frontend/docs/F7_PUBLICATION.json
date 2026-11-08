@@ -1,0 +1,131 @@
+{
+  "checked_at": "2026-11-03T09:04:54.309109+00:00",
+  "branch": "feat/7-source-trace-fe",
+  "dependency_base": "13a7680e96c1170cb9dcc041577e626760d8d76f",
+  "status": "PRE_COMMIT_PRE_PUSH; remote publication requires exact SHA readback",
+  "allowlist": [
+    "frontend/docs/F6_AXIS_PRECISION_FIX.json",
+    "frontend/docs/F6_F7_AUDIT_PLAN.md",
+    "frontend/docs/F6_F7_REVIEW_FIXES.json",
+    "frontend/docs/F6_F7_REVIEW_FIXES.md",
+    "frontend/docs/F7_FRONTEND_HANDOFF.md",
+    "frontend/docs/F7_FRONTEND_PLAN.md",
+    "frontend/docs/F7_FRONTEND_VERIFICATION.json",
+    "frontend/docs/F7_PUBLICATION.json",
+    "frontend/docs/F7_PUBLICATION.md",
+    "frontend/package.json",
+    "frontend/src/App.tsx",
+    "frontend/src/features/indicators/DetailPage.tsx",
+    "frontend/src/features/indicators/SourceTracePage.tsx",
+    "frontend/src/features/indicators/source-trace.css",
+    "frontend/src/features/indicators/source.ts",
+    "frontend/src/features/indicators/useDetailData.ts",
+    "frontend/tests/indicator-browser.test.mjs",
+    "frontend/tests/indicator-pages.test.mjs",
+    "frontend/tests/source-trace.test.mjs"
+  ],
+  "units": {
+    "F6": {
+      "counts": {
+        "tests": 33,
+        "pass": 33,
+        "fail": 0,
+        "skipped": 0
+      },
+      "exit_code": 0,
+      "log": ".artifacts/publication-f6-unit.log"
+    },
+    "F7": {
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "exit_code": 0,
+      "log": ".artifacts/publication-f7-unit.log"
+    },
+    "editorial": {
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "exit_code": 0,
+      "log": ".artifacts/publication-editorial-unit.log"
+    }
+  },
+  "feature_browser": {
+    "groups": 18,
+    "F7": 8,
+    "shared": 10,
+    "errors": [],
+    "exit_code": 0,
+    "receipt": ".artifacts/feature7-browser/verification.json"
+  },
+  "editorial_browser": {
+    "groups": 5,
+    "errors": [],
+    "exit_code": 0,
+    "receipt": ".artifacts/browser/verification.json"
+  },
+  "build": {
+    "exit_code": 0,
+    "warning": "Chunk above 500 kB remains"
+  },
+  "lint": {
+    "exit_code": 0,
+    "existing_warnings": [
+      "src/components/EconomicSummary.tsx:15:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.",
+      "src/api.ts:107:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.",
+      "src/components/TrendChart.tsx:106:38: warning react-hooks(exhaustive-deps): React hook useMemo depends on `supported`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`."
+    ]
+  },
+  "source_sha256": {
+    "frontend/package-lock.json": "cd89db4feffc5fe26f45845f4030878c79fdac9b8081dfab5924f43d3d55646a",
+    "frontend/package.json": "5f347dd58101f13bb52ae9c0060436997cce47096092a1bf428d1f75a3d26cdf",
+    "frontend/src/api.ts": "ab32d65702ee201bbc364f0eb848c35e230c17d597744c675c32a4c4c3f85b6b",
+    "frontend/src/App.tsx": "7e8cd369dba8587658ffe5e61015c8a16fd336aac925a9879eb1d1c8ca3a7d54",
+    "frontend/src/features/indicators/api.ts": "05f42ba37cefba1301a8e62fe2ea79e1d4d5ad8ba86edf29b6c8bc16cd357c76",
+    "frontend/src/features/indicators/data.ts": "6fba3e313c95f5aac76ddbbec93e06e887d7d0300e03804655276a9317627fc5",
+    "frontend/src/features/indicators/DetailPage.tsx": "4c3ca3ea4114e7884cb2a4a7c4a839a70f73d52074f9774e3b0a449ede859ab7",
+    "frontend/src/features/indicators/features.css": "be4661f7e3ab876080a005b0b506aa45774f3b8dc2766f9e05e61773226c12bd",
+    "frontend/src/features/indicators/source-trace.css": "2b3cf38b70fa79b92f20001a291aea1073449782d31ce6414b8f6db8adf4c839",
+    "frontend/src/features/indicators/source.ts": "a6804b56a897fe0eda346919ae9c31dfcd4bd6fccd91e92d16179ac374b92fe0",
+    "frontend/src/features/indicators/SourceTracePage.tsx": "a08343c9d1cdbd285b8e497a1bb97311e4bab4142f91f4282660b533f9be219d",
+    "frontend/src/features/indicators/types.ts": "994ebf9152ce47f3733db8732a49c9776df5dc3cec11987b28a392805488898e",
+    "frontend/src/features/indicators/useDetailData.ts": "90b8b11b405b29e25893ad0727bf365905e98ca6afcb31840ee1f6446d82e4ce",
+    "frontend/src/index.css": "c6ae5ea91997ecddd50e1c95615a854716287a1cbc8f5627b055f73bfde84a11",
+    "frontend/tests/browser.test.mjs": "f1935b0781924d9c902ff3629ad5c039bac4f891c3dd57527ff4a9a8a41f307d",
+    "frontend/tests/editorial.test.mjs": "e95d3178f9592747f372bbad3186268855651f6275e08275962018af19085cb2",
+    "frontend/tests/indicator-api.test.mjs": "3f46ee96d2508bfa5a9a0b24e9d133534ae0b2ed3e1631d02b237c304e3b42e0",
+    "frontend/tests/indicator-browser.test.mjs": "0c7198b352162183d5d8118946dfee4f96bbe6fde192dea0081474422d801c9c",
+    "frontend/tests/indicator-data.test.mjs": "bf5e57dc45b9c47ea591e3ed76f023538c4d6e7ccd49921ed0a282456c82a7b0",
+    "frontend/tests/indicator-fixtures.mjs": "692ccc4ff2bc8ed8c2ebc01d57c9db885b783b69d5f2a909af011df1df1e6b63",
+    "frontend/tests/indicator-pages.test.mjs": "12925e01fa82d59b1037d750185c15a27314e15cc35f8ae8414926cd270806d7",
+    "frontend/tests/source-trace.test.mjs": "80f52ef21693458094492d30dfda4b66d76666b13dba90f92d1ae1c98992fcc6"
+  },
+  "source_digest": "7ebab67b73048ce68b07e720ee0f98af2b259f333279d551b4c2cb9348af86bd",
+  "logs_sha256": {
+    "publication-build.log": "d7309edd16165e428a43baaea85460cf51dbde8dc01b43f8eb92cd55b0197114",
+    "publication-editorial-browser.log": "d8df6a757e78e8da339ff905af7de8c0cf786abe4173a5f207fe945dab8a8e1b",
+    "publication-editorial-unit.log": "b3ab11fd33c591d9e3d8be5c3583f37128aaaa38919d0fd842847b1c623c8fc7",
+    "publication-f6-unit.log": "b003747cdc8f3f311d17fde8346196436e731575783dfea67d603d62d066fe3c",
+    "publication-f7-unit.log": "41b5e559cf685511a0c9ef08cf6812f07f7da8bbca8cee4318cb8c0c7bf9fa9d",
+    "publication-feature-browser.log": "886581fa00cc74eafb578eb292007e5b8473233c8979f2abeea37516f6601208",
+    "publication-lint.log": "b35efd7ba07ba217338285084b2849b85d5c463e060a146ff3f74de497cfedd3"
+  },
+  "recovery": {
+    "stash": "46e83a7567a650b9ee1d098dfc70f1cede288c80",
+    "all_22_original_overlay_files_restored": true,
+    "normalized_difference": "Only existing core.autocrlf CRLF/LF conversion; no content differences before documentation status updates"
+  },
+  "limits": [
+    "Synthetic API only, not live backend acceptance",
+    "Visual acceptance F7 pending",
+    "No PR/merge/shared-branch write authorized",
+    "Older receipts are historical; current checkout hash may differ from them due to demonstrated CRLF/LF conversion",
+    "Remote CI not yet checked; local PASS not a remote-CI claim"
+  ]
+}
