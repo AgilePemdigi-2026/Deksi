@@ -60,3 +60,9 @@ test('Indicator cards link to live Source Trace (fitur 9), not a dead anchor', a
   assert.match(html,/sumber-data\?indicator=/);
   assert.match(html,/Source Trace/);
 });
+
+test('Admin sources page exposes an Edit entry point per source', async () => {
+  const { AdminSourcesPage } = await load('components/AdminSourcesPage.tsx');
+  const html = render(AdminSourcesPage);
+  assert.match(html, /Kelola Sumber Data/);
+});

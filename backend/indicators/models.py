@@ -41,6 +41,53 @@ class Source(models.Model):
         return f"{self.source_id} ({self.institution})"
 
 
+def source_config_snapshot(source: "Source") -> dict:
+    """Snapshot konfigurasi tanpa secret (model Source tidak menyimpan secret)."""
+    return {
+        "sourceId": source.source_id,
+        "sourceName": source.source_name,
+        "institution": source.institution,
+        "primaryUrl": source.primary_url,
+        "description": source.description or "",
+        "acquisitionMethod": source.acquisition_method or "",
+        "endpointUrl": source.endpoint_url or "",
+        "dataFormat": source.data_format or "",
+        "frequency": source.frequency or "",
+        "updateSchedule": source.update_schedule or "",
+        "status": source.status,
+    }
+
+
+class SourceRevision(models.Model):
+    """Riwayat revisi konfigurasi sumber. Tidak pernah dihapus/diubah saat edit."""
+
+    class Action(models.TextChoices):
+        CREATE = "tambah", "Tambah sumber"
+        UPDATE = "edit", "Edit sumber"
+
+    source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name="revisions")
+    version = models.PositiveIntegerField()
+    action = models.CharField(max_length=16, choices=Action.choices)
+    before = models.JSONField(default=dict)
+    after = models.JSONField(default=dict)
+    changed_fields = models.JSONField(default=list)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deksi_source_revisions",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-version"]
+        unique_together = [("source", "version")]
+
+    def __str__(self) -> str:
+        return f"{self.source.source_id} v{self.version} ({self.action})"
+
+
 class RawFile(models.Model):
     class ParseStatus(models.TextChoices):
         PENDING = "pending"

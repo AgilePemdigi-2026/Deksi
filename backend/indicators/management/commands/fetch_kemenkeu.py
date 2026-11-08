@@ -28,6 +28,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Unduh dan parse saja tanpa menulis ke database.",
         )
+        parser.add_argument(
+            "--scrap-dir",
+            default=None,
+            help="Folder arsip PDF (default: DEKSI_SCRAPING_DIR / Folder Scrapping).",
+        )
+        parser.add_argument(
+            "--no-scrap-copy",
+            action="store_true",
+            help="Jangan salin PDF ke folder arsip.",
+        )
 
     def handle(self, *args, **options):
         urls = options["urls"] or kemenkeu.DEFAULT_KITA_URLS
@@ -40,7 +50,10 @@ class Command(BaseCommand):
         for url in urls:
             self.stdout.write(f"Mengambil PDF APBN KiTa: {url}")
             try:
-                summary = fiscal.ingest_kita_pdf_url(url)
+                summary = fiscal.ingest_kita_pdf_url(
+                    url, scrap_dir=options["scrap_dir"],
+                    no_scrap_copy=options["no_scrap_copy"],
+                )
             except kemenkeu.KitaError as exc:
                 record_update_failure("APBN KiTa Kemenkeu", updated_by=user, message=f"{url}: {exc}")
                 self.stderr.write(self.style.ERROR(f"Ekstraksi dibatalkan: {exc}"))
@@ -58,6 +71,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"SHA-256      : {summary['checksum']}"))
             for metric in summary["metrics"]:
                 self.stdout.write(self.style.SUCCESS(f"Metrik       : {metric}"))
+            if summary.get("scrap_copy"):
+                self.stdout.write(self.style.SUCCESS(f"Arsip        : {summary['scrap_copy']['pdf']}"))
             ok += 1
         self.stdout.write(f"Selesai: {ok} berhasil, {failed} gagal dari {len(urls)} URL.")
         self.stdout.write("Langkah berikut: validate_observations, lalu publish_observations.")
