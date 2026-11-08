@@ -1,0 +1,147 @@
+{
+  "verified_at": "2026-11-03T10:44:14.018217+00:00",
+  "branch": "feat/7-source-trace-be",
+  "dependency_base": "652ec018ddad455358a9d552593c11b52c4be03b",
+  "repository": "AgilePemdigi-2026/Deksi",
+  "scope": "Compatible F6/F7 public backend APIs and synthetic real-FE integration; local checkpoints only",
+  "backend_tests": {
+    "run": 39,
+    "passed": 38,
+    "skipped": 1,
+    "reason": "Physical Windows symlink creation requires unavailable privileges; not counted PASS",
+    "F6_standalone_passed": 18
+  },
+  "backend_checks": {
+    "django_check": 0,
+    "migration_drift": 0,
+    "scoped_ruff": 0,
+    "node_syntax": 0
+  },
+  "frontend": {
+    "head": "94a05cd1fe5044d3d7e0f71ad6d0487edd5f921f",
+    "unchanged": true,
+    "unit_tests": {
+      "f6-unit": 33,
+      "f7-unit": 12,
+      "editorial-unit": 7
+    },
+    "unit_total": 52,
+    "build_exit": 0,
+    "lint_exit": 0,
+    "existing_lint_warnings": 3,
+    "existing_bundle_warning": "chunk >500 kB"
+  },
+  "actual_browser": {
+    "synthetic": true,
+    "api_interception": false,
+    "checks": [
+      "Real Django GETs return reviewed zero, exact values and all 24 shared-RAW observations",
+      "Actual Dashboard → Detail uses public API without login or synthetic interception",
+      "Keyboard Detail → Source Trace → return retains zero, source, period, RAW and selector",
+      "Native oldest-period selection beyond old 12-row limit survives source navigation and reload",
+      "Cross-origin browser RAW download matches digest; disk corruption is refused with HTTP 503",
+      "Real stored-value change refuses an old context instead of silently replacing it",
+      "Empty data never becomes zero and malformed revisions trigger no API loader",
+      "Real-API source page remains readable at 390/768/1440; no source-link fetch or console exception"
+    ],
+    "errors": [],
+    "scratch_database_removed": true,
+    "owned_backend_stopped": true,
+    "owned_browser_profile_removed": true
+  },
+  "live_receipt_sha256": "f9d59711e947e93ae3004dce66e519aecffe20861b2de251bf90f077f3dbf8db",
+  "independent_review": {
+    "scope": [
+      "fields.py",
+      "views.py",
+      "provenance.py",
+      "storage.py",
+      "tests/test_exact_value.py",
+      "tests/test_raw_storage.py"
+    ],
+    "verdict": "No additional blocking finding confirmed in the six inspected files; static review only",
+    "transcript_sha256": "0ed94efc2b05a8502419e8866ed33e82db776bd5102aacd1316207f673a6bd5d"
+  },
+  "commands": [
+    "python manage.py test indicators.tests --settings=backend.test_settings_indicators",
+    "python manage.py check --settings=backend.test_settings_indicators",
+    "python manage.py makemigrations --check --dry-run --settings=backend.test_settings_indicators",
+    "ruff check [all scoped Python source/tests; see README]",
+    "node --check indicators/tests/frontend-integration.mjs",
+    "python indicators/tests/run_frontend_integration.py --frontend-root E:/Deksi-Team/.hermes/worktrees/feature-7-source-trace-fe/frontend"
+  ],
+  "runtime": "Verified existing Login venv executable, Python 3.14.7/Django 6.1.2; reused read-only; no dependency installation",
+  "canonical": "Generic Hermes phase failed on interpreter resolution (global Python without Django). Not a canonical PASS; explicit interpreter suite and real application run passed. Failed recipe logs retained.",
+  "source_sha256": {
+    "backend/.gitignore": "5c9b1fdf3a7e8d70d898e0daaa80cbf4945cf04fc2b1e85cd6ca19754f072443",
+    "backend/backend/test_settings_indicators.py": "a6398133684472129f072b185f8cb0acd89fe6810f479488ead580c488f44e51",
+    "backend/docs/indicator-detail/PLAN.md": "0f6fa4e013808b1df9fed36f5e83c4f416776d52c4bfcd6fd08763837c5a61c4",
+    "backend/docs/indicator-detail/README.md": "d85433f78d366c5bde09f4fa5758a16182c0ff1950d0520912814b90ee6f5769",
+    "backend/docs/source-trace/EVALUATION.md": "0cc67bce997e7d435f3d42a7e072cb7fce87f234b2eb1f1fd7e30487fd2941e4",
+    "backend/docs/source-trace/README.md": "4c58663bdcd4c67f71d50566b99951c5eaed58eaad17934f0b4196138e9a88d7",
+    "backend/indicators/fields.py": "51a5b4959ab8148f942c0ad91e57dc11a853cdea38a1e05ac60e9acdf11fcd61",
+    "backend/indicators/migrations/0004_exact_observation_decimal.py": "bed2742d02ec365b01f6abf996d3650248587091887c5ca2fd1dfd42d33776c4",
+    "backend/indicators/models.py": "85ced245d4950e3cd95d38d387356aed9a2f93535afe3a711d9169c784abacfa",
+    "backend/indicators/provenance.py": "3b425b965af64934490cb391026b9f751bd59541b496ae01d8524ad92e4aca0d",
+    "backend/indicators/storage.py": "f8f35d7bf2f33997cca7af3bd8a2e83a27bb4511bc8da94feaa81f874dae9f82",
+    "backend/indicators/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/indicators/tests/frontend-integration.mjs": "e7220e84a0532022fb2788b4cc8f08958629441752e22a042f211914c02b2ad7",
+    "backend/indicators/tests/run_frontend_integration.py": "413bedf6fb65ba7b2298a73367bd244692c0a7d1994d9e51cdb63ee2b87a2a3f",
+    "backend/indicators/tests/support.py": "ccb05b05f82e2508383e2fc5a89a8eb4226b25b6f86f0ab1bef9b2252d82d1c7",
+    "backend/indicators/tests/test_detail_api.py": "38dfcee765c71ee6d9cd0932c8f5ffe21074140bec1cf356798cc67a344de1f5",
+    "backend/indicators/tests/test_detail_trend.py": "b3261f4146e1e52b1651b00b346685df79440b85885d79ddd714046097bf4857",
+    "backend/indicators/tests/test_exact_value.py": "bad0dcb739db5a13696a8de6f3b3e1f90b7828cdc457f3d4a6815b3503431135",
+    "backend/indicators/tests/test_raw_download.py": "a11c39391d124b2fa2d809e1626d3054c7092a7e93efd026c4dae2c0e249a373",
+    "backend/indicators/tests/test_raw_storage.py": "4c004fd7f43db2229629d6b9c8c6d0786beee187be8348647baaab7d2656bb55",
+    "backend/indicators/tests/test_source_trace.py": "45c1cfd1468450976dcace6f25b4b80ee6e86d70ea87d409f95c4aec56b8b68b",
+    "backend/indicators/views.py": "0893ca20d5bba8126f6db676141c24b1d65951e08ed56c1376c171533160c775",
+    "backend/requirements.txt": "599dc93464a4fe2df37518f3a57b8fedf0718f93ed4bbf6d8db791e01d5b7572"
+  },
+  "logs": {
+    "f7-final-tests.log": {
+      "path": "backend/.artifacts/f7-final-tests.log",
+      "sha256": "d0f2d94d6c5075a115ee16e80b852ba331080e6cfb706c791a4f536229774c0f",
+      "exit_code": 0
+    },
+    "f7-final-check.log": {
+      "path": "backend/.artifacts/f7-final-check.log",
+      "sha256": "f87ceb15410bde28ff826ce26228e0576558258fa64d145847921a593a61ee63",
+      "exit_code": 0
+    },
+    "f7-final-migrations.log": {
+      "path": "backend/.artifacts/f7-final-migrations.log",
+      "sha256": "93e6e2d5be3c054add80c0f19101608803f7ca8a7df1fa41f76bbb9a1f570f4a",
+      "exit_code": 0
+    },
+    "f7-final-lint.log": {
+      "path": "backend/.artifacts/f7-final-lint.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "exit_code": 0
+    },
+    "f7-final-live-integration.log": {
+      "path": "backend/.artifacts/f7-final-live-integration.log",
+      "sha256": "1e7e166824513d37807ebe732574d84ca74ee3270bec8909f2e85f57cef7f31f",
+      "exit_code": 0
+    }
+  },
+  "allowlist": [
+    "backend/docs/source-trace/EVALUATION.md",
+    "backend/docs/source-trace/README.md",
+    "backend/indicators/provenance.py",
+    "backend/indicators/storage.py",
+    "backend/indicators/tests/frontend-integration.mjs",
+    "backend/indicators/tests/run_frontend_integration.py",
+    "backend/indicators/tests/test_raw_download.py",
+    "backend/indicators/tests/test_raw_storage.py",
+    "backend/indicators/tests/test_source_trace.py",
+    "backend/indicators/views.py",
+    "backend/docs/source-trace/VERIFICATION.json"
+  ],
+  "limits": [
+    "Synthetic data, not independently verified official economic data",
+    "Legacy mutable records: no immutable revision/formula-input ledger or new ingestion lifecycle",
+    "Published frontend reads default bounded history page; backend selector/pagination does not imply unlimited frontend history",
+    "No PostgreSQL/deployment/new human visual acceptance",
+    "No push, PR, shared branch merge or Git identity change"
+  ]
+}
