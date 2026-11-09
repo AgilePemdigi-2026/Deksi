@@ -29,14 +29,14 @@ class Source(models.Model):
     primary_url = models.URLField(max_length=500)
     description = models.TextField(blank=True, default="")
     acquisition_method = models.CharField(
-        max_length=32, choices=AcquisitionMethod.choices, blank=True, default=""
+        max_length=32, choices=AcquisitionMethod.choices, blank=True, default="", db_default=""
     )
-    endpoint_url = models.URLField(max_length=1000, blank=True, default="")
-    data_format = models.CharField(max_length=16, choices=DataFormat.choices, blank=True, default="")
-    frequency = models.CharField(max_length=16, blank=True, default="")
-    update_schedule = models.CharField(max_length=200, blank=True, default="")
+    endpoint_url = models.URLField(max_length=1000, blank=True, default="", db_default="")
+    data_format = models.CharField(max_length=16, choices=DataFormat.choices, blank=True, default="", db_default="")
+    frequency = models.CharField(max_length=16, blank=True, default="", db_default="")
+    update_schedule = models.CharField(max_length=200, blank=True, default="", db_default="")
     status = models.CharField(
-        max_length=16, choices=SourceStatus.choices, default=SourceStatus.ACTIVE
+        max_length=16, choices=SourceStatus.choices, default=SourceStatus.ACTIVE, db_default=SourceStatus.ACTIVE
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
