@@ -31,6 +31,7 @@ class ExactValueMigrationTests(TransactionTestCase):
     def test_forward_migration_preserves_existing_representable_value(self):
         old = [("indicators", "0003_seed_initial_update_log")]
         new = [("indicators", "0004_exact_observation_decimal")]
+        final_targets = MigrationExecutor(connection).loader.graph.leaf_nodes()
         executor = MigrationExecutor(connection)
         executor.migrate(old)
         try:
@@ -46,4 +47,4 @@ class ExactValueMigrationTests(TransactionTestCase):
             executor.migrate(new)
             self.assertEqual(Observation.objects.get(pk=row.pk).value, Decimal("123.123456"))
         finally:
-            MigrationExecutor(connection).migrate(new)
+            MigrationExecutor(connection).migrate(final_targets)

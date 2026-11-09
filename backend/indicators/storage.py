@@ -46,7 +46,26 @@ def save_raw(
     checksum = compute_checksum(content)
     existing = RawFile.objects.filter(source=source, checksum_sha256=checksum).first()
     if existing is not None:
-        verified_raw_bytes(existing)
+        try:
+            verified_raw_bytes(existing)
+        except FileNotFoundError:
+            # Baris lama menunjuk path yang sudah tidak ada (mis. skema
+            # penyimpanan lama). Tulis ulang isi ke path skema baru dan
+            # perbaiki penunjuknya; riwayat baris tetap.
+            # Checksum MISMATCH (ValueError) TIDAK ditangani di sini:
+            # itu tanda pemalsuan dan harus tetap melempar error.
+            root = raw_storage_root().resolve()
+            stored_dir = root / f"source-{source.pk}"
+            stored_dir.mkdir(parents=True, exist_ok=True)
+            stored_path = stored_dir / f"{checksum}.raw"
+            try:
+                with stored_path.open("xb") as handle:
+                    handle.write(content)
+            except FileExistsError:
+                pass
+            existing.stored_path = str(stored_path)
+            existing.file_size_bytes = len(content)
+            existing.save(update_fields=["stored_path", "file_size_bytes"])
         return existing, False
     retrieved_at = datetime.now(UTC)
     root = raw_storage_root().resolve()

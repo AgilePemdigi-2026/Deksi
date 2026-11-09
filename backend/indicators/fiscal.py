@@ -55,6 +55,17 @@ def get_fiscal_indicators() -> dict[str, Indicator]:
 
 def ingest_kita_pdf_url(url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
     pdf_bytes, parsed = kemenkeu.fetch_and_parse(url)
+    return ingest_kita_parsed(parsed, pdf_bytes, url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy)
+
+
+def ingest_kita_pdf_bytes(pdf_bytes: bytes, source_url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
+    """Ingest PDF KiTa dari berkas lokal (arsip Folder Scrapping)."""
+    text = kemenkeu.pdf_to_text(pdf_bytes)
+    parsed = kemenkeu.parse_kita_text(text, source_url=source_url)
+    return ingest_kita_parsed(parsed, pdf_bytes, source_url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy)
+
+
+def ingest_kita_parsed(parsed, pdf_bytes: bytes, url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
     if parsed.cumulative_until is None:
         raise kemenkeu.KitaError("periode kumulatif tidak teridentifikasi pada dokumen; data tidak disimpan")
     result = _store_parsed_result(url, pdf_bytes, parsed)

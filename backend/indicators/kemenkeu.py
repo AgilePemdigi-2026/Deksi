@@ -219,9 +219,17 @@ def _extract_summary_metrics(text: str) -> dict[str, KitaMetric]:
     if ratio is not None:
         raw = ratio.group(1).replace(".", "").replace(",", ".")
         try:
+            ratio_value = Decimal(raw)
+            nominal = metrics.get("defisit_apbn")
+            if nominal is not None and (nominal.value > 0) != (ratio_value > 0) and ratio_value != 0:
+                # Teks sumber kadang menulis rasio defisit dengan minus
+                # ("(-1,24% PDB)") sementara nominalnya positif.
+                # Samakan tanda dengan nominal agar seri konsisten
+                # (defisit positif, surplus negatif).
+                ratio_value = -ratio_value
             metrics["defisit_pdb"] = KitaMetric(
                 identifier="defisit_pdb",
-                value=Decimal(raw),
+                value=ratio_value,
                 unit="% PDB",
                 matched_label=ratio.group(0),
             )
@@ -230,14 +238,259 @@ def _extract_summary_metrics(text: str) -> dict[str, KitaMetric]:
     return metrics
 
 
+# Celah kata sisipan kolom antar angka dan satuannya ("atau 0,41\n Di sisi
+# Belanja Negara, sampai persen"). \S+ dipakai agar koma menempel
+# ("Negara,") tak memutus pencocokan seperti yang terjadi pada \w+.
+_GAP = r"(?:\s+\S+){0,10}?"
+
+
+def _extract_narrative_metrics(normalized: str) -> dict[str, KitaMetric]:
+    """Fallback edisi lama (2021-2024): angka total dari kalimat narasi.
+
+    Pola berjangkar, bukan keyword lepas (keyword lepas pernah mengambil
+    komponen sebagai total):
+    - Pendapatan: "tercatat RpX triliun" dengan "Pendapatan Negara" di dekatnya.
+    - Belanja: "RpX triliun (Y% dari pagu)" yang persennya juga disebut bersama
+      "Belanja Negara ... dari pagu" (cross-match, menolak komponen).
+    - Surplus/defisit: "RpX triliun (Y% ... PDB)" dengan kata surplus/defisit
+      di dekatnya; surplus disimpan negatif (defisit = -surplus).
+    """
+    from indicators.parsing import parse_id_number
+
+    def _num(raw: str) -> Decimal | None:
+        try:
+            value = parse_id_number(raw)
+        except Exception:
+            return None
+        if value is None or not (Decimal(1) <= abs(value) <= Decimal(50000)):
+            return None
+        return value
+
+    metrics: dict[str, KitaMetric] = {}
+    # 1. Pendapatan total, dua redaksi template era 2024:
+    #    (a) "Pendapatan Negara RpX triliun [atau Y% dari target]";
+    #    (b) "tercatat RpX triliun" dengan "Pendapatan Negara" di dekatnya.
+    for pattern in (
+        r"Pendapatan Negara\s+Rp\s*([0-9][0-9.,]*)\s*triliun",
+        r"tercatat\s+Rp\s*([0-9][0-9.,]*)\s*triliun",
+    ):
+        for match in re.finditer(pattern, normalized, re.IGNORECASE):
+            window = normalized[max(0, match.start() - 250) : match.end() + 50]
+            lowered = window.lower()
+            if "pendapatan negara" not in lowered:
+                continue
+            if any(k in lowered for k in ("pajak tercatat", "cukai", "pnbp", "bea masuk", "bea keluar", "subsidi", "transfer")):
+                continue
+            value = _num(match.group(1))
+            if value is None:
+                continue
+            metrics["pendapatan_negara"] = KitaMetric(
+                identifier="pendapatan_negara",
+                value=value,
+                unit="Rp Triliun",
+                matched_label=match.group(0).strip(),
+            )
+            break
+        if "pendapatan_negara" in metrics:
+            break
+    # 2. Belanja total via cross-match persentase pagu.
+    mentioned: set[str] = set()
+    for match in re.finditer(
+        r"belanja negara[^.]{0,150}?([0-9]+,[0-9]+)\s*persen\s*dari\s*pagu",
+        normalized,
+        re.IGNORECASE,
+    ):
+        mentioned.add(match.group(1))
+    for match in re.finditer(
+        r"Rp\s*([0-9][0-9.,]*)\s*triliun\s*\(\s*([0-9]+,[0-9]+)\s*persen\s*dari\s*pagu\s*\)",
+        normalized,
+        re.IGNORECASE,
+    ):
+        if match.group(2) not in mentioned:
+            continue
+        value = _num(match.group(1))
+        if value is None:
+            continue
+        metrics["belanja_negara"] = KitaMetric(
+            identifier="belanja_negara",
+            value=value,
+            unit="Rp Triliun",
+            matched_label=match.group(0).strip(),
+        )
+        break
+    if "belanja_negara" not in metrics:
+        # Redaksi "terealisasi RpX triliun" pada kalimat Belanja Negara.
+        for match in re.finditer(
+            r"terealisasi\s+Rp\s*([0-9][0-9.,]*)\s*triliun",
+            normalized,
+            re.IGNORECASE,
+        ):
+            window = normalized[max(0, match.start() - 150) : match.end() + 50]
+            lowered = window.lower()
+            if "belanja negara" not in lowered:
+                continue
+            if any(k in lowered for k in ("subsidi", "transfer", "pemerintah pusat", "belanja k/l", "nonk/l", "non k/l")):
+                continue
+            value = _num(match.group(1))
+            if value is None:
+                continue
+            metrics["belanja_negara"] = KitaMetric(
+                identifier="belanja_negara",
+                value=value,
+                unit="Rp Triliun",
+                matched_label=match.group(0).strip(),
+            )
+            break
+    # 3. Surplus/defisit + rasio PDB. Dua redaksi:
+    #    (a) "RpX triliun (Y% ... PDB)" dengan kata surplus/defisit di dekatnya;
+    #    (b) "tercatat/mencapai surplus|defisit RpX triliun [atau Y% ... PDB]".
+    #    Surplus disimpan negatif. Abaikan perbandingan tahun lalu
+    #    ("yang sama 20xx") dan keseimbangan primer.
+    for match in re.finditer(
+        r"Rp\s*([0-9][0-9.,]*)\s*triliun\s*\(\s*([0-9]+[.,][0-9]+)\s*(?:persen|%)\s*(?:dari\s*)?PDB\s*\)",
+        normalized,
+        re.IGNORECASE,
+    ):
+        # Atribusi harus tepat sebelum angka (menolak angka pembiayaan/utang
+        # yang kebetulan ber-PDB, mis. "Pembiayaan ... Rp616,2 triliun ...").
+        before = normalized[max(0, match.start() - 100) : match.start()].lower()
+        pos_surplus = before.rfind("surplus")
+        pos_defisit = before.rfind("defisit")
+        if pos_surplus < 0 and pos_defisit < 0:
+            continue
+        sign = -1 if pos_surplus >= pos_defisit else 1
+        value = _num(match.group(1))
+        ratio_raw = match.group(2).replace(".", "").replace(",", ".")
+        try:
+            ratio = Decimal(ratio_raw)
+        except InvalidOperation:
+            continue
+        if value is None or not (Decimal(0) <= abs(ratio) <= Decimal(10)):
+            continue
+        metrics["defisit_apbn"] = KitaMetric(
+            identifier="defisit_apbn",
+            value=sign * value,
+            unit="Rp Triliun",
+            matched_label=match.group(0).strip(),
+        )
+        metrics["defisit_pdb"] = KitaMetric(
+            identifier="defisit_pdb",
+            value=sign * ratio,
+            unit="% PDB",
+            matched_label=match.group(0).strip(),
+        )
+        break
+    if "defisit_apbn" not in metrics:
+        ratio_tail = r"(?:\s*atau\s*([0-9]+[.,][0-9]+)" + _GAP + r"\s*persen\s*(?:(terhadap|dari)\s*)?PDB)?"
+        for match in re.finditer(
+            r"(surplus|defisit)(?:\s+\w+){0,2}\s+Rp\s*([0-9][0-9.,]*)\s*triliun" + ratio_tail,
+            normalized,
+            re.IGNORECASE,
+        ):
+            # Angka headline selalu muncul sebelum perbandingan tahun lalu,
+            # jadi kemunculan valid pertama langsung dipakai.
+            before = normalized[max(0, match.start() - 80) : match.start()].lower()
+            near = normalized[max(0, match.start() - 80) : match.end() + 80].lower()
+            if "primer" in near or "keseimbangan" in near:
+                continue
+            if re.search(r"\bsama\b|\blalu\b", before):
+                continue
+            value = _num(match.group(2))
+            if value is None:
+                continue
+            sign = -1 if match.group(1).lower() == "surplus" else 1
+            metrics["defisit_apbn"] = KitaMetric(
+                identifier="defisit_apbn",
+                value=sign * value,
+                unit="Rp Triliun",
+                matched_label=match.group(0).strip(),
+            )
+            ratio_raw = match.group(3)
+            if not ratio_raw:
+                # Rasio kadang terpisah oleh kolom ("...triliun\n\n Di sisi
+                # Belanja Negara, sampai atau 0,68 persen terhadap PDB",
+                # atau "atau 0,41\n Di sisi ... sampai persen terhadap PDB").
+                # Ambil bila rasio muncul SEBELUM angka Rp lain di jendela.
+                after = normalized[match.end() : match.end() + 150]
+                lookahead = re.search(
+                    r"([0-9]+[.,][0-9]+)" + _GAP + r"\s*persen\s*(?:(terhadap|dari)\s*)?PDB",
+                    after,
+                    re.IGNORECASE,
+                )
+                rp_after = re.search(r"Rp\s*[0-9]", after)
+                if lookahead and (not rp_after or lookahead.start() < rp_after.start()):
+                    ratio_raw = lookahead.group(1)
+            if ratio_raw:
+                after_all = (near + normalized[match.end() : match.end() + 150]).lower()
+                if "pdb" in after_all:
+                    try:
+                        ratio = Decimal(ratio_raw.replace(".", "").replace(",", "."))
+                    except InvalidOperation:
+                        ratio = None
+                    if ratio is not None and Decimal(0) <= abs(ratio) <= Decimal(10):
+                        metrics["defisit_pdb"] = KitaMetric(
+                            identifier="defisit_pdb",
+                            value=sign * ratio,
+                            unit="% PDB",
+                            matched_label=match.group(0).strip(),
+                        )
+            break
+    # 3b. Rasio tanpa nominal ("mengalami defisit 0,34 persen terhadap PDB").
+    # Dipakai hanya bila nominal sudah ada dari pola (b) dan polanya sendiri
+    # tak menyebut tahun lain perbandingan.
+    if "defisit_apbn" in metrics and "defisit_pdb" not in metrics:
+        for match in re.finditer(
+            r"(surplus|defisit)\s+([0-9]+[.,][0-9]+)" + _GAP + r"\s*persen\s*(?:(terhadap|dari)\s*)?PDB",
+            normalized,
+            re.IGNORECASE,
+        ):
+            window = normalized[max(0, match.start() - 80) : match.end() + 20].lower()
+            if "primer" in window or "keseimbangan" in window:
+                continue
+            if re.search(r"\b(sama|lalu)\b", window):
+                continue
+            try:
+                ratio = Decimal(match.group(2).replace(".", "").replace(",", "."))
+            except InvalidOperation:
+                continue
+            if not (Decimal(0) <= abs(ratio) <= Decimal(10)):
+                continue
+            sign = -1 if match.group(1).lower() == "surplus" else 1
+            metrics["defisit_pdb"] = KitaMetric(
+                identifier="defisit_pdb",
+                value=sign * ratio,
+                unit="% PDB",
+                matched_label=match.group(0).strip(),
+            )
+            break
+    # 4. Identitas akuntansi: defisit = belanja - pendapatan
+    # (negatif saat surplus). Jika tidak cocok, buang D.
+    if {"pendapatan_negara", "belanja_negara", "defisit_apbn"} <= set(metrics):
+        gap = abs(
+            metrics["defisit_apbn"].value
+            - (
+                metrics["belanja_negara"].value
+                - metrics["pendapatan_negara"].value
+            )
+        )
+        tolerance = max(Decimal("1"), abs(metrics["defisit_apbn"].value) * Decimal("0.05"))
+        if gap > tolerance:
+            metrics.pop("defisit_apbn", None)
+            metrics.pop("defisit_pdb", None)
+    return metrics
+
+
 def extract_kita_metrics(text: str) -> dict[str, KitaMetric]:
     # Ringkasan 3 kolom (pendapatan/belanja/defisit) bergantung pada spasi
     # kolom hasil pdftotext, jadi harus diproses dari teks mentah SEBELUM
-    # normalisasi spasi. Fallback keyword boleh memakai teks normalisasi.
+    # normalisasi spasi.
     metrics = _extract_summary_metrics(text)
     normalized = re.sub(r"[ \t]+", " ", text)
+    # Fallback keyword HANYA untuk pembiayaan (total tak terambigu).
+    # P/B/D dari keyword lepas terbukti mengambil komponen sebagai total
+    # pada edisi lama, sehingga dinonaktifkan di sini.
     for identifier, patterns in METRIC_KEYWORDS.items():
-        if identifier in metrics:
+        if identifier in metrics or identifier != "pembiayaan_anggaran":
             continue
         for pattern in patterns:
             match = pattern.search(normalized)
@@ -253,6 +506,9 @@ def extract_kita_metrics(text: str) -> dict[str, KitaMetric]:
                     matched_label=match.group(0),
                 )
                 break
+    # Fallback naratif untuk edisi lama tanpa tabel ringkasan.
+    for identifier, metric in _extract_narrative_metrics(normalized).items():
+        metrics.setdefault(identifier, metric)
     return metrics
 
 

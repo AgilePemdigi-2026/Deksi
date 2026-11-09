@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from indicators import bps
-from indicators.models import Indicator, Observation
+from indicators.models import Indicator, Observation, Source
 from indicators.provenance import matching_raw, public_source_url, source_trace_parameters
 from indicators.storage import verified_raw_bytes
 from indicators.updates import latest_attempt, latest_successful_update, serialize_update_log
@@ -461,9 +461,9 @@ def serialize_trace(observation: Observation) -> dict:
     value_type = value_type_for(observation)
     publication_url = None
     if raw_file is not None and (raw_file.source_url or "").startswith("http"):
-        publication_url = raw_file.source_url
+        publication_url = public_source_url(raw_file.source_url)
     if not publication_url:
-        publication_url = observation.source.primary_url or None
+        publication_url = public_source_url(observation.source.primary_url)
     trace = {
         "observationId": observation.pk,
         "available": True,
@@ -490,7 +490,6 @@ def serialize_trace(observation: Observation) -> dict:
         "publicationUrl": publication_url,
         "retrievedAt": raw_file.retrieved_at.isoformat() if raw_file and raw_file.retrieved_at else None,
         "version": raw_file.checksum_sha256[:12] if raw_file else None,
-        "revision": observation.validation_notes or None,
         "validationStatus": observation.validation_status,
         "reviewedAt": observation.reviewed_at.isoformat() if observation.reviewed_at else None,
         "source": {

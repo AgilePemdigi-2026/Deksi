@@ -46,7 +46,7 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
     const params = new URLSearchParams(search)
     return <SourceDataPage selection={{ sourceId: params.get('source') || undefined, indicator: params.get('indicator') || undefined, period: params.get('period') || undefined }} />
   }
-  if (path === '/admin/sumber') return <AdminSourcesPage />
+  if (path === '/admin/sumber' || path === '/admin/sumber-data') return <AdminSourcesPage />
   const route = parseRoute(path, search)
   if (route.kind === 'dashboard') return <Dashboard />
   if (route.kind === 'detail') return <DetailScreen route={route} />
