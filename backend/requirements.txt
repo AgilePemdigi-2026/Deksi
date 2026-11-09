@@ -1,0 +1,5 @@
+# The active root manifest plus imports used by the Django public API.
+-r ../requirements.txt
+django-environ==0.14.0
+django-cors-headers==4.9.0
+httpx==0.28.1

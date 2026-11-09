@@ -1,8 +1,6 @@
 from django.urls import path
 
-from indicators import views
-from indicators import feedback_views
-
+from indicators import dashboard_views, feedback_views, views
 
 urlpatterns = [
     # ── Sistem ──────────────────────────────────────────────────────────────
@@ -20,10 +18,8 @@ urlpatterns = [
         views.raw_file_download,
         name="indicator-raw-file",
     ),
-
-    # ── Fitur 5: Filter Dashboard ────────────────────────────────────────────
-    path("indicators/dashboard/", views.indicator_dashboard_filter, name="indicator-dashboard-filter"),
-    path("indicators/categories/", views.indicator_categories, name="indicator-categories"),
+    path("indicators/dashboard/", dashboard_views.indicator_dashboard_filter, name="indicator-dashboard-filter"),
+    path("indicators/categories/", dashboard_views.indicator_categories, name="indicator-categories"),
 
     # ── Fitur 9: Daftar Sumber Data / Source Trace ──────────────────────────
     path("sources/", views.source_list, name="source-list"),

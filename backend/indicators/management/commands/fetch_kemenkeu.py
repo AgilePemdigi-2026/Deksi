@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 
-from indicators import fiscal
-from indicators import kemenkeu
-from indicators.updates import record_update_failure, record_update_success
+from indicators import fiscal, kemenkeu
+from indicators.updates import record_update_failure
 
 
 class Command(BaseCommand):
@@ -41,17 +41,13 @@ class Command(BaseCommand):
             self.stdout.write(f"Mengambil PDF APBN KiTa: {url}")
             try:
                 summary = fiscal.ingest_kita_pdf_url(url)
-            except kemenkeu.KitaError as exc:
+            except (kemenkeu.KitaError, ValidationError) as exc:
                 record_update_failure("APBN KiTa Kemenkeu", updated_by=user, message=f"{url}: {exc}")
                 self.stderr.write(self.style.ERROR(f"Ekstraksi dibatalkan: {exc}"))
                 failed += 1
                 continue
-            record_update_success(
-                "APBN KiTa Kemenkeu",
-                updated_by=user,
-                observation_count=len(summary["metrics"]),
-                message=f"Metadata APBN KiTa {summary['period_label']} berhasil diambil.",
-            )
+            # Staging bukan publikasi: tidak dicatat sebagai pembaruan sukses.
+            self.stdout.write("Perubahan menunggu review Admin; data publik belum diganti.")
             self.stdout.write(self.style.SUCCESS(f"Dokumen      : {summary['document_name']}"))
             self.stdout.write(self.style.SUCCESS(f"Periode      : {summary['period_label']}"))
             self.stdout.write(self.style.SUCCESS(f"Rilis data   : {summary['publication_date']}"))

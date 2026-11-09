@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 
 from indicators import bps
-from indicators.updates import record_update_failure, record_update_success
+from indicators.updates import record_update_failure
 
 
 class Command(BaseCommand):
@@ -23,21 +24,16 @@ class Command(BaseCommand):
                 start_year=options["start_year"],
                 end_year=options["end_year"],
             )
-        except bps.BpsError as exc:
+        except (bps.BpsError, ValidationError) as exc:
             record_update_failure("WebAPI BPS", updated_by=user, message=str(exc))
             self.stderr.write(self.style.ERROR(str(exc)))
-            raise SystemExit(2)
+            raise SystemExit(2) from exc
         if summary["errors"]:
             message = "; ".join(summary["errors"])
             record_update_failure("WebAPI BPS", updated_by=user, message=message)
             self.stderr.write(self.style.ERROR(f"Sinkronisasi BPS gagal sebagian: {message}"))
             raise SystemExit(2)
-        record_update_success(
-            "WebAPI BPS",
-            updated_by=user,
-            observation_count=summary["observations"],
-            message="Sinkronisasi indikator BPS berhasil.",
-        )
-        self.stdout.write(self.style.SUCCESS(f"Observasi BPS diproses: {summary['observations']}"))
+        self.stdout.write(self.style.SUCCESS(
+            f"Observasi BPS diproses: {summary['observations']}; belum dipublikasikan."))
         for code, period in summary["latest"].items():
             self.stdout.write(self.style.SUCCESS(f"{code}: periode terbaru {period}"))

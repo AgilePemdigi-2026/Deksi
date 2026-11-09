@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:8000/api";
+export const API_BASE = "/api";
 
 export type Direction = "up" | "down" | "flat";
 
@@ -311,13 +311,12 @@ export async function fetchSourceDetail(sourceId: string): Promise<SourceDetail>
 
 export async function fetchSourceTrace(
   code: string,
-  params?: { period?: string; observation_date?: string },
+  // Parameter legacy (period/observation_date) tidak lagi dikirim: backend
+  // Source Trace kini hanya menerima selector tanggal/tipe/frekuensi/sumber
+  // atau tanpa parameter (observasi terbaru). Panel daftar sumber memakai mode terbaru.
+  _params?: { period?: string; observation_date?: string },
 ): Promise<SourceTrace> {
-  const query = new URLSearchParams();
-  if (params?.period) query.set("period", params.period);
-  if (params?.observation_date) query.set("observation_date", params.observation_date);
-  const suffix = query.toString() ? `?${query}` : "";
-  const res = await fetch(`${API_BASE}/indicators/${encodeURIComponent(code)}/source-trace/${suffix}`);
+  const res = await fetch(`${API_BASE}/indicators/${encodeURIComponent(code)}/source-trace/`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as SourceTrace;
 }

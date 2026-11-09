@@ -1,5 +1,5 @@
 /**
- * DashboardFilter – Fitur 5: Filter periode dan kategori indikator.
+ * DashboardFilter ΓÇô Fitur 5: Filter periode dan kategori indikator.
  *
  * Menampilkan kontrol filter berupa:
  *  - Pills kategori yang diisi dinamis dari endpoint /api/indicators/categories/
@@ -10,7 +10,7 @@
  * sehingga perubahan filter dapat mempengaruhi komponen lain (kartu, grafik).
  */
 
-import { useIndicatorCategories, type DashboardFilters } from "../api";
+import { useIndicatorCategories, type DashboardFilters } from "../features/dashboard/filter";
 
 interface Props {
   filters: DashboardFilters;
@@ -22,7 +22,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
 
 export function DashboardFilter({ filters, onChange }: Props) {
-  const categoryEntries = useIndicatorCategories();
+  const { data: categoryEntries = [], error, retry } = useIndicatorCategories();
   const hasActiveFilter = filters.category !== "" || filters.year !== "";
 
   function setCategory(cat: string) {
@@ -39,6 +39,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
 
   return (
     <section className="dashboard-filter" aria-label="Filter dashboard">
+      {error && <p role="alert">Kategori belum tersedia. <button type="button" onClick={retry}>Coba kategori lagi</button></p>}
       <div className="dashboard-filter__row">
         {/* Pills kategori */}
         <div className="dashboard-filter__group" role="group" aria-label="Filter kategori">
@@ -52,7 +53,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             >
               Semua
             </button>
-            {categoryEntries.map((entry) => (
+            {(categoryEntries ?? []).map((entry) => (
               <button
                 key={entry.category}
                 id={`filter-cat-${entry.category.toLowerCase().replace(/\s/g, "-")}`}
@@ -79,7 +80,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             value={filters.year}
             onChange={(e) => setYear(e.target.value)}
           >
-            <option value="">Semua Tahun</option>
+            <option value="">Terbaru (semua tahun)</option>
             {YEAR_OPTIONS.map((y) => (
               <option key={y} value={String(y)}>
                 {y}
@@ -88,7 +89,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
           </select>
         </div>
 
-        {/* Tombol reset – muncul hanya bila ada filter aktif */}
+        {/* Tombol reset ΓÇô muncul hanya bila ada filter aktif */}
         {hasActiveFilter && (
           <button
             id="filter-reset"
@@ -96,7 +97,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             onClick={resetFilters}
             aria-label="Reset semua filter"
           >
-            ✕ Reset Filter
+            Γ£ò Reset Filter
           </button>
         )}
       </div>
@@ -110,7 +111,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             filters.year && `Tahun: ${filters.year}`,
           ]
             .filter(Boolean)
-            .join(" · ")}
+            .join(" ┬╖ ")}
         </p>
       )}
     </section>

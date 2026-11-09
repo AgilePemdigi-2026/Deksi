@@ -46,7 +46,7 @@ const Sparkline = ({ points, color }: { points: number[]; color: string }) => {
   );
 };
 
-export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> & { id: string } }) {
+export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> & { id?: string } }) {
   return (
     <article className="indicator-card">
       <div className="indicator-head">
@@ -76,12 +76,8 @@ export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> & { id
         <span className="indicator-source">
           {meta.source} • Observasi: {meta.sourceDate}
         </span>
-        <a
-          className="source-trace-link"
-          href={`#/sumber-data?indicator=${encodeURIComponent(meta.id)}`}
-        >
-          Source Trace ↗
-        </a>
+        {meta.id && /^[a-z][a-z0-9_-]{0,31}$/.test(meta.id) ? <a className="indicator-link" href={`/indikator/${encodeURIComponent(meta.id)}`}>Lihat detail ↗</a> : <button type="button" className="indicator-link" disabled>Detail belum tersedia</button>}
+        {meta.id ? <a className="source-trace-link" href={`/sumber-data?indicator=${encodeURIComponent(meta.id)}`}>Source Trace ↗</a> : null}
       </footer>
     </article>
   );

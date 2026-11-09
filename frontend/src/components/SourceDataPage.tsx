@@ -108,10 +108,10 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
       </div>
 
       <nav className="sources-nav" aria-label="Navigasi halaman">
-        <a href="#dashboard">Beranda</a>
+        <a href="/">Beranda</a>
         <a href="#indikator">Indikator</a>
         <a href="#analisis">Analisis</a>
-        <a href="#/sumber-data" aria-current="page">Sumber Data</a>
+        <a href="/sumber-data" aria-current="page">Sumber Data</a>
         <a href="#tentang">Tentang</a>
       </nav>
 
@@ -131,7 +131,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
                 setActiveSource(s.sourceId);
                 setActiveIndicator(null);
                 setActivePeriod(undefined);
-                window.location.hash = `#/sumber-data?source=${encodeURIComponent(s.sourceId)}`;
+                window.location.assign(`/sumber-data?source=${encodeURIComponent(s.sourceId)}`);
               }}
               className={s.sourceId === activeSource ? "source-card active" : "source-card"}
               aria-pressed={s.sourceId === activeSource}
@@ -180,7 +180,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
                       onClick={() => {
                         setActiveIndicator(ind.code);
                         setActivePeriod(undefined);
-                        window.location.hash = `#/sumber-data?source=${encodeURIComponent(detail.sourceId)}&indicator=${encodeURIComponent(ind.code)}`;
+                        window.location.assign(`/sumber-data?source=${encodeURIComponent(detail.sourceId)}&indicator=${encodeURIComponent(ind.code)}`);
                       }}
                       className={ind.code === activeIndicator ? "source-ind active" : "source-ind"}
                     >
