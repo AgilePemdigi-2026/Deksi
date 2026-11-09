@@ -1,5 +1,5 @@
 /**
- * DashboardFilter – Fitur 5: Filter periode dan kategori indikator.
+ * DashboardFilter ΓÇô Fitur 5: Filter periode dan kategori indikator.
  *
  * Menampilkan kontrol filter berupa:
  *  - Pills kategori yang diisi dinamis dari endpoint /api/indicators/categories/
@@ -89,7 +89,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
           </select>
         </div>
 
-        {/* Tombol reset – muncul hanya bila ada filter aktif */}
+        {/* Tombol reset ΓÇô muncul hanya bila ada filter aktif */}
         {hasActiveFilter && (
           <button
             id="filter-reset"
@@ -97,7 +97,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             onClick={resetFilters}
             aria-label="Reset semua filter"
           >
-            ✕ Reset Filter
+            Γ£ò Reset Filter
           </button>
         )}
       </div>
@@ -111,7 +111,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             filters.year && `Tahun: ${filters.year}`,
           ]
             .filter(Boolean)
-            .join(" · ")}
+            .join(" ┬╖ ")}
         </p>
       )}
     </section>

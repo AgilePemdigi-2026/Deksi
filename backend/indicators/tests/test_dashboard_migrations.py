@@ -1,10 +1,63 @@
 from datetime import date
 from decimal import Decimal
 
-from django.db import connection
+from django.db import IntegrityError, connection
 from django.db.migrations.executor import MigrationExecutor
 from django.db.migrations.loader import MigrationLoader
 from django.test import SimpleTestCase, TransactionTestCase
+from django.utils import timezone
+
+# Nilai aman untuk kolom Source yang ditambahkan Fitur 10. Dipakai hanya bila
+# status migrasi yang diuji tidak mengenal kolom tersebut sementara tabel
+# database sudah memilikinya (cabang migrasi paralel tetap teraplikasi).
+_SOURCE_BACKFILL = {
+    "acquisition_method": "",
+    "data_format": "",
+    "endpoint_url": "",
+    "frequency": "",
+    "update_schedule": "",
+    "status": "active",
+}
+
+
+def _create_source_compat(hist_source_model, **kwargs):
+    """Buat baris Source pada status migrasi lama yang toleran skema baru."""
+    model_fields = {f.name for f in hist_source_model._meta.fields}
+    create_kwargs = dict(kwargs)
+    create_kwargs.update({k: v for k, v in _SOURCE_BACKFILL.items() if k in model_fields})
+    try:
+        return hist_source_model.objects.create(**create_kwargs)
+    except IntegrityError:
+        pass
+    table = hist_source_model._meta.db_table
+    field_by_column = {f.column: f for f in hist_source_model._meta.fields}
+    auto_column = hist_source_model._meta.auto_field.column if hist_source_model._meta.auto_field else None
+    with connection.cursor() as cur:
+        db_columns = [c.name for c in connection.introspection.get_table_description(cur, table)]
+    insert_columns, params = [], []
+    for column in db_columns:
+        if column == auto_column:
+            continue
+        field = field_by_column.get(column)
+        if field is not None and field.name in create_kwargs:
+            params.append(create_kwargs[field.name])
+        elif column in _SOURCE_BACKFILL:
+            params.append(_SOURCE_BACKFILL[column])
+        elif field is not None and (getattr(field, "auto_now", False) or getattr(field, "auto_now_add", False)):
+            params.append(timezone.now())
+        elif field is not None:
+            params.append(field.get_default())
+        else:
+            params.append(None)
+        insert_columns.append(f'"{column}"')
+    placeholders = ", ".join(["%s"] * len(insert_columns))
+    with connection.cursor() as cur:
+        cur.execute(
+            f'INSERT INTO "{table}" ({", ".join(insert_columns)}) VALUES ({placeholders}) RETURNING "id"',
+            params,
+        )
+        source_pk = cur.fetchone()[0]
+    return hist_source_model.objects.get(pk=source_pk)
 
 
 class DashboardMigrationGraphTests(SimpleTestCase):
@@ -28,7 +81,8 @@ class DashboardMigrationUpgradeTests(TransactionTestCase):
                 category="Test",
                 unit="Rp",
             )
-            source = apps.get_model("indicators", "Source").objects.create(
+            source = _create_source_compat(
+                apps.get_model("indicators", "Source"),
                 source_id="TEST_MIGRATION",
                 source_name="SYNTHETIC",
                 institution="SYNTHETIC",
