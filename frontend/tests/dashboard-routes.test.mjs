@@ -20,6 +20,7 @@ test('all Sprint1 routes coexist, public root has full donor sections and no inv
   const html=renderToStaticMarkup(createElement(App,{pathname:path}));assert(!html.includes('id="economic-overview"'));assert(html.includes('feature-content'))
  }
  const sources=renderToStaticMarkup(createElement(App,{pathname:'/sumber-data'}));assert(sources.includes('Sumber Data'))
+ const adminSources=renderToStaticMarkup(createElement(App,{pathname:'/admin/sumber-data'}));assert(adminSources.includes('Kelola Sumber'))
  const unknown=renderToStaticMarkup(createElement(App,{pathname:'/rute-tidak-ada-xyz'}));assert(unknown.includes('Halaman tidak ditemukan'))
 })
 test('public API and RAW stay same origin, no hardcoded shared test port',()=>{

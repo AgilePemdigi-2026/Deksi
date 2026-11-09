@@ -144,8 +144,25 @@ def review_candidate(candidate_id, user, *, publish=True, notes=""):
                   "reviewed_by_id": user.pk, "reviewed_at": now, "validation_notes": ""}
     previous = base["observation"]
     if previous:
-        expected = dict(previous)
-        expected["pk"] = expected.pop("id")
+        from datetime import datetime as _datetime
+
+        # Filter konkuren hanya pada kunci + field kontrol kelayakan
+        # publikasi. Field fakta tidak ikut: kesetaraannya sudah diverifikasi
+        # di atas dalam transaksi yang sama (baris terkunci select_for_update),
+        # dan representasi desimal JSON ("4.940000") vs SQLite TEXT ("4.94")
+        # membuat filter tekstual gagal walau nilainya sama.
+        expected = {
+            "pk": previous["id"],
+            "validation_status": previous["validation_status"],
+            "reviewed_by_id": previous["reviewed_by_id"],
+            "validation_notes": previous["validation_notes"],
+        }
+        if previous.get("reviewed_at") is None:
+            expected["reviewed_at__isnull"] = True
+        elif isinstance(previous["reviewed_at"], str):
+            expected["reviewed_at"] = _datetime.fromisoformat(previous["reviewed_at"])
+        else:
+            expected["reviewed_at"] = previous["reviewed_at"]
         if Observation.objects.filter(**expected).update(**new_fields) != 1:
             raise CandidateConflictError("Observasi berubah saat publikasi; tidak ada data yang diganti.")
         row = Observation.objects.get(pk=previous["id"])

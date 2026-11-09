@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from indicators import bps
-from indicators.models import Indicator, Observation
+from indicators.models import Indicator, Observation, Source
 from indicators.provenance import matching_raw, public_source_url, source_trace_parameters
 from indicators.storage import verified_raw_bytes
 from indicators.updates import latest_attempt, latest_successful_update, serialize_update_log
@@ -459,7 +459,9 @@ def serialize_derived(observation: Observation) -> dict | None:
 def serialize_trace(observation: Observation) -> dict:
     raw_file = matching_raw(observation)
     value_type = value_type_for(observation)
-    publication_url = public_source_url(raw_file.source_url) if raw_file is not None else None
+    publication_url = None
+    if raw_file is not None and (raw_file.source_url or "").startswith("http"):
+        publication_url = public_source_url(raw_file.source_url)
     if not publication_url:
         publication_url = public_source_url(observation.source.primary_url)
     trace = {
@@ -488,7 +490,6 @@ def serialize_trace(observation: Observation) -> dict:
         "publicationUrl": publication_url,
         "retrievedAt": raw_file.retrieved_at.isoformat() if raw_file and raw_file.retrieved_at else None,
         "version": raw_file.checksum_sha256[:12] if raw_file else None,
-        "revision": None,
         "validationStatus": observation.validation_status,
         "reviewedAt": observation.reviewed_at.isoformat() if observation.reviewed_at else None,
         "source": {
@@ -595,6 +596,8 @@ def serialize_source_entry(source: Source) -> dict:
     published = Observation.objects.filter(
         source=source,
         validation_status=Observation.Status.PUBLISHED,
+        reviewed_by__isnull=False,
+        reviewed_at__isnull=False,
     ).select_related("indicator")
     indicator_ids = sorted({o.indicator.code for o in published.only("indicator__code")})
     # Hitung indikator unik + observasi tanpa memuat semua baris nilai.
@@ -608,11 +611,11 @@ def serialize_source_entry(source: Source) -> dict:
         "institution": source.institution,
         "primaryUrl": source.primary_url,
         "description": source.description or "",
-        "acquisitionMethod": getattr(source, "acquisition_method", "") or "",
-        "dataFormat": getattr(source, "data_format", "") or "",
-        "frequency": getattr(source, "frequency", "") or "",
-        "updateSchedule": getattr(source, "update_schedule", "") or "",
-        "status": getattr(source, "status", "") or "",
+        "acquisitionMethod": source.acquisition_method or "",
+        "dataFormat": source.data_format or "",
+        "frequency": source.frequency or "",
+        "updateSchedule": source.update_schedule or "",
+        "status": source.status or "",
         "indicators": sorted(indicator_codes),
         "indicatorCount": len(indicator_codes),
         "observationCount": published.count(),
@@ -649,6 +652,8 @@ def serialize_source_indicator(indicator: Indicator, source: Source) -> dict:
             indicator=indicator,
             source=source,
             validation_status=Observation.Status.PUBLISHED,
+            reviewed_by__isnull=False,
+            reviewed_at__isnull=False,
         )
         .order_by("-observation_date")
         .select_related("raw_file")
@@ -658,6 +663,8 @@ def serialize_source_indicator(indicator: Indicator, source: Source) -> dict:
         indicator=indicator,
         source=source,
         validation_status=Observation.Status.PUBLISHED,
+        reviewed_by__isnull=False,
+        reviewed_at__isnull=False,
     ).count()
     if latest is None:
         return {
@@ -722,6 +729,8 @@ def source_indicators(request, source_id: str):
         Observation.objects.filter(
             source=source,
             validation_status=Observation.Status.PUBLISHED,
+            reviewed_by__isnull=False,
+            reviewed_at__isnull=False,
         )
         .order_by()
         .values_list("indicator__code", flat=True)

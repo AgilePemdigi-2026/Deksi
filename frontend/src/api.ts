@@ -322,6 +322,173 @@ export async function fetchSourceTrace(
 }
 
 // ---------------------------------------------------------------------------
+// Fitur 10 – Kelola Sumber Data (Admin, session auth, khusus staf)
+// ---------------------------------------------------------------------------
+
+export interface AdminSession {
+  authenticated: boolean;
+  username: string | null;
+  isStaff: boolean;
+}
+
+export interface AcquisitionMethod {
+  value: string;
+  label: string;
+  formats: string[];
+  handler: string;
+  endpointRequired: boolean;
+  description: string;
+}
+
+export interface AdminSourceEntry {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  primaryUrl: string;
+  description: string;
+  acquisitionMethod: string;
+  acquisitionMethodLabel: string;
+  endpointUrl: string;
+  dataFormat: string;
+  frequency: string;
+  updateSchedule: string;
+  status: string;
+  lastFetch: { retrievedAt: string | null; documentName: string | null; parseStatus: string | null };
+}
+
+export interface SourceCreatePayload {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  primaryUrl: string;
+  description?: string;
+  acquisitionMethod: string;
+  endpointUrl?: string;
+  dataFormat: string;
+  frequency: string;
+  updateSchedule?: string;
+  status?: string;
+}
+
+async function adminFetch(path: string, init?: RequestInit) {
+  const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init });
+  return res;
+}
+
+export async function fetchAdminSession(): Promise<AdminSession> {
+  const res = await adminFetch("/admin/session/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as AdminSession;
+}
+
+export async function adminLogin(username: string, password: string): Promise<void> {
+  const res = await adminFetch("/admin/login/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  }
+}
+
+export async function adminLogout(): Promise<void> {
+  await adminFetch("/admin/logout/", { method: "POST" });
+}
+
+export async function fetchAcquisitionMethods(): Promise<{ methods: AcquisitionMethod[]; frequencies: string[] }> {
+  const res = await adminFetch("/admin/sources/acquisition-methods/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as { methods: AcquisitionMethod[]; frequencies: string[] };
+}
+
+export async function fetchAdminSources(): Promise<AdminSourceEntry[]> {
+  const res = await adminFetch("/admin/sources/");
+  if (!res.ok) {
+    if (res.status === 401) throw new Error("Sesi admin diperlukan. Silakan login.");
+    if (res.status === 403) throw new Error("Akun tidak memiliki hak pengelolaan sumber.");
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const body = await res.json();
+  return (body?.sources ?? []) as AdminSourceEntry[];
+}
+
+export async function createAdminSource(payload: SourceCreatePayload): Promise<AdminSourceEntry> {
+  const res = await adminFetch("/admin/sources/create/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 201) return (body as { source: AdminSourceEntry }).source;
+  throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+}
+
+export interface AdminSourceDetail extends AdminSourceEntry {
+  revisionCount: number;
+}
+
+export interface AdminRevision {
+  version: number;
+  action: string;
+  before: Record<string, string>;
+  after: Record<string, string>;
+  changedFields: string[];
+  updatedBy: string | null;
+  createdAt: string | null;
+}
+
+export interface SourceUpdatePayload {
+  sourceName?: string;
+  institution?: string;
+  primaryUrl?: string;
+  description?: string;
+  acquisitionMethod?: string;
+  endpointUrl?: string;
+  dataFormat?: string;
+  frequency?: string;
+  updateSchedule?: string;
+  status?: string;
+}
+
+export interface SourceUpdateResult {
+  source: AdminSourceEntry;
+  revision?: AdminRevision;
+  changedFields?: string[];
+}
+
+export async function fetchAdminSourceDetail(sourceId: string): Promise<AdminSourceDetail> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error(`Sumber '${sourceId}' tidak tersedia.`);
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return (await res.json()) as AdminSourceDetail;
+}
+
+export async function fetchAdminSourceRevisions(sourceId: string): Promise<AdminRevision[]> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/revisions/`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.revisions ?? []) as AdminRevision[];
+}
+
+export async function updateAdminSource(
+  sourceId: string,
+  payload: SourceUpdatePayload,
+): Promise<SourceUpdateResult> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/update/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.ok) return body as SourceUpdateResult;
+  throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+}
+
+// ---------------------------------------------------------------------------
 // Fitur 8 – Umpan Balik
 // ---------------------------------------------------------------------------
 

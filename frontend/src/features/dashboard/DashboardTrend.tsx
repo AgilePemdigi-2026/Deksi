@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { chartGeometry, contextHref, formatDecimal } from '../indicators/data'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { availableRanges, chartGeometry, contextHref, formatDecimal, normalizeRange, type RangeKey } from '../indicators/data'
 import type { HistoryPoint } from '../indicators/types'
 import { useHistory, useTraceOptions } from './hooks'
 import { codes, names, pointMatches, visibleHistory } from './model'
@@ -13,6 +13,11 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
   const [exportStatus,setExportStatus]=useState('')
   const history=useHistory(code,granularity)
   const trace=useTraceOptions(code)
+  // Opsi rentang mengikuti tahun yang benar-benar ada pada indikator aktif.
+  const rangeOptions=useMemo(()=>availableRanges(history.data?.points),[history.data])
+  useEffect(()=>{
+    if(history.data&&!history.error&&!rangeOptions.includes(range as RangeKey))setRange(normalizeRange(range,rangeOptions))
+  },[code,history.data,history.error,range,rangeOptions])
   const rows=visibleHistory(history.data?.points??[],year,range)
   const key=JSON.stringify([code,granularity,range,year,rows])
   const index=selection?.key===key?Math.min(selection.index,rows.length-1):rows.length-1
@@ -47,7 +52,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
       <div className="dash-controls">
         <div className="dash-control-group"><span className="dash-kicker" id="series-label">INDIKATOR</span><div className="dash-pills" role="group" aria-labelledby="series-label">{codes.filter(c=>allowedCodes.includes(c)).map(c=><button key={c} type="button" aria-pressed={code===c} onClick={()=>{setRequested(c);setGranularity('native')}}>{names[c]}</button>)}</div></div>
         <div className="dash-control-group"><span className="dash-kicker" id="frequency-label">PERIODE PENAYANGAN</span><div className="dash-pills" role="group" aria-labelledby="frequency-label">{frequencies.map(([value,label])=><button key={value} type="button" aria-pressed={granularity===value} disabled={value!=='native'&&!supported.includes(value)} title={value!=='native'&&!supported.includes(value)?'Tidak ditawarkan backend untuk seri ini':undefined} onClick={()=>setGranularity(value)}>{label}</button>)}</div></div>
-        <div className="dash-control-group"><span className="dash-kicker" id="range-label">RENTANG</span><div className="dash-pills" role="group" aria-labelledby="range-label">{['3','5','10','all'].map(value=><button key={value} type="button" aria-pressed={range===value} onClick={()=>setRange(value)}>{value==='all'?'Semua':value+' tahun'}</button>)}</div></div>
+        <div className="dash-control-group"><span className="dash-kicker" id="range-label">RENTANG</span><div className="dash-pills" role="group" aria-labelledby="range-label">{rangeOptions.map(value=><button key={value} type="button" aria-pressed={range===value} onClick={()=>setRange(value)}>{value==='all'?'Semua':value+' tahun'}</button>)}</div></div>
       </div>
       <div className="dash-chart-toolbar"><p>Satuan: {rows[0]?.unit??'Belum tersedia'}{year?` · Tahun ${year}`:''}</p><button type="button" className="dash-text-button" disabled={!rows.length||history.loading||!!history.error} onClick={exportRows}>Ekspor JSON ↓</button></div>
       <p id="chart-description" className="dash-chart-description">Gunakan panah kiri/kanan, Home dan End pada titik grafik. Tabel dan ekspor mempertahankan string presisi API. Rentang mengikuti tanggal observasi terakhir, bukan tanggal hari ini.</p>
@@ -68,7 +73,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
         <text x="120" y="230">{rows[0]?.period}</text><text x="716" y="230" textAnchor="end">{rows.at(-1)?.period}</text>
       </svg>}</div>
       <div className="dash-point-panel" aria-live="polite"><div><span className="dash-kicker">OBSERVASI TERPILIH</span><strong>{selected?.period??'Belum tersedia'}</strong><small>{selected?.observationDate??'Tanggal belum tersedia'}</small></div><div><span className="dash-kicker">NILAI / SATUAN</span><strong>{formatDecimal(selected?.value)} {selected?.unit??''}</strong></div><div><span className="dash-kicker">JENIS / SUMBER</span><strong>{selected?.dataType??'Belum tersedia'}</strong><small>{selected?.sourceId??'Sumber belum tersedia'}</small></div></div>
-      <p className="dash-chart-note">{history.data?.note} Geometri menggunakan pendekatan numerik. Tidak ada target kebijakan atau rata-rata rentang buatan. Garis diputus pada gap kalender yang dikenali; seri sumber, satuan, frekuensi dan jenis data berbeda tidak digabungkan.</p>
+      <p className="dash-chart-note">{history.data?.note} Geometri menggunakan pendekatan numerik. Tidak ada target kebijakan atau rata-rata rentang buatan. Garis menghubungkan observasi berurutan; jarak horizontal tidak proporsional dengan waktu bila ada bulan yang hilang. Seri sumber, satuan, frekuensi dan jenis data berbeda tidak digabungkan.</p>
       <div className="dash-chart-actions">{href?<a className="dash-text-button" href={href}>Source Trace titik terpilih ↗</a>:<p className="dash-chart-description">{trace.loading?'Memuat konteks sumber…':'Source Trace belum dapat diikat unik pada titik ini; tidak dialihkan ke terbaru.'}{trace.error&&<button type="button" className="dash-text-button" onClick={trace.retry}>Coba sumber lagi</button>}</p>}<a className="dash-text-button" href={'/indikator/'+code}>Detail indikator ↗</a></div>
       <details className="dash-history"><summary>Tabel histori ({rows.length} observasi)</summary><div className="dash-table-scroll" role="region" tabIndex={0} aria-label="Tabel histori"><table><caption>Periode observasi, bukan jurnal revisi immutable</caption><thead><tr><th>Periode</th><th>Nilai</th><th>Satuan</th><th>Sumber / jenis</th></tr></thead><tbody>{rows.map((row,i)=><tr key={i}><th scope="row"><button type="button" className="dash-text-button" onClick={()=>selectPoint(i)}>{row.period}</button></th><td>{formatDecimal(row.value)}</td><td>{row.unit}</td><td>{row.sourceId??'Belum tersedia'} / {row.dataType??'Belum tersedia'}</td></tr>)}</tbody></table></div></details>
       <p role="status" className="dash-chart-description">{exportStatus}</p>
