@@ -53,11 +53,23 @@ test('An empty API response remains an explicit empty state', async () => {
   assert.doesNotMatch(html,/class="indicator-card"/);
 });
 
-test('Indicator cards link to live detail and Source Trace (fitur 9), not a dead anchor', async () => {
+test('Indicator cards link to live Source Trace (fitur 9), not a dead anchor', async () => {
+  const { IndicatorCard } = await load('components/IndicatorCard.tsx');
+  const html=render(IndicatorCard,{meta});
+  assert.doesNotMatch(html,/href="#detail"/);
+  assert.match(html,/sumber-data\?indicator=/);
+  assert.match(html,/Source Trace/);
+});
+
+test('The integrated card uses a real detail route rather than a dead anchor', async () => {
   const { IndicatorCard } = await load('components/IndicatorCard.tsx');
   const html=render(IndicatorCard,{meta});
   assert.doesNotMatch(html,/href="#detail"/);
   assert.match(html,/href="\/indikator\/pdb"/);
-  assert.match(html,/sumber-data\?indicator=/);
-  assert.match(html,/Source Trace/);
+});
+
+test('Admin sources page exposes an Edit entry point per source', async () => {
+  const { AdminSourcesPage } = await load('components/AdminSourcesPage.tsx');
+  const html = render(AdminSourcesPage);
+  assert.match(html, /Kelola Sumber Data/);
 });

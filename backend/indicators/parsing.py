@@ -143,8 +143,13 @@ def parse_jisdor(value_text, date_text) -> dict | None:
     }
 
 
-def parse_bkpm_rp_juta(text) -> Decimal | None:
-    """BKPM CSV memakai titik sebagai desimal (contoh 9.481 = 9,481 juta), bukan pemisah ribuan."""
+def parse_dot_decimal(text) -> Decimal | None:
+    """Angka desimal titik internasional (contoh 9.481 = 9,481 juta), bukan pemisah ribuan.
+
+    Dipakai untuk CSV BKPM dan XLSX Indikator Moneter yang menulis desimal
+    dengan titik. JANGAN pakai parse_id_number di sini: titik tiga digit
+    akan dibaca sebagai pemisah ribuan (9.481 -> 9481).
+    """
     value = normalize_text(text)
     if not value:
         return None
@@ -153,13 +158,34 @@ def parse_bkpm_rp_juta(text) -> Decimal | None:
         return Decimal(cleaned)
     except InvalidOperation:
         return None
+
+
+def parse_bkpm_number(text) -> Decimal | None:
+    """Angka kolom investasi_rp_juta lintas format file BKPM.
+
+    File 2025 memakai desimal titik ("2264.22241"); file 2026 memakai
+    desimal koma ("11368,60677"). Aturan:
+    - ada koma dan titik -> format Indonesia (titik ribuan, koma desimal);
+    - hanya koma -> koma adalah desimal;
+    - hanya titik satu -> desimal titik; titik lebih dari satu -> ribuan.
+    """
+    value = normalize_text(text)
+    if not value:
+        return None
+    if "," in value and "." in value:
+        cleaned = value.replace(".", "").replace(",", ".")
+    elif "," in value:
+        cleaned = value.replace(",", ".")
+    elif value.count(".") > 1:
+        cleaned = value.replace(".", "")
+    else:
+        cleaned = value
     try:
-        rp_juta = row[11]
-    except IndexError:
+        return Decimal(cleaned)
+    except InvalidOperation:
         return None
-    if rp_juta in (None, ""):
-        return None
-    value = parse_id_number(str(rp_juta))
-    if value is None:
-        raise ValueError(f"unparseable investasi_rp_juta: {rp_juta!r}")
-    return value
+
+
+def parse_bkpm_rp_juta(text) -> Decimal | None:
+    """BKPM CSV: delegasi ke parse_bkpm_number yang tahan format campuran."""
+    return parse_bkpm_number(text)

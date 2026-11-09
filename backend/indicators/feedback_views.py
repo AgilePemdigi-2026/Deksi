@@ -111,7 +111,7 @@ def submit_feedback(request):
         if field in limits and len((value or "").strip()) > limits[field]:
             return json_error(f"Field '{field}' terlalu panjang.", status=400)
 
-    # ΓöÇΓöÇ Validasi wajib ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    # ── Validasi wajib ────────────────────────────────────────────────────
     category = (data.get("category") or "").strip()
     description = (data.get("description") or "").strip()
 
@@ -134,7 +134,7 @@ def submit_feedback(request):
             status=400,
         )
 
-    # ΓöÇΓöÇ Validasi opsional ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    # ── Validasi opsional ─────────────────────────────────────────────────
     sender_name = (data.get("sender_name") or "").strip()
 
     sender_email = (data.get("sender_email") or "").strip()
@@ -147,7 +147,7 @@ def submit_feedback(request):
     related_code = (data.get("related_indicator_code") or "").strip()
     related_period = (data.get("related_period") or "").strip()
 
-    # ΓöÇΓöÇ Simpan ke database ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    # ── Simpan ke database ────────────────────────────────────────────────
     fb = Feedback.objects.create(
         category=category,
         description=description,

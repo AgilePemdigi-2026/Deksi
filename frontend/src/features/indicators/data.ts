@@ -40,6 +40,41 @@ export function safeExternalUrl(raw: string | null | undefined): string | null {
     return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : null
   } catch { return null }
 }
+export type RangeKey = '3' | '5' | '10' | 'all'
+
+/**
+ * Opsi rentang tahun berdasarkan tahun kalender yang benar-benar memiliki
+ * minimal satu observasi pada indikator terpilih (bukan max-min, agar
+ * tahun kosong di tengah tidak dihitung sebagai cakupan data).
+ * 'Semua' selalu valid karena hanya menampilkan yang tersedia.
+ */
+export function availableRanges(
+  points: readonly { observationDate?: string | null; year?: number | null }[] | null | undefined,
+): RangeKey[] {
+  const years = new Set<number>()
+  for (const p of points ?? []) {
+    let y: number | undefined
+    if (typeof p?.year === 'number' && Number.isInteger(p.year) && p.year >= 1 && p.year <= 9999) {
+      y = p.year
+    } else if (typeof p?.observationDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.observationDate)) {
+      y = Number(p.observationDate.slice(0, 4))
+    }
+    if (y !== undefined) years.add(y)
+  }
+  const span = years.size
+  const out: RangeKey[] = []
+  if (span >= 3) out.push('3')
+  if (span >= 5) out.push('5')
+  if (span >= 10) out.push('10')
+  out.push('all')
+  return out
+}
+
+/** Kembalikan pilihan ke rentang valid; jatuh ke 'all' bila tidak tersedia. */
+export function normalizeRange(wanted: string, options: readonly RangeKey[]): RangeKey {
+  return (options as readonly string[]).includes(wanted) ? (wanted as RangeKey) : 'all'
+}
+
 export function canBind(reading: SourceReading): boolean {
   return reading.observationDate !== null && validDate(reading.observationDate) && !!reading.period && !!reading.unit &&
     frequencies.has(reading.frequency ?? '') && dataTypes.has(reading.dataType ?? '') && /^[A-Za-z0-9_-]{1,64}$/.test(reading.source?.sourceId ?? '')
@@ -79,18 +114,12 @@ export function chartGeometry(history: HistoryPoint[], unit: string) {
     y: max === min ? 110 : 28 + (max - v) / span * 164,
     period: history[i].period, value: history[i].value!,
   })
-  const monthSteps: Record<string, number> = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 }
-  const step = monthSteps[history[0]?.frequency ?? '']
-  const calendarGap = (index: number) => {
-    const before = history[index - 1]?.observationDate, after = history[index]?.observationDate
-    if (!step || !before || !after) return false
-    if (!validDate(before) || !validDate(after)) return true
-    const month = (date: string) => Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7))
-    return month(after) - month(before) !== step
-  }
+  // Garis menghubungkan observasi berurutan apa adanya; jeda kalender
+  // (bulan hilang) tidak memutus garis. Jarak horizontal antar titik
+  // tetap merata mengikuti urutan, bukan proporsional terhadap waktu.
   const segments: string[] = []; let current: string[] = []
-  for (const [index, point] of points.entries()) {
-    if ((!point || calendarGap(index)) && current.length) { segments.push(current.join(' ')); current = [] }
+  for (const point of points) {
+    if (!point && current.length) { segments.push(current.join(' ')); current = [] }
     if (point) current.push(`${point.x},${point.y}`)
   }
   if (current.length) segments.push(current.join(' '))

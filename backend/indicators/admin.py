@@ -3,13 +3,32 @@ from django.core.exceptions import ValidationError
 
 from indicators.feedback_model import Feedback
 from indicators.lifecycle import review_candidate
-from indicators.models import DataUpdateLog, Indicator, Observation, ObservationCandidate, RawFile, Source
+from indicators.models import DataUpdateLog, Indicator, Observation, ObservationCandidate, RawFile, Source, SourceRevision
+from indicators.updates import record_update_success
 
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
-    list_display = ("source_id", "source_name", "institution", "primary_url")
+    list_display = (
+        "source_id", "source_name", "institution", "primary_url",
+        "acquisition_method", "data_format", "frequency", "status",
+    )
     search_fields = ("source_id", "source_name", "institution")
+    list_filter = ("status", "acquisition_method")
+
+
+@admin.register(SourceRevision)
+class SourceRevisionAdmin(admin.ModelAdmin):
+    list_display = ("source", "version", "action", "updated_by", "created_at")
+    list_filter = ("action",)
+    search_fields = ("source__source_id",)
+    readonly_fields = ("source", "version", "action", "before", "after", "changed_fields")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Indicator)
@@ -123,9 +142,6 @@ class DataUpdateLogAdmin(admin.ModelAdmin):
         return False
 
 
-# ---------------------------------------------------------------------------
-# Fitur 8: Umpan Balik
-# ---------------------------------------------------------------------------
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = (

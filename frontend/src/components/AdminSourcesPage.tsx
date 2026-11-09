@@ -6,8 +6,12 @@ import {
   displayOrUnavailable,
   fetchAcquisitionMethods,
   fetchAdminSession,
+  fetchAdminSourceDetail,
+  fetchAdminSourceRevisions,
   fetchAdminSources,
+  updateAdminSource,
   type AcquisitionMethod,
+  type AdminRevision,
   type AdminSourceEntry,
 } from "../api";
 
@@ -49,6 +53,11 @@ export function AdminSourcesPage() {
   const [frequencies, setFrequencies] = useState<string[]>([]);
 
   const [showForm, setShowForm] = useState(false);
+  const [mode, setMode] = useState<"add" | "edit">("add");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [revisions, setRevisions] = useState<AdminRevision[]>([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -113,10 +122,13 @@ export function AdminSourcesPage() {
   const allowedFormats = activeMethod?.formats ?? [];
 
   const validate = (): string | null => {
-    if (!form.sourceId.trim() || !form.sourceName.trim() || !form.institution.trim())
-      return "Identitas sumber (ID, nama, institusi) wajib diisi.";
-    if (!/^[A-Za-z0-9_]{2,32}$/.test(form.sourceId.trim()))
-      return "Source ID 2–32 karakter: huruf, angka, garis bawah.";
+    if (mode === "add") {
+      if (!form.sourceId.trim()) return "Source ID wajib diisi.";
+      if (!/^[A-Za-z0-9_]{2,32}$/.test(form.sourceId.trim()))
+        return "Source ID 2–32 karakter: huruf, angka, garis bawah.";
+    }
+    if (!form.sourceName.trim() || !form.institution.trim())
+      return "Nama sumber dan institusi wajib diisi.";
     if (!form.primaryUrl.trim() || !isValidHttpUrl(form.primaryUrl.trim()))
       return "Portal resmi harus URL http(s) yang valid.";
     if (!form.acquisitionMethod) return "Metode akuisisi wajib dipilih.";
@@ -140,23 +152,43 @@ export function AdminSourcesPage() {
     setSaving(true);
     setFormError(null);
     try {
-      const created = await createAdminSource({
-        sourceId: form.sourceId.trim().toUpperCase(),
-        sourceName: form.sourceName.trim(),
-        institution: form.institution.trim(),
-        primaryUrl: form.primaryUrl.trim(),
-        description: form.description.trim(),
-        acquisitionMethod: form.acquisitionMethod,
-        endpointUrl: form.endpointUrl.trim(),
-        dataFormat: form.dataFormat,
-        frequency: form.frequency,
-        updateSchedule: form.updateSchedule.trim(),
-        status: form.status,
-      });
-      setSuccess(`Sumber ${created.sourceId} berhasil ditambahkan. Berlaku pada siklus akuisisi berikutnya.`);
-      setForm(EMPTY_FORM);
-      setDirty(false);
-      setShowForm(false);
+      if (mode === "edit" && editingId) {
+        const result = await updateAdminSource(editingId, {
+          sourceName: form.sourceName.trim(),
+          institution: form.institution.trim(),
+          primaryUrl: form.primaryUrl.trim(),
+          description: form.description.trim(),
+          acquisitionMethod: form.acquisitionMethod,
+          endpointUrl: form.endpointUrl.trim(),
+          dataFormat: form.dataFormat,
+          frequency: form.frequency,
+          updateSchedule: form.updateSchedule.trim(),
+          status: form.status,
+        });
+        if (result.changedFields && result.changedFields.length > 0) {
+          setSuccess(
+            `Sumber ${editingId} direvisi (v${result.revision?.version}). Ubah: ${result.changedFields.join(", ")}. Berlaku pada siklus akuisisi berikutnya.`,
+          );
+        } else {
+          setSuccess(`Tidak ada perubahan pada ${editingId}. Konfigurasi tetap.`);
+        }
+      } else {
+        const created = await createAdminSource({
+          sourceId: form.sourceId.trim().toUpperCase(),
+          sourceName: form.sourceName.trim(),
+          institution: form.institution.trim(),
+          primaryUrl: form.primaryUrl.trim(),
+          description: form.description.trim(),
+          acquisitionMethod: form.acquisitionMethod,
+          endpointUrl: form.endpointUrl.trim(),
+          dataFormat: form.dataFormat,
+          frequency: form.frequency,
+          updateSchedule: form.updateSchedule.trim(),
+          status: form.status,
+        });
+        setSuccess(`Sumber ${created.sourceId} berhasil ditambahkan. Berlaku pada siklus akuisisi berikutnya.`);
+      }
+      resetForm();
       await reload();
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Penyimpanan gagal.");
@@ -165,12 +197,61 @@ export function AdminSourcesPage() {
     }
   };
 
-  const cancelForm = () => {
-    if (dirty && !window.confirm("Batalkan? Perubahan form akan hilang.")) return;
+  const resetForm = () => {
     setShowForm(false);
+    setMode("add");
+    setEditingId(null);
     setForm(EMPTY_FORM);
     setDirty(false);
     setFormError(null);
+    setRevisions([]);
+  };
+
+  const cancelForm = () => {
+    if (dirty && !window.confirm("Batalkan? Perubahan form akan hilang.")) return;
+    resetForm();
+  };
+
+  const startAdd = () => {
+    resetForm();
+    setShowForm(true);
+    setSuccess(null);
+  };
+
+  const startEdit = async (sourceId: string) => {
+    if (dirty && showForm && !window.confirm("Batalkan perubahan berjalan dan edit sumber lain?")) return;
+    setShowForm(true);
+    setMode("edit");
+    setEditingId(sourceId);
+    setSuccess(null);
+    setFormError(null);
+    setDetailLoading(true);
+    try {
+      const detail = await fetchAdminSourceDetail(sourceId);
+      setForm({
+        sourceId: detail.sourceId,
+        sourceName: detail.sourceName,
+        institution: detail.institution,
+        primaryUrl: detail.primaryUrl,
+        description: detail.description,
+        acquisitionMethod: detail.acquisitionMethod,
+        endpointUrl: detail.endpointUrl,
+        dataFormat: detail.dataFormat,
+        frequency: detail.frequency,
+        updateSchedule: detail.updateSchedule,
+        status: detail.status,
+      });
+      setDirty(false);
+      setRevisionsLoading(true);
+      fetchAdminSourceRevisions(sourceId)
+        .then(setRevisions)
+        .catch(() => setRevisions([]))
+        .finally(() => setRevisionsLoading(false));
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Detail sumber tidak dapat dimuat.");
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   return (
@@ -214,7 +295,7 @@ export function AdminSourcesPage() {
           <div className="source-detail-head">
             <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
             <span>
-              <button type="button" className="tab" onClick={() => (showForm ? cancelForm() : (setShowForm(true), setSuccess(null)))}>Tambah Sumber Data</button>{" "}
+              <button type="button" className="tab" onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
               <button type="button" className="tab" onClick={doLogout}>Keluar</button>
             </span>
           </div>
@@ -232,16 +313,23 @@ export function AdminSourcesPage() {
                   <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
                   <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
                   <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                  <button type="button" className="source-trace-link" onClick={() => startEdit(s.sourceId)}>
+                    Edit ↗
+                  </button>
                 </article>
               ))}
             </div>
           )}
 
           {showForm && (
-            <article className="trace-panel" aria-label="Form tambah sumber">
-              <h3 className="trace-title">Tambah Sumber Data * wajib</h3>
+            <article className="trace-panel" aria-label={mode === "edit" ? "Form edit sumber" : "Form tambah sumber"}>
+              <h3 className="trace-title">{mode === "edit" ? `Edit Sumber ${editingId}` : "Tambah Sumber Data"} * wajib</h3>
+              {detailLoading ? (
+                <p className="summary-loading">Memuat detail sumber…</p>
+              ) : (
+              <>
               <div className="trace-grid">
-                <label className="trace-row">Source ID *<input value={form.sourceId} onChange={(e) => set("sourceId", e.target.value.toUpperCase())} placeholder="CONTOH_ID" /></label>
+                <label className="trace-row">Source ID *<input value={form.sourceId} onChange={(e) => set("sourceId", e.target.value.toUpperCase())} placeholder="CONTOH_ID" disabled={mode === "edit"} title={mode === "edit" ? "Identitas tidak dapat diubah" : undefined} /></label>
                 <label className="trace-row">Nama sumber *<input value={form.sourceName} onChange={(e) => set("sourceName", e.target.value)} /></label>
                 <label className="trace-row">Institusi *<input value={form.institution} onChange={(e) => set("institution", e.target.value)} /></label>
                 <label className="trace-row">Portal resmi URL *<input value={form.primaryUrl} onChange={(e) => set("primaryUrl", e.target.value)} placeholder="https://" /></label>
@@ -268,9 +356,31 @@ export function AdminSourcesPage() {
               {activeMethod && <p className="trace-note">Handler: {activeMethod.handler}. {activeMethod.description}</p>}
               {formError && <p className="summary-error">{formError}</p>}
               <footer className="trace-foot">
-                <button type="button" className="tab tab-active" onClick={submit} disabled={saving}>{saving ? "Menyimpan…" : "Simpan"}</button>
+                <button type="button" className="tab tab-active" onClick={submit} disabled={saving || detailLoading}>{saving ? "Menyimpan…" : mode === "edit" ? "Simpan Perubahan" : "Simpan"}</button>
                 <button type="button" className="tab" onClick={cancelForm} disabled={saving}>Batal</button>
               </footer>
+              </>
+              )}
+              {mode === "edit" && editingId && (
+                <details className="trace-raw">
+                  <summary>Riwayat revisi {editingId} (tidak pernah dihapus)</summary>
+                  {revisionsLoading ? (
+                    <p className="summary-loading">Memuat riwayat…</p>
+                  ) : revisions.length === 0 ? (
+                    <p className="trace-note">Belum ada revisi tercatat.</p>
+                  ) : (
+                    <ul className="trace-history">
+                      {revisions.map((r) => (
+                        <li key={r.version}>
+                          <span>v{r.version} · {r.action}</span>
+                          <span>{r.updatedBy ?? "—"} · {r.createdAt ?? "Tidak tersedia"}</span>
+                          <span className="trace-history-type">Ubah: {r.changedFields.join(", ") || "-"}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </details>
+              )}
             </article>
           )}
         </>
