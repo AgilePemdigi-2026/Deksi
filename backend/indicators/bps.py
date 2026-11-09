@@ -7,8 +7,7 @@ import httpx
 from django.conf import settings
 from django.utils import timezone
 
-from .models import Indicator, Observation, Source
-
+from .models import Indicator, Source
 
 MONTHS_ID = {
     1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
@@ -74,7 +73,7 @@ class BpsError(Exception):
     pass
 
 
-class BpsNotConfigured(BpsError):
+class BpsNotConfigured(BpsError):  # noqa: N818 - preserve the existing public exception name
     pass
 
 
@@ -153,12 +152,16 @@ def test_connection() -> dict:
 
 
 def _get_or_create_source() -> Source:
-    source, _ = Source.objects.update_or_create(source_id="BPS", defaults=BPS_SOURCE_DEFAULTS)
+    from .lifecycle import ensure_import_master
+
+    source = ensure_import_master(Source, source_id="BPS", defaults=BPS_SOURCE_DEFAULTS)
     return source
 
 
 def _get_or_create_indicator(series: dict) -> Indicator:
-    indicator, _ = Indicator.objects.update_or_create(
+    from .lifecycle import ensure_import_master
+
+    indicator = ensure_import_master(Indicator,
         code=series["code"],
         defaults={
             "name": series["name"],
@@ -289,6 +292,8 @@ def fetch_series(series: dict, start_year: int = 2016, end_year: int | None = No
 
 
 def sync_bps_indicators(start_year: int = 2016, end_year: int | None = None) -> dict:
+    from .lifecycle import stage_observation
+
     source = _get_or_create_source()
     total = 0
     errors: list[str] = []
@@ -301,21 +306,10 @@ def sync_bps_indicators(start_year: int = 2016, end_year: int | None = None) -> 
             errors.append(f"{series['code']}: {exc}")
             continue
         for point in points:
-            Observation.objects.update_or_create(
-                indicator=indicator,
-                source=source,
-                observation_date=point["observation_date"],
-                data_type=point["data_type"],
-                defaults={
-                    "period_label": point["period_label"],
-                    "frequency": point["frequency"],
-                    "value": point["value"],
-                    "unit": point["unit"],
-                    "validation_status": Observation.Status.PUBLISHED,
-                    "validation_notes": "Disinkronkan dari WebAPI BPS.",
-                    "reviewed_at": timezone.now(),
-                },
-            )
+            stage_observation(indicator_id=indicator.pk, source_id=source.pk,
+                observation_date=point["observation_date"], data_type=point["data_type"],
+                period_label=point["period_label"], frequency=point["frequency"],
+                value=point["value"], unit=point["unit"])
             total += 1
         if points:
             latest[series["code"]] = max(points, key=lambda point: point["observation_date"])["period_label"]

@@ -1,11 +1,13 @@
 """
-Model Feedback – menyimpan umpan balik yang dikirim pengguna publik.
+Model Feedback - menyimpan umpan balik yang dikirim pengguna publik.
 
 Kolom identitas pengirim (sender_name, sender_email) bersifat opsional sesuai SRS
 agar pengguna dapat mengirim tanpa membuat akun.  Kolom related_* menghubungkan
 umpan balik ke indikator atau periode tertentu sehingga Admin dapat menindaklanjuti
 dengan konteks yang cukup.
 """
+
+from typing import ClassVar
 
 from django.db import models
 
@@ -32,17 +34,15 @@ class Feedback(models.Model):
     )
     description = models.TextField(verbose_name="Deskripsi")
 
-    # Identitas pengirim – opsional
+    # Identitas pengirim - opsional
     sender_name = models.CharField(max_length=150, blank=True, default="", verbose_name="Nama Pengirim")
     sender_email = models.EmailField(blank=True, default="", verbose_name="Email Pengirim")
 
-    # Pengaitan dengan indikator / versi tertentu – opsional
+    # Pengaitan dengan indikator / versi tertentu - opsional
     related_indicator_code = models.CharField(
         max_length=32, blank=True, default="", verbose_name="Kode Indikator Terkait"
     )
-    related_period = models.CharField(
-        max_length=50, blank=True, default="", verbose_name="Periode Terkait"
-    )
+    related_period = models.CharField(max_length=50, blank=True, default="", verbose_name="Periode Terkait")
 
     # Status penanganan
     status = models.CharField(
@@ -60,10 +60,10 @@ class Feedback(models.Model):
 
     class Meta:
         db_table = "feedback"
-        ordering = ["-created_at"]
+        ordering: ClassVar[list[str]] = ["-created_at"]
         verbose_name = "Umpan Balik"
         verbose_name_plural = "Umpan Balik"
 
     def __str__(self) -> str:
         sender = self.sender_name or self.sender_email or "Anonim"
-        return f"[{self.get_category_display()}] {sender} – {self.created_at:%Y-%m-%d}"
+        return f"[{self.get_category_display()}] {sender} - {self.created_at:%Y-%m-%d}"

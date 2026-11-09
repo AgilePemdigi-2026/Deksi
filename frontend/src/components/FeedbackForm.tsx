@@ -1,5 +1,5 @@
 /**
- * FeedbackForm – Fitur 8: Kirim Umpan Balik (UC-05).
+ * FeedbackForm ΓÇô Fitur 8: Kirim Umpan Balik (UC-05).
  *
  * Form terkontrol dengan:
  *  - Pilihan kategori dari endpoint /api/feedback/categories/
@@ -7,7 +7,7 @@
  *  - Field identitas pengirim opsional (nama, email)
  *  - Field pengaitan indikator dan periode (opsional)
  *  - Validasi client-side sebelum kirim ke backend
- *  - Tiga state visual: idle → loading → success | error
+ *  - Tiga state visual: idle ΓåÆ loading ΓåÆ success | error
  */
 
 import { useState, type FormEvent } from "react";
@@ -16,7 +16,7 @@ import {
   submitFeedback,
   type FeedbackPayload,
   type FeedbackResult,
-} from "../api";
+} from "../features/dashboard/feedback";
 
 interface Props {
   /** Kode indikator yang sedang dilihat user, opsional untuk pra-isi field terkait. */
@@ -35,7 +35,7 @@ const EMPTY_PAYLOAD: FeedbackPayload = {
 };
 
 export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: Props) {
-  const feedbackCategories = useFeedbackCategories();
+  const { categories: feedbackCategories, error: categoryError, retry: retryCategories } = useFeedbackCategories();
 
   const [payload, setPayload] = useState<FeedbackPayload>({
     ...EMPTY_PAYLOAD,
@@ -49,7 +49,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
     message: "",
   });
 
-  // ── Validasi client-side ────────────────────────────────────────────────
+  // ΓöÇΓöÇ Validasi client-side ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   function validate(): boolean {
     const errors: Partial<Record<keyof FeedbackPayload, string>> = {};
 
@@ -71,10 +71,10 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
     return Object.keys(errors).length === 0;
   }
 
-  // ── Submit ──────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Submit ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (result.status === "loading" || !validate()) return;
 
     setResult({ id: null, status: "loading", message: "" });
 
@@ -103,11 +103,11 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
     if (result.status !== "idle") setResult({ id: null, status: "idle", message: "" });
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Render ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   if (result.status === "success") {
     return (
       <div className="feedback-success" role="status">
-        <span className="feedback-success__icon" aria-hidden="true">✓</span>
+        <span className="feedback-success__icon" aria-hidden="true">Γ£ô</span>
         <p className="feedback-success__message">{result.message}</p>
         <button
           className="feedback-btn feedback-btn--secondary"
@@ -127,6 +127,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
       noValidate
       aria-label="Form umpan balik"
     >
+      {categoryError && <p role="alert">{categoryError} <button type="button" onClick={retryCategories}>Muat kategori lagi</button></p>}
       {/* Error dari server */}
       {result.status === "error" && (
         <div className="feedback-form__server-error" role="alert">
@@ -147,7 +148,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
           required
           disabled={result.status === "loading"}
         >
-          <option value="">— Pilih kategori —</option>
+          <option value="">ΓÇö Pilih kategori ΓÇö</option>
           {feedbackCategories.map((cat) => (
             <option key={cat.value} value={cat.value}>
               {cat.label}
@@ -168,7 +169,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
           id="fb-description"
           className={`feedback-textarea${fieldErrors.description ? " feedback-input--error" : ""}`}
           rows={5}
-          placeholder="Jelaskan secara spesifik apa yang perlu diperbaiki atau ditambahkan…"
+          placeholder="Jelaskan secara spesifik apa yang perlu diperbaiki atau ditambahkanΓÇª"
           value={payload.description}
           onChange={(e) => update("description", e.target.value)}
           required
@@ -262,7 +263,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
         className="feedback-btn feedback-btn--primary"
         disabled={result.status === "loading"}
       >
-        {result.status === "loading" ? "Mengirim…" : "Kirim Umpan Balik"}
+        {result.status === "loading" ? "MengirimΓÇª" : "Kirim Umpan Balik"}
       </button>
     </form>
   );

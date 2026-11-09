@@ -187,9 +187,9 @@ export function AdminSourcesPage() {
       </div>
 
       <nav className="sources-nav" aria-label="Navigasi halaman">
-        <a href="#dashboard">Beranda</a>
-        <a href="#/sumber-data">Sumber Data</a>
-        <a href="#/admin/sumber" aria-current="page">Kelola Sumber</a>
+        <a href="/">Beranda</a>
+        <a href="/sumber-data">Sumber Data</a>
+        <a href="/admin/sumber-data" aria-current="page">Kelola Sumber</a>
       </nav>
 
       {!sessionChecked || (loading && !authenticated) ? (

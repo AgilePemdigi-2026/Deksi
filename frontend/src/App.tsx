@@ -1,130 +1,38 @@
 import './App.css'
-import { useEffect, useState } from 'react'
-import { EconomicSummary } from './components/EconomicSummary'
-import { TrendChart } from './components/TrendChart'
-import { InsightSection } from './components/ShellBottom'
-import { EditorialLanding, EditorialContext } from './components/EditorialLanding'
-import { EditorialInfo, EditorialFooter } from './components/EditorialInfo'
-import { DashboardFilter } from './components/DashboardFilter'
-import { FeedbackForm } from './components/FeedbackForm'
-import { SourceDataPage, type SourcePageSelection } from './components/SourceDataPage'
+import Dashboard from './features/dashboard/Dashboard'
+import LoginPage from './features/admin/LoginPage'
+import ForgotPasswordPage from './features/admin/ForgotPasswordPage'
+import ResetPasswordPage from './features/admin/ResetPasswordPage'
+import type { RecoveryService } from './features/admin/recovery'
+import { createRecoveryClient } from './features/admin/recoveryClient'
+import { authOrigin } from './features/admin/auth'
+import { parseRoute } from './features/indicators/data'
+import { DetailScreen, FeatureUnavailable } from './features/indicators/DetailPage'
+import { SourceTraceScreen } from './features/indicators/SourceTracePage'
+import { SourceDataPage } from './components/SourceDataPage'
 import { AdminSourcesPage } from './components/AdminSourcesPage'
-import { useDashboardFilter, type DashboardFilters } from './api'
+import './features/indicators/features.css'
 
-const INITIAL_FILTERS: DashboardFilters = { category: '', year: '' }
-
-function parseSourceHash(): SourcePageSelection | null {
-  const hash = window.location.hash || '';
-  if (!hash.startsWith('#/sumber-data')) return null;
-  const query = hash.includes('?') ? hash.split('?')[1] : '';
-  const params = new URLSearchParams(query);
-  return {
-    sourceId: params.get('source') || undefined,
-    indicator: params.get('indicator') || undefined,
-    period: params.get('period') || undefined,
-  };
-}
-
-export default function App() {
-  const [infoOpen, setInfoOpen] = useState(false)
-  const [filters, setFilters] = useState<DashboardFilters>(INITIAL_FILTERS)
-  const [sourceRoute, setSourceRoute] = useState<SourcePageSelection | null>(
-    () => (typeof window !== 'undefined' ? parseSourceHash() : null),
-  )
-  const [adminRoute, setAdminRoute] = useState(
-    () => typeof window !== 'undefined' && (window.location.hash || '').startsWith('#/admin/sumber'),
-  )
-
-  // Fitur 5: gunakan hook filter; saat filter kosong hasilnya identik dengan
-  // endpoint /api/indicators/ sehingga tidak ada perubahan perilaku default.
-  const { summary, cards, loading, error } = useDashboardFilter(filters)
-
-  useEffect(() => { document.title = 'DEKSI · Deteksi Ekonomi Indonesia' }, [])
-
-  // Fitur 9: rute hash publik #/sumber-data (tanpa login, tanpa router tambahan).
-  // Fitur 10: rute hash admin #/admin/sumber (session auth + staf).
-  useEffect(() => {
-    const sync = () => {
-      setSourceRoute(parseSourceHash());
-      setAdminRoute((window.location.hash || '').startsWith('#/admin/sumber'));
-    };
-    window.addEventListener('hashchange', sync);
-    return () => window.removeEventListener('hashchange', sync);
-  }, [])
-
-  if (adminRoute) {
-    return (
-      <div className="deksi-page">
-        <a className="skip-link" href="#admin-sources-title">Lewati ke konten utama</a>
-        <main>
-          <AdminSourcesPage />
-        </main>
-        <EditorialFooter onInfo={() => setInfoOpen(true)} />
-        <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
-      </div>
-    );
+const recoveryClient=createRecoveryClient(authOrigin())
+export default function App({pathname=typeof window==='undefined'?'/':window.location.pathname,search=typeof window==='undefined'?'':window.location.search,resetService=recoveryClient}:{pathname?:string;search?:string;resetService?:RecoveryService}={}) {
+  const path=pathname.replace(/\/+$/,'')||'/'
+  if(path==='/admin/login')return <LoginPage/>
+  if(path==='/admin/forgot-password')return <ForgotPasswordPage service={resetService}/>
+  if(path==='/admin/reset-password')return <ResetPasswordPage service={resetService}/>
+  // Fitur 9: halaman daftar sumber data publik.
+  if(path==='/sumber-data'){
+    const params=new URLSearchParams(search)
+    return <SourceDataPage selection={{
+      sourceId: params.get('source') || undefined,
+      indicator: params.get('indicator') || undefined,
+      period: params.get('period') || undefined,
+    }}/>
   }
-
-  if (sourceRoute) {
-    return (
-      <div className="deksi-page">
-        <a className="skip-link" href="#sources-title">Lewati ke konten utama</a>
-        <main>
-          <SourceDataPage selection={sourceRoute} />
-        </main>
-        <EditorialFooter onInfo={() => setInfoOpen(true)} />
-        <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="deksi-page">
-      <a className="skip-link" href="#hero-title">Lewati ke konten utama</a>
-      <main>
-        <EditorialLanding
-          cards={cards}
-          summary={summary}
-          loading={loading}
-          error={error}
-          onInfo={() => setInfoOpen(true)}
-        />
-
-        <div className="api-context" role="status">
-          <span>PEMBARUAN BACKEND</span>
-          <p>
-            {loading
-              ? 'Memuat metadata…'
-              : error
-              ? error
-              : summary?.lastUpdate?.formatted ?? 'Waktu pembaruan belum tersedia.'}
-          </p>
-          <p>Nilai dan metadata ditampilkan sesuai respons API, bukan fixture prototipe.</p>
-        </div>
-
-        {/* Fitur 5: Filter dashboard */}
-        <DashboardFilter filters={filters} onChange={setFilters} />
-
-        <EconomicSummary cards={cards} loading={loading} error={error} />
-        <TrendChart />
-        <InsightSection />
-        <EditorialContext cards={cards} loading={loading} error={error} />
-
-        {/* Fitur 8: Form umpan balik */}
-        <section id="feedback-section" className="feedback-section">
-          <div className="feedback-section__inner">
-            <h2 className="feedback-section__title">Kirim Umpan Balik</h2>
-            <p className="feedback-section__desc">
-              Temukan data yang perlu diperbaiki atau memiliki saran untuk DEKSI?
-              Sampaikan kepada tim kami. Identitas pengirim bersifat opsional.
-            </p>
-            <FeedbackForm />
-          </div>
-        </section>
-      </main>
-
-      <EditorialFooter onInfo={() => setInfoOpen(true)} />
-      <EditorialInfo open={infoOpen} onClose={() => setInfoOpen(false)} />
-    </div>
-  )
+  // Fitur 10: halaman kelola sumber data (Admin, session auth + staf).
+  if(path==='/admin/sumber-data' || path==='/admin/sumber')return <AdminSourcesPage/>
+  const route=parseRoute(path,search)
+  if(route.kind==='dashboard')return <Dashboard/>
+  if(route.kind==='detail')return <DetailScreen route={route}/>
+  if(route.kind==='source')return <SourceTraceScreen route={route}/>
+  return <FeatureUnavailable/>
 }
