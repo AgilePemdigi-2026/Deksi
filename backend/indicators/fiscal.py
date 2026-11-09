@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.utils import timezone
 
 from . import kemenkeu
 from .lifecycle import ensure_import_master, stage_observation
@@ -51,11 +53,32 @@ def get_fiscal_indicators() -> dict[str, Indicator]:
     return result
 
 
-def ingest_kita_pdf_url(url: str) -> dict:
+def ingest_kita_pdf_url(url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
     pdf_bytes, parsed = kemenkeu.fetch_and_parse(url)
-    source = get_kemenkeu_source()
+    return ingest_kita_parsed(parsed, pdf_bytes, url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy)
+
+
+def ingest_kita_pdf_bytes(pdf_bytes: bytes, source_url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
+    """Ingest PDF KiTa dari berkas lokal (arsip Folder Scrapping)."""
+    text = kemenkeu.pdf_to_text(pdf_bytes)
+    parsed = kemenkeu.parse_kita_text(text, source_url=source_url)
+    return ingest_kita_parsed(parsed, pdf_bytes, source_url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy)
+
+
+def ingest_kita_parsed(parsed, pdf_bytes: bytes, url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
     if parsed.cumulative_until is None:
         raise kemenkeu.KitaError("periode kumulatif tidak teridentifikasi pada dokumen; data tidak disimpan")
+    result = _store_parsed_result(url, pdf_bytes, parsed)
+    if not no_scrap_copy:
+        result["scrap_copy"] = archive_to_scraping_dir(
+            pdf_bytes, result["document_name"], url,
+            result["period_label"], result["checksum"], scrap_dir=scrap_dir,
+        )
+    return result
+
+
+def _store_parsed_result(url: str, pdf_bytes: bytes, parsed) -> dict:
+    source = get_kemenkeu_source()
     document_name = kemenkeu.suggested_document_name(parsed)
     raw_file, is_new = save_raw(
         source, pdf_bytes, document_name,
@@ -84,3 +107,38 @@ def ingest_kita_pdf_url(url: str) -> dict:
         "raw_file_id": raw_file.id,
         "checksum": raw_file.checksum_sha256,
     }
+
+
+def resolve_scraping_dir(scrap_dir=None):
+    from pathlib import Path
+
+    if scrap_dir:
+        target = Path(scrap_dir)
+    else:
+        target = Path(getattr(settings, "DEKSI_SCRAPING_DIR", Path(".")))
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def archive_to_scraping_dir(pdf_bytes: bytes, document_name: str, url: str,
+                            period_label: str, checksum: str, scrap_dir=None) -> dict:
+    """Salin PDF edisi KiTa ke Folder Scrapping + file sidecar provenance."""
+    from .storage import compute_checksum
+
+    target = resolve_scraping_dir(scrap_dir)
+    if compute_checksum(pdf_bytes) != checksum:
+        raise kemenkeu.KitaError("checksum PDF berubah antara unduh dan arsip; dibatalkan")
+    pdf_path = target / document_name
+    if not pdf_path.exists():
+        pdf_path.write_bytes(pdf_bytes)
+    sidecar = target / f"{document_name}.sumber.txt"
+    sidecar.write_text(
+        "Sumber resmi: Kementerian Keuangan RI, publikasi APBN KiTa.\n"
+        f"URL: {url}\n"
+        f"Periode data: {period_label}\n"
+        f"SHA-256: {checksum}\n"
+        f"Ukuran: {len(pdf_bytes)} bytes.\n"
+        f"Diarsipkan: {timezone.now().isoformat()}.\n",
+        encoding="utf-8",
+    )
+    return {"pdf": str(pdf_path), "sidecar": str(sidecar)}

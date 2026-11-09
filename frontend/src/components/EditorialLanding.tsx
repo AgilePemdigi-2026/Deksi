@@ -39,10 +39,10 @@ export function EditorialLanding({ cards, summary, loading, error, onInfo }: Lan
         <span className="nav-slider" aria-hidden="true" />
         <a className="is-active" href="#dashboard" aria-current="page">Beranda</a>
         <a href="#indikator">Indikator</a><a href="#analisis">Tren</a>
-        <button type="button" onClick={onInfo}>Sumber</button>
+        <a href="#/sumber-data">Sumber Data</a>
       </nav>
       <p className="hero-date"><span>{loading ? 'MEMUAT DATA /' : error ? 'API BELUM TERHUBUNG /' : 'RESPONS API /'}</span><span>{period}</span></p>
-      <button type="button" className="button contact" onClick={onInfo} aria-label="Buka informasi sumber"><span className="contact-label">Sumber</span><Arrow /></button>
+      <button type="button" className="button contact" onClick={() => { window.location.hash = '#/sumber-data'; }} aria-label="Buka halaman Sumber Data"><span className="contact-label">Sumber Data</span><Arrow /></button>
       <div className="title-group"><h1 className="display-title" id="hero-title"><span className="title-mask"><span className="title-line">DATA</span></span><span className="title-mask"><span className="title-line">DEKSI</span></span></h1><span className="title-year">(PUBLIK)</span></div>
       <div className="about"><p className="about-label">● (TENTANG)</p><p className="about-copy">Indikator ekonomi dalam konteks,<br />dengan sumber yang bisa ditelusuri.</p><a className="button book" href="#indikator">Lihat Data<Arrow /></a></div>
       <figure className="portrait-stage" aria-label="Foto perkotaan sebagai ilustrasi, bukan bukti data ekonomi">

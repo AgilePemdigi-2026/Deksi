@@ -36,7 +36,10 @@ export function InsightSection() {
             </div>
             <footer className="insight-footer">
               <span>Referensi desain: {item.footerSource}</span>
-              <a href="#analisis">Baca grafik ↗</a>
+              <span>
+                <a href="#analisis">Baca grafik ↗</a>{' '}
+                <a href="#/sumber-data">Source Trace ↗</a>
+              </span>
             </footer>
           </article>
         ))}

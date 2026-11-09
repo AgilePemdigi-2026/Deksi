@@ -1,4 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  availableRanges,
+  normalizeRange,
+  type RangeKey,
+} from "../features/indicators/data";
 import {
   Area,
   CartesianGrid,
@@ -24,6 +29,20 @@ const YEARS: Record<Exclude<Timeframe, "Semua">, number> = {
   "3 Tahun": 3,
   "5 Tahun": 5,
   "10 Tahun": 10,
+};
+
+const TIMEFRAME_KEY: Record<Timeframe, RangeKey> = {
+  "3 Tahun": "3",
+  "5 Tahun": "5",
+  "10 Tahun": "10",
+  Semua: "all",
+};
+
+const KEY_TIMEFRAME: Record<RangeKey, Timeframe> = {
+  "3": "3 Tahun",
+  "5": "5 Tahun",
+  "10": "10 Tahun",
+  all: "Semua",
 };
 
 const numberFormat = new Intl.NumberFormat("id-ID", {
@@ -86,6 +105,21 @@ export function TrendChart() {
 
   const trendMeta = indicatorTrends[activeId];
   const { trend, loading, error } = useTrend(activeId);
+
+  // Opsi rentang mengikuti tahun yang benar-benar ada pada indikator aktif.
+  const rangeOptions = useMemo<readonly RangeKey[]>(
+    () => availableRanges((trend?.points ?? []).map((p) => ({ year: pointYear(p) || undefined }))),
+    [trend],
+  );
+  const visibleTimeframes = useMemo(
+    () => TIMEFRAMES.filter((tf) => (rangeOptions as readonly string[]).includes(TIMEFRAME_KEY[tf])),
+    [rangeOptions],
+  );
+  useEffect(() => {
+    if (trend && !error && !visibleTimeframes.includes(timeframe)) {
+      setTimeframe(KEY_TIMEFRAME[normalizeRange(TIMEFRAME_KEY[timeframe], rangeOptions)]);
+    }
+  }, [activeId, trend, error, timeframe, visibleTimeframes, rangeOptions]);
 
   const unit = trend?.unit ?? trendMeta.unitSuffix;
   const supported = trend?.granularities?.length
@@ -156,7 +190,7 @@ export function TrendChart() {
             ))}
           </div>
           <div className="trend-tabs compact" role="tablist" aria-label="Pilih rentang waktu">
-            {TIMEFRAMES.map((tf) => (
+            {visibleTimeframes.map((tf) => (
               <button
                 key={tf}
                 type="button"
@@ -254,6 +288,12 @@ export function TrendChart() {
               ? ` Data terbaru tersedia sampai ${trend.dataAvailableUntil}.`
               : ""}
           </span>
+          <a
+            className="trend-footnote-link"
+            href={`#/sumber-data?indicator=${encodeURIComponent(activeId)}`}
+          >
+            Source Trace {trendMeta.name} ↗
+          </a>
           <a
             className="trend-footnote-link"
             href="https://www.bps.go.id/id/statistics-table"

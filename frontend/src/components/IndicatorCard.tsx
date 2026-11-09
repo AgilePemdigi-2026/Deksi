@@ -76,7 +76,7 @@ export function IndicatorCard({ meta }: { meta: Omit<IndicatorMeta, 'id'> & { id
         <span className="indicator-source">
           {meta.source} • Observasi: {meta.sourceDate}
         </span>
-        {meta.id && /^[a-z][a-z0-9_-]{0,31}$/.test(meta.id) ? <a className="indicator-link" href={`/indikator/${encodeURIComponent(meta.id)}`}>Lihat detail ↗</a> : <button type="button" className="indicator-link" disabled>Detail belum tersedia</button>}
+        {meta.id && /^[a-z][a-z0-9_-]{0,31}$/.test(meta.id) ? <><a className="indicator-link" href={`/indikator/${encodeURIComponent(meta.id)}`}>Lihat detail ↗</a><a className="source-trace-link" href={`/sumber-data?indicator=${encodeURIComponent(meta.id)}`}>Source Trace ↗</a></> : <button type="button" className="indicator-link" disabled>Detail belum tersedia</button>}
       </footer>
     </article>
   );

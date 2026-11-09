@@ -1,4 +1,5 @@
 import type { SummaryCard } from "../api";
+import type { IndicatorId } from "../data/indicators";
 import { IndicatorCard } from "./IndicatorCard";
 
 const CARD_COLORS: Record<string, string> = {
@@ -20,7 +21,7 @@ export const formatDateID = (iso?: string | null): string => {
 };
 
 const toCardMeta = (card: SummaryCard) => ({
-  id: card.id,
+  id: (card.id in CARD_COLORS ? card.id : "pdb") as IndicatorId,
   category: card.category || "Indikator Ekonomi",
   name: card.name,
   value: card.value ?? "-",
