@@ -136,11 +136,14 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
               className={s.sourceId === activeSource ? "source-card active" : "source-card"}
               aria-pressed={s.sourceId === activeSource}
             >
-              <p className="source-institution">{s.institution}</p>
+              <p className="source-institution">{s.institution}{s.status ? ` · ${s.status}` : ""}</p>
               <p className="source-name">{s.sourceName}</p>
               <p className="source-desc">{s.description || INSTITUTION_BLURB[s.sourceId] || ""}</p>
               <p className="source-meta">
                 {s.indicatorCount} indikator · {s.observationCount} observasi
+              </p>
+              <p className="source-meta">
+                Jenis: {displayOrUnavailable(s.acquisitionMethod || s.dataFormat)} · Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}
               </p>
               <p className="source-meta">
                 Terbaru: {displayOrUnavailable(s.latestPeriod)} ·{" "}
