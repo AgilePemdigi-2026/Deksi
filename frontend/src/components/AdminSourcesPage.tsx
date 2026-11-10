@@ -336,7 +336,7 @@ export function AdminSourcesPage() {
         <a href="/sumber-data">Sumber Data</a>
         <a href="/admin/sumber-data" aria-current="page">Kelola Sumber</a>
         <a href="/admin/riwayat-sinkronisasi">Riwayat Sinkronisasi</a>
-        <a href="/#/admin/feedback">Kelola Umpan Balik</a>
+        <a href="/admin/feedback">Kelola Umpan Balik</a>
       </nav>
 
       {!sessionChecked || (loading && !authenticated) ? (

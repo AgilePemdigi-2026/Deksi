@@ -100,6 +100,28 @@ export function createAuthClient(origin: string, fetcher: typeof fetch = fetch) 
     async session(signal?: AbortSignal) {
       return sessionUser(await request('session', 'GET', undefined, signal))
     },
+    async confirmPortalSession(user: AdminUser, signal?: AbortSignal) {
+      const controller = new AbortController()
+      const abort = () => controller.abort()
+      if (signal?.aborted) abort()
+      signal?.addEventListener('abort', abort, { once: true })
+      const timeout = setTimeout(abort, 10000)
+      try {
+        const response = await fetcher('/api/admin/session/', {
+          method: 'GET', credentials: 'include', cache: 'no-store', redirect: 'error', signal: controller.signal,
+        })
+        const body = object(await response.json().catch(() => null))
+        if (!response.ok || body?.authenticated !== true || body.isStaff !== true || body.username !== user.username) {
+          throw new AuthError('invalid_response')
+        }
+      } catch (error) {
+        if (error instanceof AuthError) throw error
+        throw new AuthError('unavailable')
+      } finally {
+        clearTimeout(timeout)
+        signal?.removeEventListener('abort', abort)
+      }
+    },
     async login(identifier: string, password: string, signal?: AbortSignal) {
       await csrf(signal)
       const body = object(await request('login', 'POST', { identifier, password }, signal))
