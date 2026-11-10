@@ -60,7 +60,7 @@ Compose menjalankan migrasi sebelum backend, lalu menjalankan backend dan fronte
 
 ## Deploy Production ke Coolify
 
-Untuk production, gunakan `docker-compose.prod.yml`, bukan Compose development. File ini membangun frontend sebagai aset statis di Nginx, menjalankan Django dengan Gunicorn, dan menggunakan PostgreSQL dengan volume persisten. Frontend menjadi satu-satunya service yang perlu diberi domain publik di Coolify; arahkan domain ke port container `80`. Backend dan PostgreSQL tetap internal.
+Untuk production, gunakan `docker-compose.prod.yml`, bukan Compose development. File ini membangun frontend sebagai aset statis di Nginx, menjalankan Django dengan Gunicorn, dan menggunakan PostgreSQL dengan volume persisten. Frontend menjadi satu-satunya service yang perlu diberi domain publik di Coolify; arahkan domain ke port container `80`. Backend dan PostgreSQL tetap internal. Pengalihan HTTP ke HTTPS ditangani Coolify agar tidak terjadi redirect berulang di belakang reverse proxy.
 
 Push seluruh perubahan aplikasi dan konfigurasi Docker ke Git, tanpa mengunggah `backend/.env`. Di Coolify, buat resource Docker Compose dari repository dan branch tersebut, lalu atur Docker Compose location ke `/docker-compose.prod.yml`. Tambahkan environment variables berikut di Coolify:
 
