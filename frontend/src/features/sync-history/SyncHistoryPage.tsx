@@ -58,6 +58,7 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
             Pantau proses pengambilan data dari sumber. Riwayat ini terpisah dari perubahan
             konfigurasi sumber dan publikasi observasi.
           </p>
+          <a className="sync-history__back" href="/admin/sumber">Kelola Sumber Data</a>
         </div>
         <span className="sync-history__badge">Admin DEKSI</span>
       </header>

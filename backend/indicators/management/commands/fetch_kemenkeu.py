@@ -80,7 +80,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         source = Source.objects.filter(source_id="KEMENKEU").first()
         if source is not None:
-            require_active_source(source)
+            try:
+                require_active_source(source)
+            except InactiveSourceError as exc:
+                self.stdout.write(self.style.WARNING(str(exc)))
+                return
         urls = options["urls"] or kemenkeu.DEFAULT_KITA_URLS
         if options.get("discover"):
             bases = options.get("base_urls") or DEFAULT_ARCHIVE_URLS

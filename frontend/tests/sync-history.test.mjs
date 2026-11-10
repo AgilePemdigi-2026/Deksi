@@ -14,6 +14,7 @@ test('the disconnected history page explains its state without invented records 
   const { default: Page } = await vite.ssrLoadModule('/src/features/sync-history/SyncHistoryPage.tsx')
   const html = renderToStaticMarkup(createElement(Page))
   assert.match(html, /Riwayat Sinkronisasi/)
+  assert.match(html, /<a[^>]+href="\/admin\/sumber"[^>]*>[^<]*Kelola Sumber/i)
   assert.match(html, /belum terhubung/i)
   assert.match(html, /hasil akhir belum tercatat/i)
   assert.match(html, /Berlangsung/)

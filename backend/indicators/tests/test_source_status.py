@@ -1,5 +1,6 @@
 import os
 import tempfile
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -34,10 +35,14 @@ class SourceStatusTests(TestCase):
         source = fiscal.get_kemenkeu_source()
         source.status = "inactive"
         source.save(update_fields=["status"])
+        before = DataUpdateLog.objects.count()
+        output = StringIO()
         with patch("indicators.kemenkeu_discovery.discover_via_anggaran_search",
-                   side_effect=AssertionError("discovery called")):
-            with self.assertRaises(ValidationError):
-                call_command("fetch_kemenkeu", discover=True)
+                   side_effect=AssertionError("discovery called")) as discover:
+            call_command("fetch_kemenkeu", discover=True, stdout=output)
+        discover.assert_not_called()
+        self.assertIn("tidak aktif", output.getvalue().lower())
+        self.assertEqual(DataUpdateLog.objects.count(), before)
 
     def test_inactive_local_sources_do_not_import_files(self):
         with tempfile.TemporaryDirectory(dir=os.environ["HERMES_TEST_SCRATCH"]) as directory:

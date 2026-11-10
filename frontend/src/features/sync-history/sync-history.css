@@ -5,6 +5,8 @@
 .sync-history h1,.sync-history h2,.sync-history h3,.sync-history p{margin-top:0}
 .sync-history h1{margin-bottom:12px;font-size:clamp(32px,4vw,52px);line-height:1.08;letter-spacing:-.035em}
 .sync-history__intro{max-width:650px;margin-bottom:0;color:#333;font-size:15px;line-height:1.65}
+.sync-history__back{display:inline-block;margin-top:16px;color:#111;text-decoration:underline;text-underline-offset:3px}
+.sync-history__back:focus-visible{outline:2px solid #111;outline-offset:3px}
 .sync-history__badge,.sync-history__connection{display:inline-flex;align-items:center;padding:9px 14px;border:1px solid #777;border-radius:999px;font-size:12px;white-space:nowrap}
 .sync-history__panel{padding:28px;border:1px solid #999;border-radius:5px;background:#e1e1e1}
 .sync-history__panel-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:24px;border-bottom:1px solid #aaa}

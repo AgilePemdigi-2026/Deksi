@@ -14,11 +14,12 @@ test('admin status update bootstraps CSRF and sends it in the mutation header', 
     return new Response(JSON.stringify(calls.length === 1 ? {csrfToken:'synthetic-csrf'} : {source:{status:'inactive'}}))
   }
   try {
-    const result = await api.updateAdminSource('BPS', {status:'inactive'})
+    const result = await api.updateAdminSource('BPS', {status:'inactive', expectedRevision:0})
     assert.equal(result.source.status, 'inactive')
     assert.equal(calls[0].url, '/api/auth/csrf/')
     assert.equal(calls[1].url, '/api/admin/sources/BPS/update/')
     assert.equal(calls[1].init.headers.get('X-CSRFToken'), 'synthetic-csrf')
+    assert.deepEqual(JSON.parse(calls[1].init.body), {status:'inactive', expectedRevision:0})
     assert.equal(calls[1].init.credentials, 'include')
     assert.equal(calls.length, 2)
   } finally { globalThis.fetch = original }
@@ -29,7 +30,7 @@ test('admin status update does not submit when CSRF bootstrap fails', async () =
   let calls = 0
   globalThis.fetch = async () => { calls++; return new Response('', {status:500}) }
   try {
-    await assert.rejects(api.updateAdminSource('BPS', {status:'inactive'}), /Token keamanan/)
+    await assert.rejects(api.updateAdminSource('BPS', {status:'inactive', expectedRevision:0}), /Token keamanan/)
     assert.equal(calls, 1)
   } finally { globalThis.fetch = original }
 })
