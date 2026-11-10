@@ -14,11 +14,13 @@ from ipaddress import ip_address
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db import transaction
+from django.db.models import Q
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from indicators.feedback_model import Feedback
+from indicators.feedback_model import Feedback, FeedbackAuditLog
 from indicators.models import Indicator
 from indicators.views import json_error, json_success
 
@@ -227,12 +229,23 @@ def _serialize_feedback_item(fb: Feedback) -> dict:
 @require_GET
 def admin_feedback_list(request):
     """
-    Memuat daftar laporan pengguna dengan filter status dan kategori.
+    Memuat daftar laporan pengguna dengan pencarian kata kunci dan filter status/kategori.
     Query params:
+      q / search: mencari deskripsi, pengirim, email, indikator, atau periode
       status: filter status penanganan
       category: filter kategori
     """
     qs = Feedback.objects.all().order_by("-created_at")
+
+    search_query = (request.GET.get("q") or request.GET.get("search") or "").strip()
+    if search_query:
+        qs = qs.filter(
+            Q(description__icontains=search_query)
+            | Q(sender_name__icontains=search_query)
+            | Q(sender_email__icontains=search_query)
+            | Q(related_indicator_code__icontains=search_query)
+            | Q(related_period__icontains=search_query)
+        )
 
     # Filter status penanganan
     status_param = (request.GET.get("status") or "").strip()
@@ -247,6 +260,7 @@ def admin_feedback_list(request):
     items = [_serialize_feedback_item(fb) for fb in qs]
     return json_success({
         "count": len(items),
+        "search_query": search_query,
         "feedbacks": items,
         "available_statuses": [
             {"value": s.value, "label": s.label} for s in Feedback.Status
@@ -259,12 +273,7 @@ def admin_feedback_list(request):
 # ---------------------------------------------------------------------------
 
 
-@require_GET
-def admin_feedback_detail(request, feedback_id: int):
-    fb = Feedback.objects.filter(pk=feedback_id).first()
-    if fb is None:
-        return json_error("Umpan balik tidak ditemukan.", status=404)
-
+def _serialize_feedback_detail(fb: Feedback) -> dict:
     data = _serialize_feedback_item(fb)
     related_indicator = None
     if fb.related_indicator_code:
@@ -284,5 +293,104 @@ def admin_feedback_detail(request, feedback_id: int):
                 "unit": "-",
             }
     data["related_indicator"] = related_indicator
+    data["audit_logs"] = [
+        {
+            "id": log.pk,
+            "old_status": log.old_status,
+            "old_status_label": log.get_old_status_display(),
+            "new_status": log.new_status,
+            "new_status_label": log.get_new_status_display(),
+            "notes": log.notes,
+            "changed_by": log.changed_by,
+            "changed_at": log.changed_at.isoformat() if log.changed_at else None,
+        }
+        for log in fb.audit_logs.all().order_by("-changed_at")
+    ]
+    return data
 
-    return json_success({"feedback": data})
+
+@ensure_csrf_cookie
+@require_GET
+def admin_feedback_detail(request, feedback_id: int):
+    fb = Feedback.objects.filter(pk=feedback_id).first()
+    if fb is None:
+        return json_error("Umpan balik tidak ditemukan.", status=404)
+
+    return json_success({"feedback": _serialize_feedback_detail(fb), "csrfToken": get_token(request)})
+
+
+# ---------------------------------------------------------------------------
+# Fitur 18: Ubah Status Umpan Balik dan Catat Audit Log (Admin)
+# ---------------------------------------------------------------------------
+
+
+def _require_feedback_staff(request):
+    user = getattr(request, "user", None)
+    if user is None or not user.is_authenticated:
+        return json_error("Autentikasi diperlukan.", status=401)
+    if not user.is_staff:
+        return json_error("Hak akses admin diperlukan.", status=403)
+    return None
+
+
+@require_http_methods(["POST", "PATCH"])
+def admin_feedback_update_status(request, feedback_id: int):
+    denied = _require_feedback_staff(request)
+    if denied is not None:
+        return denied
+
+    data, parse_error = _parse_json_body(request)
+    if parse_error is not None:
+        return parse_error
+    data = data or {}
+
+    status_value = data.get("status")
+    if not isinstance(status_value, str) or not status_value.strip():
+        return json_error("Field 'status' wajib diisi.", status=400)
+    new_status = status_value.strip()
+    valid_statuses = {status.value for status in Feedback.Status}
+    if new_status not in valid_statuses:
+        return json_error(
+            f"Status '{new_status}' tidak valid. Pilihan valid: {sorted(valid_statuses)}",
+            status=400,
+        )
+
+    notes = data.get("notes", "")
+    if not isinstance(notes, str):
+        return json_error("Field 'notes' harus berupa teks.", status=400)
+    notes = notes.strip()
+    if len(notes) > _MAX_DESCRIPTION_LEN:
+        return json_error(
+            f"Catatan penanganan maksimal {_MAX_DESCRIPTION_LEN} karakter.", status=400
+        )
+
+    user = request.user
+    changed_by = (user.get_full_name() or user.get_username() or "Admin")[:150]
+    with transaction.atomic():
+        fb = Feedback.objects.select_for_update().filter(pk=feedback_id).first()
+        if fb is None:
+            return json_error("Umpan balik tidak ditemukan.", status=404)
+
+        old_status = fb.status
+        FeedbackAuditLog.objects.create(
+            feedback=fb,
+            old_status=old_status,
+            new_status=new_status,
+            notes=notes,
+            changed_by=changed_by,
+        )
+        fb.status = new_status
+        fb.admin_notes = notes
+        fb.save(update_fields=["status", "admin_notes", "updated_at"])
+
+    logger.info(
+        "Status feedback #%s diubah dari '%s' ke '%s' oleh %s",
+        fb.pk,
+        old_status,
+        new_status,
+        changed_by,
+    )
+    return json_success({
+        "feedback": _serialize_feedback_detail(fb),
+        "csrfToken": get_token(request),
+    })

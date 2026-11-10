@@ -574,19 +574,34 @@ export interface AdminFeedbackListResponse {
 }
 
 export interface AdminFeedbackDetail extends AdminFeedbackItem {
+  csrfToken: string;
   related_indicator: {
     code: string;
     name: string;
     category: string;
     unit: string;
   } | null;
+  audit_logs: FeedbackAuditLogEntry[];
+}
+
+export interface FeedbackAuditLogEntry {
+  id: number;
+  old_status: string;
+  old_status_label: string;
+  new_status: string;
+  new_status_label: string;
+  notes: string;
+  changed_by: string;
+  changed_at: string | null;
 }
 
 export async function fetchAdminFeedbacks(params?: {
+  search?: string;
   status?: string;
   category?: string;
 }): Promise<AdminFeedbackListResponse> {
   const query = new URLSearchParams();
+  if (params?.search?.trim()) query.set("search", params.search.trim());
   if (params?.status && params.status !== "all") query.set("status", params.status);
   if (params?.category && params.category !== "all") query.set("category", params.category);
 
@@ -609,5 +624,24 @@ export async function fetchAdminFeedbackDetail(id: number): Promise<AdminFeedbac
     throw new Error(`HTTP ${res.status}`);
   }
   const body = await res.json();
-  return body.feedback as AdminFeedbackDetail;
+  return { ...body.feedback, csrfToken: body.csrfToken } as AdminFeedbackDetail;
+}
+
+export async function updateAdminFeedbackStatus(
+  id: number,
+  payload: { status: string; notes: string; csrfToken: string },
+): Promise<AdminFeedbackDetail> {
+  const res = await adminFetch(`/admin/feedback/${id}/status/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": payload.csrfToken,
+    },
+    body: JSON.stringify({ status: payload.status, notes: payload.notes }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.error ?? `Gagal memperbarui status (HTTP ${res.status})`);
+  }
+  return { ...body.feedback, csrfToken: body.csrfToken } as AdminFeedbackDetail;
 }

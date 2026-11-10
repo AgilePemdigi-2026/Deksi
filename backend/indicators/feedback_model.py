@@ -67,3 +67,37 @@ class Feedback(models.Model):
     def __str__(self) -> str:
         sender = self.sender_name or self.sender_email or "Anonim"
         return f"[{self.get_category_display()}] {sender} - {self.created_at:%Y-%m-%d}"
+
+
+class FeedbackAuditLog(models.Model):
+    feedback = models.ForeignKey(
+        Feedback,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+        verbose_name="Umpan Balik",
+    )
+    old_status = models.CharField(
+        max_length=12,
+        choices=Feedback.Status.choices,
+        verbose_name="Status Lama",
+    )
+    new_status = models.CharField(
+        max_length=12,
+        choices=Feedback.Status.choices,
+        verbose_name="Status Baru",
+    )
+    notes = models.TextField(blank=True, default="", verbose_name="Catatan Penanganan")
+    changed_by = models.CharField(max_length=150, blank=True, default="Admin", verbose_name="Diubah Oleh")
+    changed_at = models.DateTimeField(auto_now_add=True, verbose_name="Waktu Perubahan")
+
+    class Meta:
+        db_table = "feedback_audit_log"
+        ordering: ClassVar[list[str]] = ["-changed_at"]
+        verbose_name = "Audit Log Umpan Balik"
+        verbose_name_plural = "Audit Log Umpan Balik"
+
+    def __str__(self) -> str:
+        return (
+            f"Feedback #{self.feedback_id}: {self.old_status} -> {self.new_status} "
+            f"({self.changed_at:%Y-%m-%d %H:%M})"
+        )

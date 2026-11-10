@@ -2,7 +2,6 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from indicators.feedback_model import Feedback  # noqa: F401
 from indicators.fields import ObservationDecimalField
 
 
@@ -229,4 +228,4 @@ class DataUpdateLog(models.Model):
 
 
 # Re-export agar migration discovery berfungsi dari satu modul
-from indicators.feedback_model import Feedback  # noqa: E402, F401
+from indicators.feedback_model import Feedback, FeedbackAuditLog  # noqa: E402, F401

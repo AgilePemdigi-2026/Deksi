@@ -5,6 +5,7 @@ import {
   fetchAdminSession,
   fetchAdminFeedbacks,
   fetchAdminFeedbackDetail,
+  updateAdminFeedbackStatus,
   type AdminFeedbackItem,
   type AdminFeedbackDetail,
 } from "../api";
@@ -21,6 +22,7 @@ export function AdminFeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<AdminFeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(null);
@@ -28,6 +30,14 @@ export function AdminFeedbackPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const detailRequestId = useRef(0);
+  const [newStatus, setNewStatus] = useState("");
+  const [handlingNotes, setHandlingNotes] = useState("");
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusUpdateMessage, setStatusUpdateMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const feedbackRequestId = useRef(0);
 
   useEffect(() => {
     fetchAdminSession()
@@ -40,20 +50,24 @@ export function AdminFeedbackPage() {
   }, []);
 
   const loadFeedbacks = useCallback(async () => {
+    const requestId = ++feedbackRequestId.current;
     setLoading(true);
     setError(null);
     try {
       const res = await fetchAdminFeedbacks({
+        search: searchQuery,
         status: selectedStatus,
         category: selectedCategory,
       });
-      setFeedbacks(res.feedbacks);
+      if (feedbackRequestId.current === requestId) setFeedbacks(res.feedbacks);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memuat daftar umpan balik.");
+      if (feedbackRequestId.current === requestId) {
+        setError(err instanceof Error ? err.message : "Gagal memuat daftar umpan balik.");
+      }
     } finally {
-      setLoading(false);
+      if (feedbackRequestId.current === requestId) setLoading(false);
     }
-  }, [selectedStatus, selectedCategory]);
+  }, [searchQuery, selectedStatus, selectedCategory]);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -73,6 +87,9 @@ export function AdminFeedbackPage() {
       const data = await fetchAdminFeedbackDetail(id);
       if (detailRequestId.current !== requestId) return;
       setDetail(data);
+      setNewStatus(data.status);
+      setHandlingNotes(data.admin_notes || "");
+      setStatusUpdateMessage(null);
       setFeedbacks((current) =>
         current.map((item) =>
           item.id === data.id
@@ -90,11 +107,46 @@ export function AdminFeedbackPage() {
   };
 
   const handleCloseDetail = () => {
+    if (statusUpdating) return;
     detailRequestId.current += 1;
     setSelectedFeedbackId(null);
     setDetail(null);
     setDetailError(null);
     setDetailLoading(false);
+    setStatusUpdateMessage(null);
+  };
+
+  const handleUpdateStatus = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!detail) return;
+    const requestId = detailRequestId.current;
+    if (!newStatus) {
+      setStatusUpdateMessage({ type: "error", text: "Silakan pilih status penanganan." });
+      return;
+    }
+
+    setStatusUpdating(true);
+    setStatusUpdateMessage(null);
+    try {
+      const updated = await updateAdminFeedbackStatus(detail.id, {
+        status: newStatus,
+        notes: handlingNotes,
+        csrfToken: detail.csrfToken,
+      });
+      if (detailRequestId.current !== requestId) return;
+      setDetail(updated);
+      setStatusUpdateMessage({ type: "success", text: "Status dan catatan berhasil disimpan." });
+      await loadFeedbacks();
+    } catch (err) {
+      if (detailRequestId.current === requestId) {
+        setStatusUpdateMessage({
+          type: "error",
+          text: err instanceof Error ? err.message : "Gagal memperbarui status umpan balik.",
+        });
+      }
+    } finally {
+      if (detailRequestId.current === requestId) setStatusUpdating(false);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -116,6 +168,7 @@ export function AdminFeedbackPage() {
     try {
       await adminLogout();
     } finally {
+      feedbackRequestId.current += 1;
       setAuthenticated(false);
       setFeedbacks([]);
     }
@@ -207,7 +260,7 @@ export function AdminFeedbackPage() {
     );
   }
 
-  const hasFilters = selectedStatus !== "all" || selectedCategory !== "all";
+  const hasFilters = Boolean(searchQuery.trim()) || selectedStatus !== "all" || selectedCategory !== "all";
 
   return (
     <div className="admin-fb-container">
@@ -233,6 +286,27 @@ export function AdminFeedbackPage() {
       </header>
 
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
+        <div className="admin-fb-search-wrap">
+          <span className="admin-fb-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            className="admin-fb-search-input"
+            placeholder="Cari deskripsi, pengirim, email, indikator, atau periode…"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            aria-label="Cari umpan balik"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="admin-fb-search-clear"
+              onClick={() => setSearchQuery("")}
+              aria-label="Hapus pencarian"
+            >
+              ×
+            </button>
+          )}
+        </div>
         <div className="admin-fb-filters">
           <div className="admin-fb-filter-group">
             <label htmlFor="filter-status">Status:</label>
@@ -269,6 +343,7 @@ export function AdminFeedbackPage() {
               onClick={() => {
                 setSelectedStatus("all");
                 setSelectedCategory("all");
+                setSearchQuery("");
               }}
             >
               Reset Filter
@@ -295,12 +370,17 @@ export function AdminFeedbackPage() {
           <div className="admin-fb-empty-state">
             {hasFilters ? (
               <>
-                <h3>Tidak Ada Laporan yang Cocok</h3>
-                <p>Tidak ditemukan laporan dengan status dan kategori yang dipilih.</p>
+                <h3>Tidak Ada Hasil yang Cocok</h3>
+                <p>
+                  {searchQuery.trim()
+                    ? `Tidak ditemukan laporan untuk kata kunci "${searchQuery.trim()}".`
+                    : "Tidak ditemukan laporan dengan status dan kategori yang dipilih."}
+                </p>
                 <button
                   onClick={() => {
                     setSelectedStatus("all");
                     setSelectedCategory("all");
+                    setSearchQuery("");
                   }}
                   className="admin-fb-btn secondary"
                 >
@@ -407,6 +487,7 @@ export function AdminFeedbackPage() {
                 type="button"
                 className="admin-fb-modal-close"
                 onClick={handleCloseDetail}
+                disabled={statusUpdating}
                 aria-label="Tutup detail"
               >
                 ×
@@ -476,6 +557,75 @@ export function AdminFeedbackPage() {
                       </div>
                     ) : (
                       <p className="cell-muted">Laporan ini tidak mengaitkan indikator spesifik.</p>
+                    )}
+                  </section>
+                  <section className="admin-fb-detail-card highlight">
+                    <h3>Tindak Lanjut dan Perubahan Status</h3>
+                    {statusUpdateMessage && (
+                    <div className={`admin-fb-alert ${statusUpdateMessage.type}`} role="status">
+                      {statusUpdateMessage.text}
+                    </div>
+                    )}
+                    <form onSubmit={handleUpdateStatus} className="admin-fb-form">
+                    <div className="admin-fb-form-group">
+                      <label htmlFor="feedback-new-status">Status Baru</label>
+                      <select
+                        id="feedback-new-status"
+                        value={newStatus}
+                        onChange={(event) => setNewStatus(event.target.value)}
+                        required
+                      >
+                        <option value="pending">Menunggu Ditinjau</option>
+                        <option value="in_review">Sedang Ditinjau</option>
+                        <option value="resolved">Diselesaikan</option>
+                        <option value="rejected">Ditolak</option>
+                      </select>
+                    </div>
+                    <div className="admin-fb-form-group">
+                      <label htmlFor="feedback-handling-notes">Catatan Penanganan</label>
+                      <textarea
+                        id="feedback-handling-notes"
+                        rows={3}
+                        maxLength={2000}
+                        value={handlingNotes}
+                        onChange={(event) => setHandlingNotes(event.target.value)}
+                        placeholder="Catatan tindakan atau alasan (opsional)"
+                      />
+                    </div>
+                    <div className="admin-fb-status-actions">
+                      <span className="cell-muted">{handlingNotes.length}/2000 karakter</span>
+                      <button
+                        type="submit"
+                        className="admin-fb-btn primary"
+                        disabled={statusUpdating || !detail}
+                      >
+                        {statusUpdating ? "Menyimpan…" : "Simpan Status"}
+                      </button>
+                    </div>
+                    </form>
+                  </section>
+                  <section className="admin-fb-detail-card">
+                    <h3>Riwayat Perubahan Status</h3>
+                    {detail.audit_logs.length === 0 ? (
+                    <p className="cell-muted">Belum ada riwayat perubahan status.</p>
+                    ) : (
+                    <div className="admin-fb-timeline">
+                      {detail.audit_logs.map((log) => (
+                        <article key={log.id} className="timeline-item">
+                          <div className="timeline-content">
+                            <div className="timeline-header">
+                              <span>
+                                <strong>{log.old_status_label}</strong> →{" "}
+                                <strong>{log.new_status_label}</strong>
+                              </span>
+                              <span className="timeline-date">{formatDateTime(log.changed_at)}</span>
+                            </div>
+                            {log.notes && <p className="timeline-notes">{log.notes}</p>}
+                            <span className="timeline-actor">Oleh: {log.changed_by}</span>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
                     )}
                   </section>
                 </>
