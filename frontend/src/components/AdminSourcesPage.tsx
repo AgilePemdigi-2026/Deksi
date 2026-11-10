@@ -123,6 +123,7 @@ export function AdminSourcesPage() {
       editRequest.current += 1;
       setAuthenticated(false);
       setSources([]);
+      window.location.replace("/admin/login");
     } catch {
       setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
     } finally {

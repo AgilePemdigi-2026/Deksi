@@ -177,6 +177,7 @@ export function AdminFeedbackPage() {
       setFeedbacks([]);
       setDetail(null);
       setSelectedFeedbackId(null);
+      window.location.replace("/admin/login");
     } catch {
       setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
     } finally {
