@@ -24,6 +24,15 @@ class SourceAdmin(admin.ModelAdmin):
     search_fields = ("source_id", "source_name", "institution")
     list_filter = ("status", "acquisition_method")
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(SourceRevision)
 class SourceRevisionAdmin(admin.ModelAdmin):
@@ -36,6 +45,9 @@ class SourceRevisionAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 

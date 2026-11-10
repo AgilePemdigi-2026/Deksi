@@ -207,6 +207,10 @@ class DataUpdateLog(models.Model):
         SUCCESS = "success"
         FAILED = "failed"
 
+    class EventKind(models.TextChoices):
+        UNKNOWN = "unknown", "Tidak diketahui"
+        PUBLICATION = "publication", "Publikasi observasi"
+
     updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -217,6 +221,7 @@ class DataUpdateLog(models.Model):
     )
     source = models.CharField(max_length=300, blank=True, default="")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.SUCCESS)
+    event_kind = models.CharField(max_length=16, choices=EventKind.choices, default=EventKind.UNKNOWN)
     observation_count = models.PositiveIntegerField(default=0)
     message = models.TextField(blank=True, default="")
 
@@ -229,3 +234,4 @@ class DataUpdateLog(models.Model):
 
 # Re-export agar migration discovery berfungsi dari satu modul
 from indicators.feedback_model import Feedback, FeedbackAuditLog  # noqa: E402, F401
+from indicators.sync_history_model import SyncRun  # noqa: E402, F401

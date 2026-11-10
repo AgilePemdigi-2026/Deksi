@@ -18,12 +18,16 @@ MONTHS_ID = {
 }
 
 
-def record_update_success(source: str, updated_by=None, observation_count: int = 0, message: str = "") -> DataUpdateLog:
+def record_update_success(
+    source: str, updated_by=None, observation_count: int = 0, message: str = "",
+    event_kind: str = DataUpdateLog.EventKind.UNKNOWN,
+) -> DataUpdateLog:
     return DataUpdateLog.objects.create(
         updated_at=timezone.now(),
         updated_by=updated_by,
         source=source,
         status=DataUpdateLog.Status.SUCCESS,
+        event_kind=event_kind,
         observation_count=observation_count,
         message=message,
     )
@@ -41,7 +45,9 @@ def record_update_failure(source: str, updated_by=None, message: str = "") -> Da
 
 
 def latest_successful_update() -> DataUpdateLog | None:
-    return DataUpdateLog.objects.filter(status=DataUpdateLog.Status.SUCCESS).first()
+    return DataUpdateLog.objects.filter(
+        status=DataUpdateLog.Status.SUCCESS, event_kind=DataUpdateLog.EventKind.PUBLICATION
+    ).first()
 
 
 def latest_attempt() -> DataUpdateLog | None:

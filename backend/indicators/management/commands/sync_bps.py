@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 
 from indicators import bps
+from indicators.source_status import InactiveSourceError
 from indicators.updates import record_update_failure
 
 
@@ -24,6 +25,9 @@ class Command(BaseCommand):
                 start_year=options["start_year"],
                 end_year=options["end_year"],
             )
+        except InactiveSourceError as exc:
+            self.stdout.write(self.style.WARNING(str(exc)))
+            return
         except (bps.BpsError, ValidationError) as exc:
             record_update_failure("WebAPI BPS", updated_by=user, message=str(exc))
             self.stderr.write(self.style.ERROR(str(exc)))

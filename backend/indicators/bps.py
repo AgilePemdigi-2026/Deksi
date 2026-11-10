@@ -292,9 +292,22 @@ def fetch_series(series: dict, start_year: int = 2016, end_year: int | None = No
 
 
 def sync_bps_indicators(start_year: int = 2016, end_year: int | None = None) -> dict:
-    from .lifecycle import stage_observation
+    from .sync_history_service import begin_sync_run, finalize_sync_run
 
     source = _get_or_create_source()
+    run = begin_sync_run(source=source)
+    try:
+        result = _sync_bps_started(source, start_year, end_year)
+    except Exception:
+        finalize_sync_run(run, success=False)
+        raise
+    finalize_sync_run(run, success=not result["errors"], failure_stage="fetch_series" if result["errors"] else None)
+    return result
+
+
+def _sync_bps_started(source, start_year, end_year):
+    from .lifecycle import stage_observation
+
     total = 0
     errors: list[str] = []
     latest: dict[str, str] = {}

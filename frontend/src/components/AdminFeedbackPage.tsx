@@ -18,6 +18,8 @@ export function AdminFeedbackPage() {
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const [feedbacks, setFeedbacks] = useState<AdminFeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,12 +167,20 @@ export function AdminFeedbackPage() {
   };
 
   const handleLogout = async () => {
+    setLogoutLoading(true);
+    setLogoutError(null);
     try {
       await adminLogout();
-    } finally {
       feedbackRequestId.current += 1;
+      detailRequestId.current += 1;
       setAuthenticated(false);
       setFeedbacks([]);
+      setDetail(null);
+      setSelectedFeedbackId(null);
+    } catch {
+      setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
+    } finally {
+      setLogoutLoading(false);
     }
   };
 
@@ -279,12 +289,13 @@ export function AdminFeedbackPage() {
           <a href="/" className="admin-fb-btn secondary">
             Lihat Dashboard Publik
           </a>
-          <button onClick={handleLogout} className="admin-fb-btn outline danger">
+          <button onClick={handleLogout} disabled={logoutLoading || statusUpdating} className="admin-fb-btn outline danger">
             Keluar ({adminUsername || "Admin"})
           </button>
         </div>
       </header>
 
+      {logoutError && <p className="admin-fb-alert error" role="alert">{logoutError}</p>}
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
         <div className="admin-fb-search-wrap">
           <input
