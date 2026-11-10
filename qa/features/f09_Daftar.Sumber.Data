@@ -1,0 +1,91 @@
+# English Gherkin keywords; Bahasa Indonesia scenario text.
+# SPECIFICATION ONLY: no step definitions, no application execution.
+# @sprint1 @not_run @f09
+#
+# ============ BEHAT CHEATSHEET (ringkas, copy-paste) ============
+# Struktur file: Feature > [Background] > Scenario / Scenario Outline > Given-When-Then.
+# Keywords: Feature, Background, Scenario, Scenario Outline, Examples, Given, When, Then, And, But.
+# Tags: @f09 @api @browser @BDD_F09_01. Filter run: --tags='@f09 and not @skip'.
+# Scenario Outline + Examples: untuk kasus tabel (lihat BDD-F09-06).
+# Data table (pipe) untuk payload JSON; DocString (""") untuk body mentah.
+#
+# --- Behat (PHP) quickstart ---
+# composer require --dev behat/behat guzzlehttp/guzzle
+# vendor/bin/behat --init   # hasilkan features/ + FeatureContext.php
+# behat.yml minimal:
+#   default:
+#     suites:
+#       default:
+#         paths: [features]
+#         contexts: [FeatureContext]
+#     extensions: {}
+#
+# --- FeatureContext.php skeleton untuk API DEKSI ---
+# use Behat\Behat\Context\Context; use GuzzleHttp\Client;
+# class FeatureContext implements Context {
+#   private Client $http; private $resp; private array $store = [];
+#   public function __construct() {
+#     $this->http = new Client(['base_uri' => getenv('DEKSI_BASE') ?: 'http://127.0.0.1:8000/api/']);
+#   }
+#   /** @Given /^session admin tersedia$/ */
+#   public function sessionAdmin(): void { /* login via POST admin/login, simpan cookie */ }
+#   /** @When /^client meminta "([^"]*)"$/ */
+#   public function get(string $url): void { $this->resp = $this->http->get($url); }
+#   /** @Then /^status (\d+)$/ */
+#   public function assertStatus(int $code): void {
+#     if ($this->resp->getStatusCode() !== $code) throw new \Exception('status tak cocok');
+#   }
+# }
+# Anotasi regex: @Given/@When/@Then + /^...$/ ; $1 = argumen.
+# Mink (browser): ganti Guzzle dengan MinkExtension + Selenium2Driver, step sama.
+# Run: vendor/bin/behat --tags='@f09' | vendor/bin/behat features/f09.feature:12
+# Catatan proyek: repo ini jalan pakai behave (Python), bukan Behat.
+# Mapping: behave features/*.feature + steps/*.py  <=>  behat features/*.feature + FeatureContext.php.
+# Endpoint F09 (publik, tanpa login): GET /api/sources/ | GET /api/sources/<id>/ | GET /api/sources/<id>/indicators/
+# ================================================================
+@sprint1 @not_run @f09
+Feature: F09 Daftar Sumber Data
+
+  # REQ-01 SRS 4.6.3: daftar sumber + metode akuisisi + status + jadwal pembaruan.
+
+  @BDD_F09_01 @R_F09_01 @api
+  Scenario: BDD-F09-01 - Daftar sumber tampil lengkap
+    Given katalog sumber resmi tersedia dengan minimal dua sumber aktif berbeda institusi
+    When client meminta GET /api/sources/
+    Then respons berstatus 200 dengan count sesuai jumlah dan tiap entri memuat sourceId sourceName institution acquisitionMethod status
+
+  @BDD_F09_02 @R_F09_01 @api
+  Scenario: BDD-F09-02 - Detail sumber memuat indikator terkait
+    Given sumber BPS dengan observasi PUBLISHED yang sudah direview tersedia
+    When client meminta GET /api/sources/BPS/ dengan huruf besar-kecil campuran
+    Then respons berstatus 200 dan indicatorDetails hanya berisi indikator yang observasinya PUBLISHED dan direview
+
+  @BDD_F09_03 @R_F09_01 @api
+  Scenario: BDD-F09-03 - Daftar indikator per sumber konsisten dengan detail
+    Given sumber KEMENKEU memiliki dua indikator PUBLISHED yang sudah direview
+    When client meminta GET /api/sources/KEMENKEU/indicators/
+    Then respons berstatus 200 dengan count dua dan sourceId KEMENKEU
+
+  @BDD_F09_04 @R_F09_02 @api
+  Scenario: BDD-F09-04 - Sumber tak dikenal 404 tanpa bocor data
+    Given tidak ada sumber dengan sourceId X_TIDAK_ADA
+    When client meminta GET /api/sources/X_TIDAK_ADA/
+    Then respons berstatus 404 dan body tidak memuat daftar sumber lain
+
+  @BDD_F09_05 @R_F09_02 @api
+  Scenario: BDD-F09-05 - Indikator sumber kosong tetap 200
+    Given sumber baru tanpa observasi PUBLISHED tersedia
+    When client meminta GET /api/sources/<id-baru>/indicators/
+    Then respons berstatus 200 dengan count nol dan indicators berupa list kosong
+
+  @BDD_F09_06 @R_F09_01 @api
+  Scenario Outline: BDD-F09-06 - Detail sumber case-insensitive
+    Given sumber dengan sourceId "<tersimpan>" tersedia
+    When client meminta GET /api/sources/<diminta>/
+    Then respons berstatus 200 dan sourceId pada body adalah "<tersimpan>"
+
+    Examples:
+      | tersimpan | diminta   |
+      | BPS       | bps       |
+      | BPS       | Bps       |
+      | BI        | bi        |

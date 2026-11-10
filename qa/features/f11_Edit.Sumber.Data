@@ -1,0 +1,105 @@
+# English Gherkin keywords; Bahasa Indonesia scenario text.
+# SPECIFICATION ONLY: no step definitions, no application execution.
+# @sprint1 @not_run @f11
+#
+# ============ BEHAT CHEATSHEET (ringkas, copy-paste) ============
+# Struktur file: Feature > [Background] > Scenario / Scenario Outline > Given-When-Then.
+# Keywords: Feature, Background, Scenario, Scenario Outline, Examples, Given, When, Then, And, But.
+# Tags: @f11 @api @BDD_F11_01. Filter run: --tags='@f11 and not @skip'.
+# Scenario Outline + Examples: untuk matriks penolakan (lihat BDD-F11-06).
+# Data table (pipe) untuk field yang diubah; DocString (""") untuk body mentah.
+#
+# --- Behat (PHP) quickstart ---
+# composer require --dev behat/behat guzzlehttp/guzzle
+# vendor/bin/behat --init   # hasilkan features/ + FeatureContext.php
+# behat.yml minimal:
+#   default:
+#     suites:
+#       default:
+#         paths: [features]
+#         contexts: [FeatureContext]
+#
+# --- FeatureContext.php skeleton untuk PUT/PATCH admin (F11) ---
+# use Behat\Behat\Context\Context; use GuzzleHttp\Client;
+# class FeatureContext implements Context {
+#   private Client $http; private $resp; private string $target = '';
+#   public function __construct() {
+#     $this->http = new Client(['base_uri' => getenv('DEKSI_BASE') ?: 'http://127.0.0.1:8000/api/', 'http_errors' => false]);
+#   }
+#   /** @Given /^sumber "([^"]*)" versi (\d+) ada$/ */
+#   public function ada(string $id, int $v): void { $this->target = $id; /* pastikan fixture + catat versi */ }
+#   /** @When /^client PATCH ke "([^"]*)" dengan:$/ */
+#   public function patch(string $url, \Behat\Gherkin\Node\TableNode $t): void {
+#     $this->resp = $this->http->request('PATCH', $url, ['json' => $t->getRowsHash()]);
+#   }
+#   /** @Then /^revisi naik ke (\d+)$/ */
+#   public function revisi(int $v): void {
+#     $j = json_decode((string) $this->resp->getBody(), true);
+#     if (($j['revision']['version'] ?? null) !== $v) throw new \Exception('revisi tak naik');
+#   }
+# }
+# Aturan edit (source_admin_views): sourceId immutable; revisi append-only (tidak pernah hapus/ubah);
+#   tanpa perubahan -> changedFields []; endpoint/metode berubah + http tak terjangkau -> 400, config lama kept.
+# Run: vendor/bin/behat --tags='@f11' | vendor/bin/behat features/f11.feature:12
+# Catatan proyek: repo ini jalan pakai behave (Python), bukan Behat.
+# Mapping: behave features/*.feature + steps/*.py  <=>  behat features/*.feature + FeatureContext.php.
+# Endpoint F11 (admin staf): PUT/PATCH /api/admin/sources/<id>/update/ | GET /api/admin/sources/<id>/revisions/
+# ================================================================
+@sprint1 @not_run @f11
+Feature: F11 Edit Sumber Data
+
+  # REQ-02 + REQ-03 + REQ-05 SRS 4.6.3: edit config oleh Admin staf, audit revisi, config invalid ditolak.
+
+  Background:
+    Given admin staf sudah login dengan session auth yang valid
+    And sumber "BPS_TEST" pada revision version satu sudah ada
+
+  @BDD_F11_01 @R_F11_01 @api
+  Scenario: BDD-F11-01 - Edit deskripsi naikkan revisi
+    Given field yang diubah:
+      | description | Deskripsi revisi uji |
+    When client PATCH ke /api/admin/sources/BPS_TEST/update/
+    Then respons berstatus 200 dan revisi naik ke dua dengan changedFields memuat description
+
+  @BDD_F11_02 @R_F11_05 @api
+  Scenario: BDD-F11-02 - Tanpa login ditolak 401
+    Given client anonim tanpa session admin
+    When client PATCH ke /api/admin/sources/BPS_TEST/update/ dengan payload valid
+    Then respons berstatus 401 dan revision version tetap satu
+
+  @BDD_F11_03 @R_F11_02 @api
+  Scenario: BDD-F11-03 - sourceId tidak boleh diubah
+    Given payload edit memuat sourceId "BPS_LAIN"
+    When client PATCH ke /api/admin/sources/BPS_TEST/update/
+    Then respons berstatus 400 menyebut sourceId tidak dapat diubah dan revision version tetap satu
+
+  @BDD_F11_04 @R_F11_03 @api
+  Scenario: BDD-F11-04 - Endpoint berubah tak terjangkau ditolak, config lama kept
+    Given endpointUrl baru memakai host http yang tidak me-resolve
+    When client PATCH ke /api/admin/sources/BPS_TEST/update/
+    Then respons berstatus 400 menyebut endpoint tidak dapat diakses dan GET detail masih menampilkan endpointUrl lama
+
+  @BDD_F11_05 @R_F11_01 @api
+  Scenario: BDD-F11-05 - Tanpa perubahan tidak buat revisi baru
+    Given payload edit sama persis dengan konfigurasi tersimpan
+    When client PATCH ke /api/admin/sources/BPS_TEST/update/
+    Then respons berstatus 200 dengan changedFields kosong dan revision version tetap satu
+
+  @BDD_F11_06 @R_F11_03 @api
+  Scenario Outline: BDD-F11-06 - Matriks penolakan edit
+    Given field "<field>" diubah menjadi "<nilai>"
+    When client PATCH ke /api/admin/sources/BPS_TEST/update/
+    Then respons berstatus <status> dan revision version tetap satu
+
+    Examples:
+      | field        | nilai             | status |
+      | primaryUrl   | bukan-url         | 400    |
+      | status       | arsip             | 400    |
+      | frequency    | tiap_menit        | 400    |
+      | dataFormat   | exe               | 400    |
+
+  @BDD_F11_07 @R_F11_01 @api
+  Scenario: BDD-F11-07 - Riwayat revisi append-only terbaca
+    Given edit deskripsi pada BDD-F11-01 sudah tersimpan sebagai revision dua
+    When client meminta GET /api/admin/sources/BPS_TEST/revisions/
+    Then respons berstatus 200 dengan dua revisi berurutan dan before revision dua sama dengan after revision satu

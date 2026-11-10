@@ -1,0 +1,113 @@
+# English Gherkin keywords; Bahasa Indonesia scenario text.
+# SPECIFICATION ONLY: no step definitions, no application execution.
+# @sprint1 @not_run @f10
+#
+# ============ BEHAT CHEATSHEET (ringkas, copy-paste) ============
+# Struktur file: Feature > [Background] > Scenario / Scenario Outline > Given-When-Then.
+# Keywords: Feature, Background, Scenario, Scenario Outline, Examples, Given, When, Then, And, But.
+# Tags: @f10 @api @BDD_F10_01. Filter run: --tags='@f10 and not @skip'.
+# Scenario Outline + Examples: untuk matriks validasi (lihat BDD-F10-06).
+# Data table (pipe) untuk payload JSON; DocString (""") untuk body mentah.
+#
+# --- Behat (PHP) quickstart ---
+# composer require --dev behat/behat guzzlehttp/guzzle
+# vendor/bin/behat --init   # hasilkan features/ + FeatureContext.php
+# behat.yml minimal:
+#   default:
+#     suites:
+#       default:
+#         paths: [features]
+#         contexts: [FeatureContext]
+#
+# --- FeatureContext.php skeleton untuk POST admin (F10) ---
+# use Behat\Behat\Context\Context; use GuzzleHttp\Client;
+# class FeatureContext implements Context {
+#   private Client $http; private $resp; private array $payload = [];
+#   public function __construct() {
+#     $this->http = new Client(['base_uri' => getenv('DEKSI_BASE') ?: 'http://127.0.0.1:8000/api/', 'http_errors' => false]);
+#   }
+#   /** @Given /^admin staf sudah login$/ */
+#   public function login(): void { /* POST admin/login, simpan cookie sesi */ }
+#   /** @Given /^payload tambah sumber:$/ */
+#   public function payload(\Behat\Gherkin\Node\TableNode $t): void { $this->payload = $t->getRowsHash(); }
+#   /** @When /^client POST ke "([^"]*)"$/ */
+#   public function post(string $url): void {
+#     $this->resp = $this->http->post($url, ['json' => $this->payload]);
+#   }
+#   /** @Then /^status (\d+)$/ */
+#   public function assertStatus(int $c): void {
+#     if ($this->resp->getStatusCode() !== $c) throw new \Exception('status tak cocok');
+#   }
+# }
+# Metode valid (source_admin_views.SUPPORTED_METHODS): api_bps/json, pdf_kita/pdf,
+#   file_xlsx/xlsx, file_zip_csv/zip_csv. Frekuensi: daily monthly quarterly semiannual annual adhoc mixed.
+# Run: vendor/bin/behat --tags='@f10' | vendor/bin/behat features/f10.feature:12
+# Catatan proyek: repo ini jalan pakai behave (Python), bukan Behat.
+# Mapping: behave features/*.feature + steps/*.py  <=>  behat features/*.feature + FeatureContext.php.
+# Endpoint F10 (admin staf, session auth): POST /api/admin/sources/create/ -> 201 + {source, revision v1}
+# ================================================================
+@sprint1 @not_run @f10
+Feature: F10 Tambah Sumber Data
+
+  # REQ-02 + REQ-03 + REQ-05 SRS 4.6.3: tambah sumber oleh Admin staf, validasi, tolak endpoint tak terjangkau.
+  # Aturan kode: sourceId unik, A-Z 0-9 _ , maks 32 char (disimpan UPPER); nama+institusi unik (case-insensitive).
+
+  Background:
+    Given admin staf sudah login dengan session auth yang valid
+
+  @BDD_F10_01 @R_F10_01 @api
+  Scenario: BDD-F10-01 - Tambah sumber file_xlsx tanpa endpoint lolos
+    Given payload tambah sumber:
+      | sourceId          | BI_RR_TEST       |
+      | sourceName        | BI 7-Day RR      |
+      | institution       | Bank Indonesia   |
+      | primaryUrl        | https://www.bi.go.id |
+      | acquisitionMethod | file_xlsx        |
+      | dataFormat        | xlsx             |
+      | frequency         | monthly          |
+    When client POST ke /api/admin/sources/create/
+    Then respons berstatus 201 dan revision version satu dengan action tambah
+
+  @BDD_F10_02 @R_F10_05 @api
+  Scenario: BDD-F10-02 - Tanpa login ditolak 401
+    Given client anonim tanpa session admin
+    When client POST ke /api/admin/sources/create/ dengan payload valid
+    Then respons berstatus 401 dan tidak ada sumber baru yang tersimpan
+
+  @BDD_F10_03 @R_F10_05 @api
+  Scenario: BDD-F10-03 - Akun non-staf ditolak 403
+    Given session login milik akun non-staf yang valid
+    When client POST ke /api/admin/sources/create/ dengan payload valid
+    Then respons berstatus 403 dan tidak ada sumber baru yang tersimpan
+
+  @BDD_F10_04 @R_F10_02 @api
+  Scenario: BDD-F10-04 - Duplikat sourceId ditolak 409
+    Given sumber BPS_TEST sudah terdaftar
+    When client POST ke /api/admin/sources/create/ dengan sourceId BPS_TEST yang sama
+    Then respons berstatus 409 dan revision tidak bertambah
+
+  @BDD_F10_05 @R_F10_03 @api
+  Scenario: BDD-F10-05 - Endpoint http tak terjangkau ditolak, data lama aman
+    Given payload tambah sumber api_bps dengan endpointUrl http yang tidak me-resolve
+    When client POST ke /api/admin/sources/create/
+    Then respons berstatus 400 menyebut endpoint tidak dapat diakses dan tidak ada sumber baru yang tersimpan
+
+  @BDD_F10_06 @R_F10_03 @api
+  Scenario Outline: BDD-F10-06 - Matriks validasi konfigurasi
+    Given payload tambah sumber dengan <field> berisi "<nilai>"
+    When client POST ke /api/admin/sources/create/
+    Then respons berstatus <status> dan tidak ada sumber baru yang tersimpan
+
+    Examples:
+      | field             | nilai              | status |
+      | sourceId          | BAD-ID!            | 400    |
+      | sourceName        |                    | 400    |
+      | acquisitionMethod | metode_ngawur      | 400    |
+      | dataFormat        | xlsx               | 400    |
+      | frequency         | tiap_hari_pagi     | 400    |
+
+  @BDD_F10_07 @R_F10_02 @api
+  Scenario: BDD-F10-07 - Kombinasi nama dan institusi ganda ditolak
+    Given sumber bernama Data Investasi dari BKPM sudah terdaftar
+    When client POST ke /api/admin/sources/create/ dengan nama dan institusi sama tetapi sourceId berbeda
+    Then respons berstatus 400 menyebut kombinasi sudah terdaftar
