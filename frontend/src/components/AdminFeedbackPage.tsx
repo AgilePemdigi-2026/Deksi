@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   adminLogin,
   adminLogout,
   fetchAdminSession,
   fetchAdminFeedbacks,
+  fetchAdminFeedbackDetail,
   type AdminFeedbackItem,
+  type AdminFeedbackDetail,
 } from "../api";
 
 export function AdminFeedbackPage() {
@@ -21,6 +23,11 @@ export function AdminFeedbackPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedFeedbackId, setSelectedFeedbackId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<AdminFeedbackDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const detailRequestId = useRef(0);
 
   useEffect(() => {
     fetchAdminSession()
@@ -55,6 +62,40 @@ export function AdminFeedbackPage() {
     }, 250);
     return () => clearTimeout(timer);
   }, [authenticated, loadFeedbacks]);
+
+  const handleOpenDetail = async (id: number) => {
+    const requestId = ++detailRequestId.current;
+    setSelectedFeedbackId(id);
+    setDetail(null);
+    setDetailError(null);
+    setDetailLoading(true);
+    try {
+      const data = await fetchAdminFeedbackDetail(id);
+      if (detailRequestId.current !== requestId) return;
+      setDetail(data);
+      setFeedbacks((current) =>
+        current.map((item) =>
+          item.id === data.id
+            ? { ...item, status: data.status, status_label: data.status_label }
+            : item,
+        ),
+      );
+    } catch (err) {
+      if (detailRequestId.current === requestId) {
+        setDetailError(err instanceof Error ? err.message : "Gagal memuat detail laporan.");
+      }
+    } finally {
+      if (detailRequestId.current === requestId) setDetailLoading(false);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    detailRequestId.current += 1;
+    setSelectedFeedbackId(null);
+    setDetail(null);
+    setDetailError(null);
+    setDetailLoading(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +146,13 @@ export function AdminFeedbackPage() {
       default:
         return "";
     }
+  };
+
+  const formatDetailDateTime = (iso: string | null) => {
+    if (!iso) return "-";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return formatDateTime(iso);
   };
 
   if (!sessionChecked) {
@@ -281,6 +329,7 @@ export function AdminFeedbackPage() {
                   <th style={{ width: "120px" }}>Indikator</th>
                   <th style={{ width: "130px" }}>Tanggal</th>
                   <th style={{ width: "140px" }}>Status</th>
+                  <th style={{ width: "100px", textAlign: "center" }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -320,6 +369,15 @@ export function AdminFeedbackPage() {
                         {fb.status_label}
                       </span>
                     </td>
+                    <td style={{ textAlign: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => void handleOpenDetail(fb.id)}
+                        className="admin-fb-btn small primary"
+                      >
+                        Detail
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -327,6 +385,105 @@ export function AdminFeedbackPage() {
           </div>
         )}
       </main>
+
+      {selectedFeedbackId !== null && (
+        <div
+          className="admin-fb-modal-overlay"
+          onClick={handleCloseDetail}
+        >
+          <section
+            className="admin-fb-modal-content"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feedback-detail-title"
+          >
+            <header className="admin-fb-modal-header">
+              <div>
+                <span className="admin-fb-eyebrow">DETAIL LAPORAN UMPAN BALIK</span>
+                <h2 id="feedback-detail-title">Laporan #{selectedFeedbackId}</h2>
+              </div>
+              <button
+                type="button"
+                className="admin-fb-modal-close"
+                onClick={handleCloseDetail}
+                aria-label="Tutup detail"
+              >
+                ×
+              </button>
+            </header>
+            <div className="admin-fb-modal-body">
+              {detailLoading ? (
+                <p>Memuat detail laporan…</p>
+              ) : detailError ? (
+                <div className="admin-fb-alert error" role="alert">{detailError}</div>
+              ) : detail ? (
+                <>
+                  <section className="admin-fb-detail-card">
+                    <div className="admin-fb-detail-banner">
+                      <div>
+                        <span className="detail-meta-label">Status</span>
+                        <span className={`badge-status ${getStatusBadgeClass(detail.status)}`}>
+                          {detail.status_label}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="detail-meta-label">Dikirim pada</span>
+                        <strong>{formatDetailDateTime(detail.created_at)}</strong>
+                      </div>
+                    </div>
+                    <h3>Isi Laporan</h3>
+                    <div className="detail-desc-box">{detail.description}</div>
+                    <div className="detail-meta-grid">
+                      <div>
+                        <span className="detail-meta-label">Kategori</span>
+                        <p className="detail-meta-val">{detail.category_label}</p>
+                      </div>
+                      <div>
+                        <span className="detail-meta-label">Pengirim</span>
+                        <p className="detail-meta-val">
+                          {detail.sender_name || "Anonim"}
+                          {detail.sender_email ? ` (${detail.sender_email})` : ""}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="detail-meta-label">Terakhir diperbarui</span>
+                        <p className="detail-meta-val">{formatDetailDateTime(detail.updated_at)}</p>
+                      </div>
+                      <div>
+                        <span className="detail-meta-label">Catatan admin</span>
+                        <p className="detail-meta-val">{detail.admin_notes || "-"}</p>
+                      </div>
+                    </div>
+                  </section>
+                  <section className="admin-fb-detail-card">
+                    <h3>Indikator Terkait</h3>
+                    {detail.related_indicator ? (
+                      <div className="detail-indicator-box">
+                        <div className="detail-indicator-header">
+                          <span className="badge-indicator-code">
+                            {detail.related_indicator.code.toUpperCase()}
+                          </span>
+                          <h4>{detail.related_indicator.name}</h4>
+                        </div>
+                        <div className="detail-indicator-props">
+                          <span><strong>Kategori:</strong> {detail.related_indicator.category}</span>
+                          <span><strong>Satuan:</strong> {detail.related_indicator.unit}</span>
+                          {detail.related_period && (
+                            <span><strong>Periode:</strong> {detail.related_period}</span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="cell-muted">Laporan ini tidak mengaitkan indikator spesifik.</p>
+                    )}
+                  </section>
+                </>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

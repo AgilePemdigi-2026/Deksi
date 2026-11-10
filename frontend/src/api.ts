@@ -573,6 +573,15 @@ export interface AdminFeedbackListResponse {
   available_statuses: { value: string; label: string }[];
 }
 
+export interface AdminFeedbackDetail extends AdminFeedbackItem {
+  related_indicator: {
+    code: string;
+    name: string;
+    category: string;
+    unit: string;
+  } | null;
+}
+
 export async function fetchAdminFeedbacks(params?: {
   status?: string;
   category?: string;
@@ -589,4 +598,16 @@ export async function fetchAdminFeedbacks(params?: {
     throw new Error(`HTTP ${res.status}`);
   }
   return (await res.json()) as AdminFeedbackListResponse;
+}
+
+export async function fetchAdminFeedbackDetail(id: number): Promise<AdminFeedbackDetail> {
+  const res = await adminFetch(`/admin/feedback/${id}/`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("Umpan balik tidak ditemukan.");
+    if (res.status === 401) throw new Error("Sesi admin diperlukan. Silakan login.");
+    if (res.status === 403) throw new Error("Hak akses admin diperlukan.");
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const body = await res.json();
+  return body.feedback as AdminFeedbackDetail;
 }

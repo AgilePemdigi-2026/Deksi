@@ -3,11 +3,20 @@
 from django.test import Client, TestCase
 
 from indicators.feedback_model import Feedback
+from indicators.models import Indicator
 
 
 class AdminFeedbackListTests(TestCase):
     def setUp(self):
         self.client = Client()
+        self.indicator = Indicator.objects.create(
+            code="pdb",
+            name="Pertumbuhan PDB",
+            category="PDB",
+            unit="%",
+            aggregation_kind="yoy",
+            sort_order=1,
+        )
         self.pending_feedback = Feedback.objects.create(
             category=Feedback.Category.DATA_ERROR,
             description="Nilai PDB kuartal 1 tidak sinkron dengan rilis BPS resmi.",
@@ -55,3 +64,42 @@ class AdminFeedbackListTests(TestCase):
         data = response.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["feedbacks"][0]["id"], self.pending_feedback.pk)
+
+    def test_detail_feedback_includes_related_indicator_and_current_status(self):
+        response = self.client.get(f"/api/admin/feedback/{self.pending_feedback.pk}/")
+
+        self.assertEqual(response.status_code, 200)
+        detail = response.json()["feedback"]
+        self.assertEqual(detail["id"], self.pending_feedback.pk)
+        self.assertEqual(detail["description"], self.pending_feedback.description)
+        self.assertEqual(detail["status"], self.pending_feedback.status)
+        self.assertEqual(detail["status_label"], self.pending_feedback.get_status_display())
+        self.assertEqual(detail["related_indicator"], {
+            "code": self.indicator.code,
+            "name": self.indicator.name,
+            "category": self.indicator.category,
+            "unit": self.indicator.unit,
+        })
+        self.assertEqual(detail["related_period"], "Q1 2024")
+
+    def test_detail_feedback_falls_back_when_indicator_is_unknown(self):
+        feedback = Feedback.objects.create(
+            category=Feedback.Category.SOURCE,
+            description="Sumber data ini belum menjelaskan periode publikasinya.",
+            related_indicator_code="inflasi",
+        )
+
+        response = self.client.get(f"/api/admin/feedback/{feedback.pk}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["feedback"]["related_indicator"], {
+            "code": "inflasi",
+            "name": "INFLASI",
+            "category": "-",
+            "unit": "-",
+        })
+
+    def test_detail_feedback_returns_not_found_for_unknown_id(self):
+        response = self.client.get("/api/admin/feedback/99999/")
+
+        self.assertEqual(response.status_code, 404)

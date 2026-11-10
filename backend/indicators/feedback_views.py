@@ -19,6 +19,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from indicators.feedback_model import Feedback
+from indicators.models import Indicator
 from indicators.views import json_error, json_success
 
 logger = logging.getLogger(__name__)
@@ -251,3 +252,37 @@ def admin_feedback_list(request):
             {"value": s.value, "label": s.label} for s in Feedback.Status
         ],
     })
+
+
+# ---------------------------------------------------------------------------
+# Fitur 16: Detail Umpan Balik dan Indikator Terkait (Admin)
+# ---------------------------------------------------------------------------
+
+
+@require_GET
+def admin_feedback_detail(request, feedback_id: int):
+    fb = Feedback.objects.filter(pk=feedback_id).first()
+    if fb is None:
+        return json_error("Umpan balik tidak ditemukan.", status=404)
+
+    data = _serialize_feedback_item(fb)
+    related_indicator = None
+    if fb.related_indicator_code:
+        indicator = Indicator.objects.filter(code__iexact=fb.related_indicator_code).first()
+        if indicator:
+            related_indicator = {
+                "code": indicator.code,
+                "name": indicator.name,
+                "category": indicator.category,
+                "unit": indicator.unit,
+            }
+        else:
+            related_indicator = {
+                "code": fb.related_indicator_code,
+                "name": fb.related_indicator_code.upper(),
+                "category": "-",
+                "unit": "-",
+            }
+    data["related_indicator"] = related_indicator
+
+    return json_success({"feedback": data})

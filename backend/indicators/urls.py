@@ -63,6 +63,11 @@ urlpatterns = [
         name="admin-source-update",
     ),
 
-    # ── Fitur 15: Daftar Umpan Balik (Admin) ────────────────────────────────
+    # ── Fitur 15-16: Daftar dan Detail Umpan Balik (Admin) ──────────────────
     path("admin/feedback/", feedback_views.admin_feedback_list, name="admin-feedback-list"),
+    path(
+        "admin/feedback/<int:feedback_id>/",
+        feedback_views.admin_feedback_detail,
+        name="admin-feedback-detail",
+    ),
 ]
