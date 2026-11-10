@@ -58,6 +58,22 @@ docker compose up --build
 
 Compose menjalankan migrasi sebelum backend, lalu menjalankan backend dan frontend. Buka frontend pada http://localhost:5174/. API backend juga tersedia di http://localhost:8000/. Data file mentah disimpan dalam volume Docker `backend_data`; database PostgreSQL tetap berada di host. Hentikan layanan dengan `Ctrl+C` atau `docker compose down`. Jangan gunakan `docker compose down -v` jika ingin mempertahankan volume data.
 
+## Deploy Production ke Coolify
+
+Untuk production, gunakan `docker-compose.prod.yml`, bukan Compose development. File ini membangun frontend sebagai aset statis di Nginx, menjalankan Django dengan Gunicorn, dan menggunakan PostgreSQL dengan volume persisten. Frontend menjadi satu-satunya service yang perlu diberi domain publik di Coolify; arahkan domain ke port container `80`. Backend dan PostgreSQL tetap internal.
+
+Push seluruh perubahan aplikasi dan konfigurasi Docker ke Git, tanpa mengunggah `backend/.env`. Di Coolify, buat resource Docker Compose dari repository dan branch tersebut, lalu atur Docker Compose location ke `/docker-compose.prod.yml`. Tambahkan environment variables berikut di Coolify:
+
+```
+SECRET_KEY=<kunci-rahasia-Django-yang-acak>
+ALLOWED_HOSTS=<domain-aplikasi-tanpa-https>
+POSTGRES_DB=deksi
+POSTGRES_USER=deksi
+POSTGRES_PASSWORD=<password-database-yang-kuat>
+```
+
+Jika frontend dan API memakai domain yang sama, `CSRF_TRUSTED_ORIGINS` dapat dikosongkan. Jika memakai origin HTTPS berbeda, isi dengan origin tepercaya lengkap, misalnya `https://app.example.com`. Atur domain pada service `frontend` ke port `80`, lalu deploy. Buat cadangan PostgreSQL secara berkala; volume persisten tidak menggantikan backup.
+
 ## Menjalankan Frontend
 
 Jalankan perintah berikut dari folder frontend.

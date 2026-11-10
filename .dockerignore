@@ -12,4 +12,3 @@
 **/.test-artifacts
 **/.ruff_cache
 **/raw_storage
-frontend
