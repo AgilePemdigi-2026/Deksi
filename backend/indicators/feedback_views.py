@@ -192,3 +192,62 @@ def feedback_categories(request):
     """
     categories = [{"value": c.value, "label": c.label} for c in Feedback.Category]
     return json_success({"categories": categories, "csrfToken": get_token(request)})
+
+
+# ---------------------------------------------------------------------------
+# Helper Serialization
+# ---------------------------------------------------------------------------
+
+
+def _serialize_feedback_item(fb: Feedback) -> dict:
+    return {
+        "id": fb.pk,
+        "category": fb.category,
+        "category_label": fb.get_category_display(),
+        "description": fb.description,
+        "sender_name": fb.sender_name,
+        "sender_email": fb.sender_email,
+        "related_indicator_code": fb.related_indicator_code,
+        "related_period": fb.related_period,
+        "status": fb.status,
+        "status_label": fb.get_status_display(),
+        "admin_notes": fb.admin_notes,
+        "ip_address": fb.ip_address,
+        "created_at": fb.created_at.isoformat() if fb.created_at else None,
+        "updated_at": fb.updated_at.isoformat() if fb.updated_at else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Fitur 15: Daftar Umpan Balik (Admin)
+# ---------------------------------------------------------------------------
+
+
+@require_GET
+def admin_feedback_list(request):
+    """
+    Memuat daftar laporan pengguna dengan filter status dan kategori.
+    Query params:
+      status: filter status penanganan
+      category: filter kategori
+    """
+    qs = Feedback.objects.all().order_by("-created_at")
+
+    # Filter status penanganan
+    status_param = (request.GET.get("status") or "").strip()
+    if status_param and status_param != "all":
+        qs = qs.filter(status=status_param)
+
+    # Filter kategori laporan
+    category_param = (request.GET.get("category") or "").strip()
+    if category_param and category_param != "all":
+        qs = qs.filter(category=category_param)
+
+    items = [_serialize_feedback_item(fb) for fb in qs]
+    return json_success({
+        "count": len(items),
+        "feedbacks": items,
+        "available_statuses": [
+            {"value": s.value, "label": s.label} for s in Feedback.Status
+        ],
+    })

@@ -12,6 +12,7 @@ import { SourceTraceScreen } from './features/indicators/SourceTracePage'
 import './features/indicators/features.css'
 import { SourceDataPage, type SourcePageSelection } from './components/SourceDataPage'
 import { AdminSourcesPage } from './components/AdminSourcesPage'
+import { AdminFeedbackPage } from './components/AdminFeedbackPage'
 
 const recoveryClient = createRecoveryClient(authOrigin())
 
@@ -33,9 +34,16 @@ function isAdminHashRoute(): boolean {
   return (window.location.hash || '').startsWith('#/admin/sumber')
 }
 
+function isAdminFeedbackHashRoute(): boolean {
+  if (typeof window === 'undefined') return false
+  const hash = window.location.hash || ''
+  return hash.startsWith('#/admin/feedback') || hash.startsWith('#/admin/umpan-balik')
+}
+
 export default function App({ pathname = typeof window === 'undefined' ? '/' : window.location.pathname, search = typeof window === 'undefined' ? '' : window.location.search, resetService = recoveryClient }: { pathname?: string; search?: string; resetService?: RecoveryService } = {}) {
   const sourceSelection = parseSourceHash()
   if (sourceSelection) return <SourceDataPage selection={sourceSelection} />
+  if (isAdminFeedbackHashRoute()) return <AdminFeedbackPage />
   if (isAdminHashRoute()) return <AdminSourcesPage />
 
   const path = pathname.replace(/\/+$/, '') || '/'
@@ -47,6 +55,7 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
     return <SourceDataPage selection={{ sourceId: params.get('source') || undefined, indicator: params.get('indicator') || undefined, period: params.get('period') || undefined }} />
   }
   if (path === '/admin/sumber' || path === '/admin/sumber-data') return <AdminSourcesPage />
+  if (path === '/admin/feedback' || path === '/admin/umpan-balik') return <AdminFeedbackPage />
   const route = parseRoute(path, search)
   if (route.kind === 'dashboard') return <Dashboard />
   if (route.kind === 'detail') return <DetailScreen route={route} />

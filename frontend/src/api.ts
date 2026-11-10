@@ -545,3 +545,48 @@ export async function submitFeedback(payload: FeedbackPayload): Promise<Feedback
     return { id: null, status: "error", message: "Tidak dapat menghubungi server." };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Fitur 15: Daftar Umpan Balik Admin
+// ---------------------------------------------------------------------------
+
+export interface AdminFeedbackItem {
+  id: number;
+  category: string;
+  category_label: string;
+  description: string;
+  sender_name: string;
+  sender_email: string;
+  related_indicator_code: string;
+  related_period: string;
+  status: string;
+  status_label: string;
+  admin_notes: string;
+  ip_address: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AdminFeedbackListResponse {
+  count: number;
+  feedbacks: AdminFeedbackItem[];
+  available_statuses: { value: string; label: string }[];
+}
+
+export async function fetchAdminFeedbacks(params?: {
+  status?: string;
+  category?: string;
+}): Promise<AdminFeedbackListResponse> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.category && params.category !== "all") query.set("category", params.category);
+
+  const qs = query.toString() ? `?${query.toString()}` : "";
+  const res = await adminFetch(`/admin/feedback/${qs}`);
+  if (!res.ok) {
+    if (res.status === 401) throw new Error("Sesi admin diperlukan. Silakan login.");
+    if (res.status === 403) throw new Error("Hak akses admin diperlukan.");
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return (await res.json()) as AdminFeedbackListResponse;
+}

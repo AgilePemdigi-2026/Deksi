@@ -271,6 +271,7 @@ export function AdminSourcesPage() {
         <a href="/">Beranda</a>
         <a href="/sumber-data">Sumber Data</a>
         <a href="/admin/sumber-data" aria-current="page">Kelola Sumber</a>
+        <a href="/#/admin/feedback">Kelola Umpan Balik</a>
       </nav>
 
       {!sessionChecked || (loading && !authenticated) ? (
