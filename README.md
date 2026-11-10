@@ -21,7 +21,7 @@ Fitur yang dikembangkan mencakup login admin, lupa dan reset kata sandi, dashboa
 
 ## Prasyarat
 
-Pastikan perangkat Anda telah memiliki Python 3.10 atau lebih baru, Node.js versi LTS, dan Git.
+Pastikan perangkat Anda telah memiliki Python 3.10 atau lebih baru, Node.js versi LTS, Git, dan PostgreSQL.
 
 ## Menjalankan Backend
 
@@ -31,14 +31,32 @@ Jalankan perintah berikut dari folder backend.
 cd backend
 python -m venv venv
 venv\Scripts\activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-auth.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-Pada macOS atau Linux, aktivasi virtual environment menggunakan `source venv/bin/activate`. Backend berjalan di http://127.0.0.1:8000/.
+Pada macOS atau Linux, aktivasi virtual environment menggunakan `source venv/bin/activate`. Backend berjalan di http://127.0.0.1:8000/. Konfigurasi development memakai PostgreSQL lokal; database `deksi` harus dibuat terlebih dahulu.
 
-Jika berkas requirements.txt belum ada, buat terlebih dahulu dari environment yang aktif dengan perintah `pip freeze > requirements.txt`.
+## Konfigurasi PostgreSQL
+
+Buat database bernama `deksi` di PostgreSQL, lalu salin `backend/.env.example` menjadi `backend/.env` dan isi `POSTGRES_PASSWORD` sesuai password lokal PostgreSQL Anda. Nilai awal koneksi mengikuti HeidiSQL: host `127.0.0.1`, port `5432`, dan user `postgres`. Sesuaikan `POSTGRES_DB` jika nama database Anda berbeda.
+
+Konfigurasi juga menerima `DATABASE_URL` jika Anda lebih memilih satu URL koneksi. File `.env` berisi kredensial lokal dan tidak boleh dimasukkan ke Git. Migrasi hanya membuat skema pada database PostgreSQL yang dipilih; data yang ada di SQLite tidak dipindahkan otomatis.
+
+Test settings dan demo sintetis terisolasi tetap memakai SQLite.
+
+## Menjalankan dengan Docker
+
+Pastikan Docker Desktop dan PostgreSQL lokal aktif, serta database `deksi` sudah dibuat. Siapkan `backend/.env` dengan menyalin `backend/.env.example` bila belum ada, lalu isi `SECRET_KEY` dengan nilai acak lokal dan `POSTGRES_PASSWORD` dengan password PostgreSQL Anda. Compose menghubungkan container backend ke PostgreSQL host pada `127.0.0.1:5432` melalui `host.docker.internal`; variabel host tersebut diatur khusus untuk Docker.
+
+Dari root proyek jalankan:
+
+```
+docker compose up --build
+```
+
+Compose menjalankan migrasi sebelum backend, lalu menjalankan backend dan frontend. Buka frontend pada http://localhost:5174/. API backend juga tersedia di http://localhost:8000/. Data file mentah disimpan dalam volume Docker `backend_data`; database PostgreSQL tetap berada di host. Hentikan layanan dengan `Ctrl+C` atau `docker compose down`. Jangan gunakan `docker compose down -v` jika ingin mempertahankan volume data.
 
 ## Menjalankan Frontend
 
@@ -54,13 +72,18 @@ Frontend berjalan di http://localhost:5173/.
 
 ## Konfigurasi Lingkungan
 
-Simpan konfigurasi sensitif pada berkas .env dan jangan mengunggahnya ke repositori. Contoh variabel yang dapat digunakan:
+Simpan konfigurasi sensitif pada `backend/.env` dan jangan mengunggahnya ke repositori. Template dapat dilihat pada `backend/.env.example`. Contoh variabel aplikasi:
 
 ```
 SECRET_KEY=isi-dengan-kunci-rahasia
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 CORS_ALLOWED_ORIGINS=http://localhost:5173
+POSTGRES_DB=deksi
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=isi-password-postgresql-lokal
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
 ```
 
 ## Pemeriksaan Kode

@@ -11,7 +11,14 @@ from indicators.models import Indicator
 
 class AdminFeedbackListTests(TestCase):
     def setUp(self):
+        user_model = get_user_model()
+        self.admin = user_model.objects.create_user(
+            username="feedback-list-admin",
+            password="test-password",
+            is_staff=True,
+        )
         self.client = Client()
+        self.client.force_login(self.admin)
         self.indicator = Indicator.objects.create(
             code="pdb",
             name="Pertumbuhan PDB",
@@ -83,6 +90,31 @@ class AdminFeedbackListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["count"], 0)
         self.assertEqual(response.json()["feedbacks"], [])
+
+    def test_list_feedback_requires_admin_authentication(self):
+        response = Client().get("/api/admin/feedback/")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_detail_feedback_requires_admin_authentication(self):
+        response = Client().get(f"/api/admin/feedback/{self.pending_feedback.pk}/")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_list_and_detail_feedback_reject_non_staff_user(self):
+        user = get_user_model().objects.create_user(
+            username="feedback-regular-user",
+            password="test-password",
+            is_staff=False,
+        )
+        client = Client()
+        client.force_login(user)
+
+        list_response = client.get("/api/admin/feedback/")
+        detail_response = client.get(f"/api/admin/feedback/{self.pending_feedback.pk}/")
+
+        self.assertEqual(list_response.status_code, 403)
+        self.assertEqual(detail_response.status_code, 403)
 
     def test_detail_feedback_includes_related_indicator_and_current_status(self):
         response = self.client.get(f"/api/admin/feedback/{self.pending_feedback.pk}/")

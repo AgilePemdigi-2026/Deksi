@@ -221,6 +221,15 @@ def _serialize_feedback_item(fb: Feedback) -> dict:
     }
 
 
+def _require_feedback_staff(request):
+    user = getattr(request, "user", None)
+    if user is None or not user.is_authenticated:
+        return json_error("Autentikasi diperlukan.", status=401)
+    if not user.is_staff:
+        return json_error("Hak akses admin diperlukan.", status=403)
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Fitur 15: Daftar Umpan Balik (Admin)
 # ---------------------------------------------------------------------------
@@ -235,6 +244,10 @@ def admin_feedback_list(request):
       status: filter status penanganan
       category: filter kategori
     """
+    denied = _require_feedback_staff(request)
+    if denied is not None:
+        return denied
+
     qs = Feedback.objects.all().order_by("-created_at")
 
     search_query = (request.GET.get("q") or request.GET.get("search") or "").strip()
@@ -312,6 +325,10 @@ def _serialize_feedback_detail(fb: Feedback) -> dict:
 @ensure_csrf_cookie
 @require_GET
 def admin_feedback_detail(request, feedback_id: int):
+    denied = _require_feedback_staff(request)
+    if denied is not None:
+        return denied
+
     fb = Feedback.objects.filter(pk=feedback_id).first()
     if fb is None:
         return json_error("Umpan balik tidak ditemukan.", status=404)
@@ -322,15 +339,6 @@ def admin_feedback_detail(request, feedback_id: int):
 # ---------------------------------------------------------------------------
 # Fitur 18: Ubah Status Umpan Balik dan Catat Audit Log (Admin)
 # ---------------------------------------------------------------------------
-
-
-def _require_feedback_staff(request):
-    user = getattr(request, "user", None)
-    if user is None or not user.is_authenticated:
-        return json_error("Autentikasi diperlukan.", status=401)
-    if not user.is_staff:
-        return json_error("Hak akses admin diperlukan.", status=403)
-    return None
 
 
 @require_http_methods(["POST", "PATCH"])

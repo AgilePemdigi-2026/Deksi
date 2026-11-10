@@ -7,7 +7,7 @@
   margin: 0 auto;
   padding: 2.5rem 1.5rem;
   font-family: var(--sans, 'Inter Tight', sans-serif);
-  color: var(--ink, #111);
+  color: #f4f4f4;
   min-height: 90vh;
 }
 
@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   gap: 1.5rem;
   padding-bottom: 2rem;
-  border-bottom: 2px solid var(--ink, #111);
+  border-bottom: 2px solid #3a3a3a;
   margin-bottom: 2rem;
 }
 
@@ -29,7 +29,7 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted, #555);
+  color: #bdbdbd;
   margin-bottom: 0.25rem;
 }
 
@@ -42,7 +42,7 @@
 
 .admin-fb-subtitle {
   font-size: 0.95rem;
-  color: var(--muted, #555);
+  color: #c4c4c4;
   margin: 0;
   max-width: 600px;
 }
@@ -88,8 +88,8 @@
 
 .admin-fb-btn.outline {
   background: transparent;
-  color: var(--ink, #111);
-  border-color: var(--border, #ccc);
+  color: #f4f4f4;
+  border-color: #9a9a9a;
 }
 .admin-fb-btn.outline.danger {
   color: #c0392b;
@@ -108,7 +108,7 @@
 .admin-fb-btn.text {
   background: transparent;
   border: none;
-  color: var(--muted, #555);
+  color: #444;
   text-decoration: underline;
   padding: 0.25rem 0.5rem;
 }
@@ -129,6 +129,7 @@
   flex-wrap: wrap;
   gap: 1rem;
   background: #fff;
+  color: #111;
   padding: 1.25rem 1.5rem;
   border: 1px solid var(--border, #e0e0e0);
   border-radius: var(--radius, 6px);
@@ -150,15 +151,9 @@
   align-items: center;
 }
 
-.admin-fb-search-icon {
-  position: absolute;
-  left: 0.75rem;
-  pointer-events: none;
-}
-
 .admin-fb-search-input {
   width: 100%;
-  padding: 0.6rem 2.2rem;
+  padding: 0.6rem 2.2rem 0.6rem 0.75rem;
   border: 1px solid #ccc;
   border-radius: var(--radius, 4px);
   background: #fafafa;
@@ -202,6 +197,7 @@
 /* Table List (Fitur 15) */
 .admin-fb-table-wrap {
   background: #fff;
+  color: #111;
   border: 1px solid #e0e0e0;
   border-radius: var(--radius, 6px);
   overflow-x: auto;
@@ -222,6 +218,7 @@
   border-collapse: collapse;
   font-size: 0.88rem;
   text-align: left;
+  color: #111;
 }
 
 .admin-fb-table th {
@@ -378,6 +375,7 @@
   height: 100vh;
   overflow-y: auto;
   background: #fff;
+  color: #111;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -617,6 +615,7 @@
   margin: 4rem auto;
   padding: 2.5rem;
   background: #fff;
+  color: #111;
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);

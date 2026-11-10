@@ -91,12 +91,20 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': env.db(
-        'DATABASE_URL',
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-    )
-}
+DATABASE_URL = env("DATABASE_URL", default="").strip()
+if DATABASE_URL:
+    DATABASES = {"default": env.db("DATABASE_URL")}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("POSTGRES_DB", default="deksi"),
+            "USER": env("POSTGRES_USER", default="postgres"),
+            "PASSWORD": env("POSTGRES_PASSWORD", default=""),
+            "HOST": env("POSTGRES_HOST", default="127.0.0.1"),
+            "PORT": env("POSTGRES_PORT", default="5432"),
+        }
+    }
 
 
 # Password validation

@@ -287,7 +287,6 @@ export function AdminFeedbackPage() {
 
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
         <div className="admin-fb-search-wrap">
-          <span className="admin-fb-search-icon" aria-hidden="true">🔍</span>
           <input
             type="search"
             className="admin-fb-search-input"
