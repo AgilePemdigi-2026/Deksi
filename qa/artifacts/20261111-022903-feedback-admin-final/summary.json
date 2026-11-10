@@ -1,0 +1,503 @@
+{
+  "generated_at": "2026-11-11T02:29:44.482172+07:00",
+  "run": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final",
+  "suite_id": "sprint2-admin-feedback-v1",
+  "backend_checkpoint": "d9c673fac84992b91c160bfaa4f0de33a8ce548b",
+  "frontend_checkpoint": "e35d97899d345f18a3341bc19beba431f94179d9",
+  "backend_live_sha": null,
+  "backend_live_tree": null,
+  "frontend_local_overlay": null,
+  "catalogue_scenarios": 10,
+  "catalogue_status": {
+    "passed": 10
+  },
+  "all_status": {
+    "passed": 10
+  },
+  "failed_scenarios": 0,
+  "non_passed_steps": {},
+  "step_status": {
+    "passed": 30
+  },
+  "by_layer": {
+    "api-real-view-disposable-db": {
+      "passed": 10
+    }
+  },
+  "by_feature": {
+    "F15": {
+      "passed": 3
+    },
+    "F16": {
+      "passed": 2
+    },
+    "F17": {
+      "passed": 2
+    },
+    "F18": {
+      "passed": 3
+    }
+  },
+  "endpoint_traffic": [
+    "GET /api/admin/feedback/ -> 200 x5",
+    "GET /api/admin/feedback/ -> 401 x1",
+    "GET /api/admin/feedback/3/ -> 200 x1",
+    "GET /api/admin/feedback/7/ -> 200 x1",
+    "GET /api/admin/feedback/8/ -> 200 x1",
+    "GET /api/admin/feedback/999999/ -> 404 x1",
+    "GET /api/auth/csrf/ -> 200 x1",
+    "POST /api/admin/feedback/7/status/ -> 200 x1",
+    "POST /api/admin/feedback/8/status/ -> 400 x1",
+    "POST /api/admin/feedback/9/status/ -> 401 x1"
+  ],
+  "source_hashes_match": {
+    "bdd_settings.py": true,
+    "browser.py": true,
+    "journal.py": true,
+    "report_results.py": true,
+    "run_bdd.py": true,
+    "features\\environment.py": true,
+    "tests\\test_browser_startup.py": true,
+    "tests\\test_f09_f11_cheatsheet.py": true,
+    "tests\\test_suite_contracts.py": true,
+    "features\\steps\\api_steps.py": true,
+    "features\\steps\\asbuilt_steps.py": true,
+    "features\\steps\\browser_steps.py": true,
+    "features\\steps\\feedback_admin_steps.py": true,
+    "features\\steps\\pilot_steps.py": true,
+    "features\\steps\\source_steps.py": true,
+    "features\\steps\\zz_remaining_steps.py": true
+  },
+  "cleanup": {
+    "disposable_run_directory_removed": true,
+    "product_db_used": false
+  },
+  "scenarios": [
+    {
+      "id": "BDD-F15-01",
+      "name": "BDD-F15-01 - Daftar menampilkan kategori tanggal dan status",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F15-01\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F15_01"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki dua laporan umpan balik sintetis dengan kategori dan status berbeda",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin meminta daftar umpan balik",
+          "passed"
+        ],
+        [
+          "Then",
+          "daftar berisi kedua laporan dengan kategori tanggal dan status",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/",
+          200
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F15-02",
+      "name": "BDD-F15-02 - Daftar kosong ditangani sebagai hasil valid",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F15-02\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F15_02"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki daftar umpan balik kosong",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin meminta daftar umpan balik",
+          "passed"
+        ],
+        [
+          "Then",
+          "respons sukses menampilkan daftar kosong tanpa error",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/",
+          200
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F15-03",
+      "name": "BDD-F15-03 - Daftar umpan balik dilindungi untuk Admin",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F15-03\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F15_03"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "pengunjung anonim belum memiliki sesi Admin",
+          "passed"
+        ],
+        [
+          "When",
+          "pengunjung meminta daftar umpan balik Admin",
+          "passed"
+        ],
+        [
+          "Then",
+          "server menolak akses daftar dengan status 401",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/",
+          401
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F16-01",
+      "name": "BDD-F16-01 - Detail mempertahankan laporan indikator dan status",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F16-01\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F16_01"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki laporan sintetis terkait indikator PDB",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin membuka detail laporan tersebut",
+          "passed"
+        ],
+        [
+          "Then",
+          "detail menunjukkan indikator terkait dan status yang sama dengan daftar",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/3/",
+          200
+        ],
+        [
+          "GET",
+          "/api/admin/feedback/",
+          200
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F16-02",
+      "name": "BDD-F16-02 - Detail laporan tak dikenal tidak ditemukan",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F16-02\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F16_02"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki sesi valid tanpa laporan terpilih",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin meminta detail laporan yang tidak ada",
+          "passed"
+        ],
+        [
+          "Then",
+          "server mengembalikan status 404 tanpa detail laporan",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/999999/",
+          404
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F17-01",
+      "name": "BDD-F17-01 - Kata kunci menyaring laporan terkait",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F17-01\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F17_01"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki laporan dengan kata kunci indikator dan laporan pembanding",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin mencari umpan balik menggunakan kata kunci indikator",
+          "passed"
+        ],
+        [
+          "Then",
+          "hanya laporan yang cocok ditampilkan",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/",
+          200
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F17-02",
+      "name": "BDD-F17-02 - Pencarian tanpa hasil menghasilkan daftar kosong",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F17-02\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F17_02"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki laporan umpan balik sintetis",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin mencari umpan balik menggunakan kata kunci yang tidak ada",
+          "passed"
+        ],
+        [
+          "Then",
+          "pencarian sukses menampilkan nol hasil",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/",
+          200
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F18-01",
+      "name": "BDD-F18-01 - Perubahan status menyimpan catatan waktu dan audit",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F18-01\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F18_01"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki laporan pending dan token CSRF valid",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin mengubah status menjadi resolved dengan catatan penanganan sintetis",
+          "passed"
+        ],
+        [
+          "Then",
+          "status catatan waktu pembaruan dan audit log tersimpan",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/7/",
+          200
+        ],
+        [
+          "POST",
+          "/api/admin/feedback/7/status/",
+          200
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F18-02",
+      "name": "BDD-F18-02 - Status tidak valid tidak mengubah laporan",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F18-02\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F18_02"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "Admin memiliki laporan pending dan token CSRF valid",
+          "passed"
+        ],
+        [
+          "When",
+          "Admin mengirim perubahan dengan status yang tidak valid",
+          "passed"
+        ],
+        [
+          "Then",
+          "server menolak perubahan dan tidak membuat audit log",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/admin/feedback/8/",
+          200
+        ],
+        [
+          "POST",
+          "/api/admin/feedback/8/status/",
+          400
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    },
+    {
+      "id": "BDD-F18-03",
+      "name": "BDD-F18-03 - Pengunjung anonim tidak dapat mengubah status",
+      "status": "passed",
+      "layer": "api-real-view-disposable-db",
+      "evidence": "C:\\Users\\KESIT\\Downloads\\PPL PRAK\\qa\\artifacts\\20261111-022903-feedback-admin-final\\BDD-F18-03\\evidence.json",
+      "errors": [],
+      "reqs": [
+        "R_F18_03"
+      ],
+      "endpoint": "",
+      "steps": [
+        [
+          "Given",
+          "laporan pending tersedia tanpa sesi Admin dan token CSRF valid",
+          "passed"
+        ],
+        [
+          "When",
+          "pengunjung anonim mengirim perubahan status",
+          "passed"
+        ],
+        [
+          "Then",
+          "server menolak perubahan dan status laporan tetap pending",
+          "passed"
+        ]
+      ],
+      "hits": [
+        [
+          "GET",
+          "/api/auth/csrf/",
+          200
+        ],
+        [
+          "POST",
+          "/api/admin/feedback/9/status/",
+          401
+        ]
+      ],
+      "human_review_pending": null,
+      "mock_scope": null,
+      "faults": [],
+      "cleanup": {}
+    }
+  ],
+  "product_exit_code": 0,
+  "driver": "Chrome/CDP NON-Selenium",
+  "visual_approval": "PENDING",
+  "contract_acceptance": "Q01-Q09 remain draft/open; execution is not approval",
+  "scope_limit": "Synthetic fixtures and candidate contracts; not full-SRS conformance, SMTP, official ingestion, production or OS-sandbox proof",
+  "acceptance_gaps_retained": []
+}

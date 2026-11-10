@@ -95,6 +95,14 @@ def main():
     if suite_id == 'sprint1-sources-v1':
         expected = set(ids)
         original = rows
+    elif suite_id == 'sprint2-admin-feedback-v1':
+        expected = {
+            f'BDD-F{feature}-{case:02d}'
+            for feature, cases in ((15, 3), (16, 2), (17, 2), (18, 3))
+            for case in range(1, cases + 1)
+        }
+        original = rows
+        assert set(ids) == expected, 'The complete Admin feedback catalogue is missing scenarios'
     else:
         expected = {f'BDD-F{feature:02d}-{case:02d}' for feature in range(1, 9) for case in range(1, 9)}
         expected.update(f'BDD-X-{case:02d}' for case in range(1, 9))
@@ -157,7 +165,7 @@ def main():
     markdown += [f'| {layer} | {dict(counts)} |' for layer, counts in by_layer.items()]
     markdown += ['', 'Chrome nyata via CDP, bukan Selenium. Kegagalan yang diinjeksi diberi label; respons sukses mock bukan bukti E2E.',
                  'Q02/Q03/Q04 dieksekusi sebagai kontrak kandidat, **bukan persetujuan manusia**. Visual review dan rekonsiliasi SRS lengkap tetap pending.', '']
-    if suite_id == 'sprint1-sources-v1':
+    if suite_id in ('sprint1-sources-v1', 'sprint2-admin-feedback-v1'):
         markdown += ['## Peta syarat dan endpoint', '', '| ID | Nama | REQ | Endpoint | Status |', '|---|---|---|---|---|']
         for r in rows:
             nama = r['name'].split(' - ', 1)[1] if ' - ' in r['name'] else r['name']
@@ -207,7 +215,7 @@ def main():
             markdown += [f"### {row['name']}", f"Status: {row['status']}; lapisan: {row['layer']}."]
             markdown += [f'- {error}' for error in row['errors']]
             markdown += [f"Bukti: `{row['evidence']}`", '']
-    if suite_id == 'sprint1-sources-v1':
+    if suite_id in ('sprint1-sources-v1', 'sprint2-admin-feedback-v1'):
         sha = receipt.get('backend_live_sha') or 'unknown'
         tree = receipt.get('backend_live_tree') or 'unknown'
         markdown += ['## Batas dan keselamatan', '',

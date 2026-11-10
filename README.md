@@ -171,6 +171,22 @@ ruff check .
 ruff format .
 ```
 
+### BDD Fitur Umpan Balik Admin (15-18)
+
+BDD memakai Behave/Gherkin dan binding Python untuk menguji API Django memakai database SQLite sementara. Dari root proyek, jalankan:
+
+```
+python qa\run_bdd.py --suite feedback-admin --tags=@feedback_admin --label feedback-admin
+```
+
+Untuk membuat ringkasan hasil dan cakupan skenario:
+
+```
+python qa\report_results.py qa\artifacts\<folder-run>
+```
+
+Semua fixture BDD bersifat sintetis dan hanya disimpan di database uji disposable, bukan di database development atau production.
+
 ## Alur Kerja Git
 
 Pengembangan dilakukan pada cabang fitur, misalnya feature/nama-fitur, kemudian digabungkan ke main melalui pull request setelah ditinjau anggota tim. Hindari melakukan push langsung ke main.

@@ -1,0 +1,45 @@
+{
+  "scenario": "BDD-F18-02 - Status tidak valid tidak mengubah laporan",
+  "api_mocked": false,
+  "database": "C:\\Users\\KESIT\\AppData\\Local\\Temp\\deksi-bdd-scratch\\deksi-bdd-tuqkvyw8\\test.sqlite3",
+  "backend_live_url": "http://localhost:56794",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\KESIT\\AppData\\Local\\Temp\\deksi-bdd-scratch\\deksi-bdd-tuqkvyw8\\test.sqlite3"
+    ]
+  ],
+  "server_requests": [
+    {
+      "method": "GET",
+      "path": "/api/admin/feedback/8/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\KESIT\\AppData\\Local\\Temp\\deksi-bdd-scratch\\deksi-bdd-tuqkvyw8\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\KESIT\\AppData\\Local\\Temp\\deksi-bdd-scratch\\deksi-bdd-tuqkvyw8\\test.sqlite3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/feedback/8/status/",
+      "query": "",
+      "status": 400,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\KESIT\\AppData\\Local\\Temp\\deksi-bdd-scratch\\deksi-bdd-tuqkvyw8\\test.sqlite3"
+        ]
+      ],
+      "configured_database": "C:\\Users\\KESIT\\AppData\\Local\\Temp\\deksi-bdd-scratch\\deksi-bdd-tuqkvyw8\\test.sqlite3"
+    }
+  ],
+  "status": "Status.passed",
+  "cleanup": {}
+}
