@@ -1,0 +1,192 @@
+{
+  "checked_at": "2026-11-03T00:50:51.666919+00:00",
+  "scope": "F7 frontend-only; synthetic browser and unit evidence, not backend integration or aesthetic acceptance",
+  "origin": "https://github.com/AgilePemdigi-2026/Deksi.git",
+  "branch": "feat/7-source-trace-fe",
+  "base": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+  "head": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+  "f7_committed": false,
+  "staged_paths": [],
+  "changed_files": [
+    "frontend/docs/F6_F7_AUDIT_PLAN.md",
+    "frontend/docs/F7_FRONTEND_HANDOFF.md",
+    "frontend/docs/F7_FRONTEND_PLAN.md",
+    "frontend/docs/F7_FRONTEND_VERIFICATION.json",
+    "frontend/package.json",
+    "frontend/src/App.tsx",
+    "frontend/src/features/indicators/DetailPage.tsx",
+    "frontend/src/features/indicators/SourceTracePage.tsx",
+    "frontend/src/features/indicators/source-trace.css",
+    "frontend/src/features/indicators/source.ts",
+    "frontend/src/features/indicators/useDetailData.ts",
+    "frontend/tests/indicator-browser.test.mjs",
+    "frontend/tests/indicator-pages.test.mjs",
+    "frontend/tests/source-trace.test.mjs"
+  ],
+  "source_sha256": {
+    "frontend/package-lock.json": "cd89db4feffc5fe26f45845f4030878c79fdac9b8081dfab5924f43d3d55646a",
+    "frontend/package.json": "5f347dd58101f13bb52ae9c0060436997cce47096092a1bf428d1f75a3d26cdf",
+    "frontend/src/api.ts": "ab32d65702ee201bbc364f0eb848c35e230c17d597744c675c32a4c4c3f85b6b",
+    "frontend/src/App.tsx": "7e8cd369dba8587658ffe5e61015c8a16fd336aac925a9879eb1d1c8ca3a7d54",
+    "frontend/src/features/indicators/api.ts": "2cb23a81a28c97173ab2830aa09b109abe3881218a5fc066a04c74ddf7b76e30",
+    "frontend/src/features/indicators/data.ts": "ec7ebd30fd995ef05e4df03d3d805911316f71f7cc1c35c415b3eff5d6eb3408",
+    "frontend/src/features/indicators/DetailPage.tsx": "5187d27b6f25fd75ea63c6e066429a53d9c7b90b877951e0828cab675a4ff384",
+    "frontend/src/features/indicators/features.css": "be4661f7e3ab876080a005b0b506aa45774f3b8dc2766f9e05e61773226c12bd",
+    "frontend/src/features/indicators/source-trace.css": "d03869e16a0525fcd1ee115403f62202762af0748e5b197b100be83901e83d70",
+    "frontend/src/features/indicators/source.ts": "51254defa75c590f598a5f7e9b7f336619294b6ce1ff0665a659d2ea1adddd1b",
+    "frontend/src/features/indicators/SourceTracePage.tsx": "50f59b66fbd1d49df04e5ce99ee98b83d63cc26165288bf987d80f67c5b4ed81",
+    "frontend/src/features/indicators/types.ts": "479c3ae42bb9d3a15540ed2b7ac49e8f96e21216b773412786e04dfd2d04419e",
+    "frontend/src/features/indicators/useDetailData.ts": "5e786773dc7123b70c75fac04fa28a4d56f474818dc07f499e5b2030326ddaea",
+    "frontend/src/index.css": "c6ae5ea91997ecddd50e1c95615a854716287a1cbc8f5627b055f73bfde84a11",
+    "frontend/tests/browser.test.mjs": "f1935b0781924d9c902ff3629ad5c039bac4f891c3dd57527ff4a9a8a41f307d",
+    "frontend/tests/editorial.test.mjs": "e95d3178f9592747f372bbad3186268855651f6275e08275962018af19085cb2",
+    "frontend/tests/indicator-api.test.mjs": "5ce8e25e4c6275e3f569802118512b8483ed2263404d72e70740c70415f5c773",
+    "frontend/tests/indicator-browser.test.mjs": "ee0f510834ad7c8c5b892f766c05942ea3a81b694b21f55f4858928749cbbbfb",
+    "frontend/tests/indicator-data.test.mjs": "d194420276582759569c342172c12536d39d5e4cb4d9b7e6ce65cf7f8146f46a",
+    "frontend/tests/indicator-fixtures.mjs": "692ccc4ff2bc8ed8c2ebc01d57c9db885b783b69d5f2a909af011df1df1e6b63",
+    "frontend/tests/indicator-pages.test.mjs": "a39f5a1bac1dc818b000d219f4be37f3176b56abae8ee5462feb8b6fc55865f1",
+    "frontend/tests/source-trace.test.mjs": "891e3e3aa56e1c1e97a925cc3dad1b3b1e3ff63ff929384c4a4299dbe9d0a7f9"
+  },
+  "source_digest": "2e423a77eb15016def8ac615b9ea4bec6433b9ccad48373d6288adfd4fd39ca2",
+  "runtime": {
+    "node": "v24.13.1",
+    "python": "3.14.7"
+  },
+  "units": {
+    "F7": {
+      "command": "npm run test:source-trace",
+      "exit_code": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "log": ".artifacts/f7-unit-final.log",
+      "log_sha256": "b07e32b5077ca0ed0374a8b586ccf8b29edb5b7d57c1449c8f0ea677b13e60da"
+    },
+    "F6": {
+      "command": "npm run test:indicators",
+      "exit_code": 0,
+      "counts": {
+        "tests": 26,
+        "pass": 26,
+        "fail": 0,
+        "skipped": 0
+      },
+      "log": ".artifacts/f6-unit-final.log",
+      "log_sha256": "5548b18b49b6809fc816f11e185ee82e377e832f3fa3eba7b74c6cb40a7ada14"
+    },
+    "editorial": {
+      "command": "npm test",
+      "exit_code": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "log": ".artifacts/editorial-unit-final.log",
+      "log_sha256": "fe874a08565b2b53f8f2266569125265b2758ce35ba7e62e94beed3b77c79510"
+    }
+  },
+  "browser": {
+    "command": "HERMES_TEST_SCRATCH='C:/Users/Pongo/AppData/Local/hermes/cache/scratch' npm run test:source-trace:browser",
+    "exit_code": 0,
+    "F7_groups": 8,
+    "F6_and_shared_groups": 8,
+    "total_groups": 16,
+    "receipt": ".artifacts/feature7-browser/verification.json",
+    "profile": "owned disposable profile; cleanup completed by awaited finally block",
+    "runtime_errors": []
+  },
+  "editorial_browser": {
+    "command": "HERMES_TEST_SCRATCH='C:/Users/Pongo/AppData/Local/hermes/cache/scratch' npm run test:browser",
+    "exit_code": 0,
+    "groups": 5,
+    "receipt": ".artifacts/browser/verification.json",
+    "runtime_errors": [],
+    "evidence_reuse": "Executed after runtime implementation. Later changes affected only F7-scoped caption CSS and F7 test assertions; dashboard runtime/assets were unchanged."
+  },
+  "build": {
+    "command": "npm run build",
+    "exit_code": 0,
+    "warning_chunk_above_500_kB": true,
+    "log": ".artifacts/f7-build-final.log"
+  },
+  "lint": {
+    "command": "npm run lint",
+    "exit_code": 0,
+    "existing_warnings": [
+      "src/components/EconomicSummary.tsx:15:14: warning react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.",
+      "src/api.ts:107:5: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.",
+      "src/components/TrendChart.tsx:106:38: warning react-hooks(exhaustive-deps): React hook useMemo depends on `supported`, which changes every render help: Try memoizing this variable with `useRef` or `useCallback`."
+    ],
+    "new_feature_warnings": 0,
+    "log": ".artifacts/f7-lint-final.log"
+  },
+  "api_live": {
+    "checked_at": "2026-11-03T00:45:49.715624+00:00",
+    "base": "http://localhost:8000/api",
+    "requests": [
+      {
+        "path": "/indicators/?code=inflasi",
+        "error": "ConnectTimeout",
+        "payload_validated": false
+      },
+      {
+        "path": "/indicators/inflasi/trend/",
+        "error": "ConnectTimeout",
+        "payload_validated": false
+      },
+      {
+        "path": "/indicators/inflasi/source-trace/",
+        "error": "ConnectTimeout",
+        "payload_validated": false
+      }
+    ],
+    "backend_started": false
+  },
+  "preview": {
+    "url": "http://127.0.0.1:5187/indikator/inflasi/sumber",
+    "process": "proc_3b03b094a703",
+    "http_checked_at": "2026-11-03T00:47:29.270193+00:00",
+    "HTTP_200": [
+      "/indikator/inflasi/sumber",
+      "/src/features/indicators/SourceTracePage.tsx",
+      "/src/features/indicators/source-trace.css",
+      "/src/features/indicators/useDetailData.ts"
+    ],
+    "data": "Runtime uses actual API; no fixture fallback. Source screenshots are explicitly synthetic test previews."
+  },
+  "protected": {
+    "feature-6-detail-fe": {
+      "head": "14be3d9780f65ea0ea85244c1f089ae93f8dec3c",
+      "clean": true,
+      "base": "505e97116f132c8630ec08d07525b8aec9e00536"
+    },
+    "react-features-6-7": {
+      "head": "cc738a8bdd7a9af44870c5480e61991050577094",
+      "clean": true
+    }
+  },
+  "output_sha256": {
+    "dist/index.html": "8a6bea935759a019b7cd139318d63f5755020aef6d74a27c0309f363cc613652",
+    "dist/assets/index-BDwSwNA6.js": "9a0a2e8f59b92036a89173344cbd6a390c2ef9cdda665e614635acb18613431e",
+    "dist/assets/index-BIM7C206.css": "b663acfc4d93a5cc13af32710b1e2475d355284b5f801ca742d88bf280062749",
+    ".artifacts/feature7-browser/detail-desktop-synthetic.png": "4e7509465e295691247da5b07e15bc3b538641cafada95301ca807a19f3b00e5",
+    ".artifacts/feature7-browser/detail-empty-mobile-synthetic.png": "491136510c46b5026489522fc46c26fce7b5022505d06b6ba45ac080a69567e2",
+    ".artifacts/feature7-browser/source-desktop-synthetic.png": "ea4b20f1f399f0fee1443a77c821943eb0f5658461bdf9cf731de85221cdb954",
+    ".artifacts/feature7-browser/source-mobile-synthetic.png": "82eca9fa74d49e32bc72b5193c74d5dc12e758b1a1f5d92663f2ccaa4cc71cc7",
+    ".artifacts/feature7-browser/verification.json": "da0214ea9a2013354d9c6e82cc69ce356ac36b761d651ed8db5fdf6941043c92",
+    ".artifacts/browser/verification.json": "03d825d62600fc7f39cc8ef29160a8f3771362105c0406408c209e0410bfbad6"
+  },
+  "acceptance": {
+    "frontend_functional": "PASS_WITHIN_RECORDED_SCOPE",
+    "F7_visual": "PENDING_USER_REVIEW",
+    "backend_immutable_revision": "UNAVAILABLE_IN_CURRENT_CONTRACT",
+    "live_API_integration": "NOT_PROVEN",
+    "canonical_Hermes_verification": "NOT_RUN_IN_THIS_BATCH; explicit scoped commands only; no bootstrap/backend execution",
+    "F7_commit_push_PR_merge": "NOT_AUTHORIZED_NOT_PERFORMED"
+  }
+}

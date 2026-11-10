@@ -1,0 +1,11 @@
+**/.git
+**/.hermes
+**/.env
+**/.env.*
+**/node_modules
+**/.artifacts
+**/dist
+**/coverage
+**/*.sqlite3*
+**/__pycache__
+backend

@@ -4,14 +4,15 @@ from decimal import Decimal
 from pathlib import Path
 
 from . import parsing
-from .models import Indicator, Observation, RawFile, Source
+from .lifecycle import ensure_import_master, stage_observation
+from .models import Indicator, RawFile, Source
 from .storage import save_raw_from_path
 
 BI_SOURCE, _ = None, None
 
 
 def get_or_create_source(source_id, source_name, institution, primary_url, description=""):
-    source, _ = Source.objects.update_or_create(
+    source = ensure_import_master(Source,
         source_id=source_id,
         defaults={
             "source_name": source_name,
@@ -24,7 +25,7 @@ def get_or_create_source(source_id, source_name, institution, primary_url, descr
 
 
 def get_or_create_indicator(code, name, category, unit, aggregation_kind, sort_order):
-    indicator, _ = Indicator.objects.update_or_create(
+    indicator = ensure_import_master(Indicator,
         code=code,
         defaults={
             "name": name,
@@ -40,21 +41,7 @@ def get_or_create_indicator(code, name, category, unit, aggregation_kind, sort_o
 def upsert_bi_observations(obs_dicts: list[dict]):
     count = 0
     for obs in obs_dicts:
-        _, _created = Observation.objects.update_or_create(
-            indicator_id=obs["indicator_id"],
-            source_id=obs["source_id"],
-            observation_date=obs["observation_date"],
-            data_type=obs.get("data_type", "level"),
-            defaults={
-                "period_label": obs["period_label"],
-                "frequency": obs["frequency"],
-                "value": obs["value"],
-                "unit": obs["unit"],
-                "publication_date": obs.get("publication_date"),
-                "raw_file_id": obs.get("raw_file_id"),
-                "validation_status": Observation.Status.PENDING,
-            },
-        )
+        stage_observation(**obs)
         count += 1
     return count
 
@@ -141,21 +128,10 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
                 "sum",
                 4,
             )
-            value_rp_triliun = (total / Decimal(1000000)).normalize()
-            _, _created = Observation.objects.update_or_create(
-                indicator=indicator,
-                source=bkpm_source,
-                observation_date=quarter_date,
-                data_type="derived_sum",
-                defaults={
-                    "period_label": period_label,
-                    "frequency": "quarterly",
-                    "value": value_rp_triliun,
-                    "unit": "Rp Triliun",
-                    "raw_file": raw_file,
-                    "validation_status": Observation.Status.PENDING,
-                },
-            )
+            value_rp_triliun = (total / Decimal(1000000)).quantize(Decimal("0.01"))
+            stage_observation(indicator_id=indicator.pk, source_id=bkpm_source.pk,
+                observation_date=quarter_date, data_type="derived_sum", period_label=period_label,
+                frequency="quarterly", value=value_rp_triliun, unit="Rp Triliun", raw_file_id=raw_file.pk)
             created_bkpm += 1
             if is_new:
                 raw_file.parse_status = RawFile.ParseStatus.PARSED
@@ -277,7 +253,7 @@ def parse_moneter_xlsx(path: Path, raw_file, source) -> list[dict]:
         "cad_devisa",
         "Cadangan Devisa",
         "Kebijakan Moneter",
-        "",
+        "USD Miliar",
         "end",
         7,
     )
@@ -287,7 +263,12 @@ def parse_moneter_xlsx(path: Path, raw_file, source) -> list[dict]:
         if str(no).strip() in ("", "None") or normalize_none(value_text) is None:
             continue
         observation_date = day.date() if hasattr(day, "date") else None
-        value = parsing.parse_id_number(value_text) if isinstance(value_text, str) else None
+        # XLSX moneter memakai desimal titik ("145.461"); parse_id_number
+        # akan membacanya sebagai ribuan. Pakai parser angka BKPM/moneter.
+        if isinstance(value_text, (int, float)) and not isinstance(value_text, bool):
+            value = Decimal(str(value_text))
+        else:
+            value = parsing.parse_bkpm_number(value_text) if isinstance(value_text, str) else None
         if str(no).strip().isdigit() and (observation_date is None or value is None):
             raise ValueError(f"unparseable Indikator Moneter row: {day!r} / {value_text!r}")
         if observation_date is None or value is None:
@@ -297,7 +278,7 @@ def parse_moneter_xlsx(path: Path, raw_file, source) -> list[dict]:
                 "observation_date": observation_date,
                 "period_label": observation_date.isoformat(),
                 "value": value,
-                "unit": "",
+                "unit": "USD Miliar",
                 "indicator_id": indicator.id,
                 "source_id": source.id,
                 "frequency": "monthly",
@@ -358,7 +339,7 @@ def sum_bkpm_zip_csv(zip_path: Path) -> Decimal:
                 raw = row[col_index].strip()
                 if raw == "":
                     continue
-                value = parsing.parse_id_number(raw)
+                value = parsing.parse_bkpm_rp_juta(raw)
                 if value is None:
                     raise ValueError(f"unparseable BKPM value: {raw!r}")
                 total += value

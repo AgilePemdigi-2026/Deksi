@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
-import environ
+from datetime import timedelta
 from pathlib import Path
+
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,12 +91,20 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = env("DATABASE_URL", default="").strip()
+if DATABASE_URL:
+    DATABASES = {"default": env.db("DATABASE_URL")}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("POSTGRES_DB", default="deksi"),
+            "USER": env("POSTGRES_USER", default="postgres"),
+            "PASSWORD": env("POSTGRES_PASSWORD", default=""),
+            "HOST": env("POSTGRES_HOST", default="127.0.0.1"),
+            "PORT": env("POSTGRES_PORT", default="5432"),
+        }
     }
-}
 
 
 # Password validation
@@ -129,10 +139,18 @@ USE_TZ = True
 
 
 # CORS untuk frontend DEKSI (Vite dev server)
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:62942", "http://127.0.0.1:62942",
+] if DEBUG else [])
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=CORS_ALLOWED_ORIGINS)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Konfigurasi pipeline data DEKSI
 DEKSI_RAW_DIR = BASE_DIR / 'raw_storage'
@@ -156,3 +174,27 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# JSON Login Admin and native Django Admin share the same account policy.
+INSTALLED_APPS += ["axes", "admin_auth"]
+MIDDLEWARE.insert(0, "admin_auth.reporting.AuthReportingMiddleware")
+MIDDLEWARE += ["axes.middleware.AxesMiddleware"]
+AUTHENTICATION_BACKENDS = ["axes.backends.AxesStandaloneBackend", "admin_auth.backends.AdminBackend"]
+CSRF_FAILURE_VIEW = "admin_auth.views.csrf_failure"
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
+AXES_USERNAME_CALLABLE = "admin_auth.backends.axes_username"
+AXES_CLIENT_IP_CALLABLE = "admin_auth.backends.client_ip"
+AXES_LOCKOUT_CALLABLE = "admin_auth.views.lockout_response"
+AXES_DISABLE_ACCESS_LOG = True
+AXES_ENABLE_ACCESS_FAILURE_LOG = False
+AXES_RESET_ON_SUCCESS = False
+AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
+AXES_VERBOSE = False
+AXES_SENSITIVE_PARAMETERS = ["username", "identifier", "password", "ip_address", "csrfmiddlewaretoken"]
+
+# Local reset is opt-in and restricted to locmem until delivery/timing is reviewed.
+ADMIN_PASSWORD_RESET_ENABLED = False
+ADMIN_PASSWORD_RESET_FRONTEND_ORIGIN = ""
+PASSWORD_RESET_TIMEOUT = 1800

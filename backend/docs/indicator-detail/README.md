@@ -1,0 +1,34 @@
+# F6 — public detail API backend
+
+> Current working-tree status: [CURRENT_STATUS.md](CURRENT_STATUS.md). The original `PLAN.md` and `VERIFICATION.json` describe earlier checkpoints; they are historical evidence, not the final publication verdict.
+
+Branch: `feat/6-detail-indikator-be`. Base: main `0e92899ce54f85440fe920ca457dfd91f747e1aa` (not the older `be` scaffold).
+
+## Contract
+
+- Existing public GET `/api/indicators/?code=<code>` and `/api/indicators/<code>/trend/` remain compatible with the published React frontend. Source Trace remains the inherited dependency until F7's focused delta.
+- Only `published` observations with both recorded reviewer and review time are public. Missing indicator/empty database remain explicit; public requests require no login.
+- Previous-value comparison and sparklines require the same indicator, source, unit, frequency and measurement type. Percent-unit differences are percentage points; other units use `(current - previous) / abs(previous) * 100` and explicitly named previous period. Zero denominators are unavailable. Decimal display rounding is two places; direction means numerical direction, not economic benefit.
+- Native trend rows preserve metadata and expose `exactValue` alongside the legacy approximate numeric graph value. Annual/monthly aggregations use Decimal; unlike series and cumulative-YTD sum aggregation are rejected with 400. Mixed native rows remain available for the frontend's labelled table; a mixed-series average is unavailable.
+- Success/error JSON is `Cache-Control: no-store`. No provider or source-link network calls occur on these reads.
+
+## Safe import and review lifecycle
+
+BI/BKPM/fiscal/BPS stage candidates and leave the active observation available until explicit authorized review. See [LIFECYCLE.md](LIFECYCLE.md) for the new migration, Admin/CLI workflow, conflict rules and trust limits. Candidate staging does not create an immutable revision journal.
+
+## Precision migration
+
+`0004_exact_observation_decimal` stores the same 24-digit/6-decimal domain without SQLite NUMERIC/float conversion. Django forms and Python values remain Decimal. SQLite SQL value ordering/aggregation is not an exact numeric contract; this code performs those operations in Python. Other engines use native NUMERIC, but PostgreSQL was not executed in this delivery. A migration cannot recover precision lost by earlier SQLite writes. Back up and review an actual deployment database before applying; none was opened here.
+
+## Reproduce (isolated tests)
+
+Use a compatible interpreter and `backend/requirements.txt` (which includes the root manifest and the actual API imports). No new packages were installed for this delivery; the existing compatible Login interpreter was used read-only.
+
+```
+python manage.py test indicators.tests --settings=backend.test_settings_indicators
+python manage.py check --settings=backend.test_settings_indicators
+python manage.py makemigrations --check --dry-run --settings=backend.test_settings_indicators
+ruff check indicators/storage.py indicators/tests/test_import_raw_safety.py indicators/admin.py indicators/tests/test_admin_exact_value.py indicators/models.py indicators/lifecycle.py indicators/ingest.py indicators/bps.py indicators/fiscal.py indicators/management/commands/publish_observations.py indicators/management/commands/fetch_kemenkeu.py indicators/management/commands/ingest_datasets.py indicators/management/commands/sync_bps.py indicators/migrations/0005_observation_candidate.py indicators/tests/test_import_lifecycle.py indicators/tests/test_import_writers.py indicators/tests/test_candidate_review.py indicators/tests/test_import_command_logs.py indicators/tests/test_lifecycle_transactions.py
+```
+
+Test settings never read `.env` and default to an in-memory SQLite test DB. Set `HERMES_TEST_SCRATCH` to an explicitly permitted scratch directory before running tests; the RAW test never relies on the process's system-temp default. Fixtures explicitly use `UJI SINTETIS`. Source-data accuracy, immutable revisions, official verification and production deployment are separate acceptance gates; no fake formula/input/version or AI output is generated. See [plan](PLAN.md) and `VERIFICATION.json` for actual local evidence.

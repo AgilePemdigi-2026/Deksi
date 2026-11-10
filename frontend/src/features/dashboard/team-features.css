@@ -1,0 +1,262 @@
+/* ==========================================================================
+   Fitur 5 – Filter Dashboard
+   ========================================================================== */
+
+.dashboard-filter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+}
+
+.dashboard-filter__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.dashboard-filter__group {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-filter__label {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.dashboard-filter__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .375rem;
+}
+
+.filter-pill {
+  padding: .25rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.filter-pill:hover { background: var(--ink); color: var(--white); }
+.filter-pill--active {
+  background: var(--ink);
+  color: var(--white);
+  border-color: var(--ink);
+}
+
+.filter-select {
+  padding: .25rem .5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-reset {
+  margin-left: auto;
+  padding: .25rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--muted);
+  transition: color .15s, border-color .15s;
+}
+.filter-reset:hover { color: var(--ink); border-color: var(--ink); }
+
+.dashboard-filter__active-note {
+  margin-top: .5rem;
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* ==========================================================================
+   Fitur 8 – Form Umpan Balik
+   ========================================================================== */
+
+.feedback-section {
+  padding: 3rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.feedback-section__inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.feedback-section__title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: .5rem;
+}
+
+.feedback-section__desc {
+  font-size: .875rem;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feedback-field {
+  display: flex;
+  flex-direction: column;
+  gap: .375rem;
+}
+
+.feedback-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 520px) {
+  .feedback-field-row { grid-template-columns: 1fr; }
+}
+
+.feedback-label {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink);
+}
+
+.feedback-label--optional {
+  font-weight: 500;
+  text-transform: none;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.feedback-input,
+.feedback-select,
+.feedback-textarea {
+  padding: .5rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  font-size: .875rem;
+  color: var(--ink);
+  width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+}
+.feedback-input:focus,
+.feedback-select:focus,
+.feedback-textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px rgba(17,17,17,.15);
+}
+.feedback-input--error {
+  border-color: #c0392b;
+}
+.feedback-textarea { resize: vertical; min-height: 120px; }
+
+.feedback-char-count {
+  font-size: .75rem;
+  color: var(--muted);
+  text-align: right;
+  margin-top: .125rem;
+}
+
+.feedback-error {
+  font-size: .8rem;
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.feedback-form__server-error {
+  padding: .75rem 1rem;
+  border: 1px solid #c0392b;
+  border-radius: var(--radius);
+  background: #fff2f2;
+  color: #c0392b;
+  font-size: .875rem;
+  font-weight: 600;
+}
+
+.feedback-identity {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+}
+.feedback-identity__toggle {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.feedback-identity[open] .feedback-identity__toggle { margin-bottom: 1rem; }
+.feedback-identity__toggle::-webkit-details-marker { display: none; }
+.feedback-identity__toggle::before {
+  content: '▸ ';
+  font-size: .7rem;
+}
+.feedback-identity[open] .feedback-identity__toggle::before { content: '▾ '; }
+
+.feedback-btn {
+  padding: .625rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: .875rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  border: 1px solid transparent;
+  transition: background .15s, color .15s;
+  align-self: flex-start;
+}
+.feedback-btn--primary {
+  background: var(--ink);
+  color: var(--white);
+  border-color: var(--ink);
+}
+.feedback-btn--primary:hover:not(:disabled) { opacity: .85; }
+.feedback-btn--primary:disabled { opacity: .5; }
+.feedback-btn--secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--border);
+}
+.feedback-btn--secondary:hover { border-color: var(--ink); }
+
+.feedback-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.feedback-success__icon {
+  font-size: 2.5rem;
+}
+.feedback-success__message {
+  font-size: .9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  max-width: 420px;
+  line-height: 1.5;
+}

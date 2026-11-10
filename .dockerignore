@@ -1,0 +1,14 @@
+**/.git
+**/.hermes
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/node_modules
+**/.env
+**/.env.*
+**/*.sqlite3
+**/*.sqlite3-*
+**/.artifacts
+**/.test-artifacts
+**/.ruff_cache
+**/raw_storage

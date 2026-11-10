@@ -1,0 +1,169 @@
+{
+  "timestamp_local": "2026-11-03T18:44:05.021067+07:00",
+  "lane": "feature-7-source-trace-be",
+  "baseline_head": "a9c6367b7077341a0ae43276463fbd08546a5c28",
+  "status": "FOUR_SCOPED_FINDINGS_REPAIRED_AND_EXECUTED_LOCALLY_NOT_PUBLISHED",
+  "shared_correction_parity": "PASS (normalized text; feature-specific wiring retained)",
+  "source_sha256": {
+    "backend/indicators/admin.py": "0d6edbc67cb52618028d7da9e9afda037dcde230625f30afa7b0023643103aa9",
+    "backend/indicators/tests/frontend-integration.mjs": "bbf5bd50ee2add2fb8a7692090bbc2d7b9d7137f0982734a388b0c2c43416c13",
+    "backend/indicators/tests/run_frontend_integration.py": "a69683cf6e031e6d009a538dbb463bf9f395e80b631bb8e1cda78baa95ea321a",
+    "backend/docs/indicator-detail/AUDIT_FIXES_PLAN.md": "e73eb0db023ef7f421ff93cfaa7f23367b4667a5af5081986e07351ed0b9b1ef",
+    "backend/indicators/tests/test_admin_exact_value.py": "24ef99f405a57e262e883ebb17cff6c0536496fdcd014e6799d3972d379d5596"
+  },
+  "executed_checks": {
+    "audit-final-check.log": {
+      "sha256": "f87ceb15410bde28ff826ce26228e0576558258fa64d145847921a593a61ee63",
+      "summary": [
+        "System check identified no issues (0 silenced)."
+      ]
+    },
+    "audit-final-lint.log": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "summary": []
+    },
+    "audit-final-live.log": {
+      "sha256": "ef7824f81e29d52f0e2015fbfd31ae8f81c875b4ebb4b723102b069ae0b6c076",
+      "summary": [
+        "PASS Real Django GETs return reviewed zero, exact values and all 24 shared-RAW observations",
+        "PASS Actual Dashboard → Detail uses public API without login or synthetic interception",
+        "PASS Keyboard Detail → Source Trace → return retains zero, source, period, RAW and selector",
+        "PASS Native oldest-period selection beyond old 12-row limit survives source navigation and reload",
+        "PASS Cross-origin browser RAW download matches digest; disk corruption is refused with HTTP 503",
+        "PASS Real stored-value change refuses an old context instead of silently replacing it",
+        "PASS Empty data never becomes zero and malformed revisions trigger no API loader",
+        "PASS Exact history survives actual Django JSON through table and SVG tooltip without rounding",
+        "PASS Actual mixed-source rows refuse one chart and retain both source identities",
+        "PASS Actual January–March monthly history has two isolated segments and no invented February or zero",
+        "PASS Real-API source page remains readable at 390/768/1440; no source-link fetch or console exception",
+        "  \"integration_checks\": 11,"
+      ]
+    },
+    "audit-final-migrations.log": {
+      "sha256": "93e6e2d5be3c054add80c0f19101608803f7ca8a7df1fa41f76bbb9a1f570f4a",
+      "summary": [
+        "No changes detected"
+      ]
+    },
+    "audit-final-tests.log": {
+      "sha256": "65a62fbfc25c464fe64ca1a6b5f98f22dd4361bab9239ab351cc1301e5af2f49",
+      "summary": [
+        "Ran 42 tests in 0.581s",
+        "OK (skipped=1)",
+        "System check identified no issues (0 silenced)."
+      ]
+    }
+  },
+  "red_before_fix_evidence": {
+    "feature-6-detail-be/audit-1-admin-red.log": {
+      "sha256": "aef5ed9ba08b14c48bef2deb38077bb9ff72b47b985a61c4a9a66cc578647df6",
+      "summary": [
+        "FAIL: test_crafted_admin_sort_parameter_cannot_sort_text_values (indicators.tests.test_admin_exact_value.ExactValueAdminTests.test_crafted_admin_sort_parameter_cannot_sort_text_values) (ordering='7')",
+        "AssertionError: 'value' unexpectedly found in ['value', 'pk']",
+        "FAIL: test_crafted_admin_sort_parameter_cannot_sort_text_values (indicators.tests.test_admin_exact_value.ExactValueAdminTests.test_crafted_admin_sort_parameter_cannot_sort_text_values) (ordering='-7')",
+        "AssertionError: 'value' unexpectedly found in ['value', 'pk']",
+        "FAIL: test_exact_value_header_does_not_offer_lexical_number_sort (indicators.tests.test_admin_exact_value.ExactValueAdminTests.test_exact_value_header_does_not_offer_lexical_number_sort)",
+        "AssertionError: True is not false",
+        "Ran 3 tests in 0.024s",
+        "FAILED (failures=3)"
+      ]
+    },
+    "feature-6-detail-fe/audit-2-exact-red.log": {
+      "sha256": "029da9a6ee51b7018cdc7c36d10fafae9407964dce2ec0d665673045c13660f7",
+      "summary": [
+        "✖ history preserves backend exact decimal strings beyond numeric plot precision (20.2766ms)",
+        "✖ invalid or conflicting exact history values fail only the history resource (4.2613ms)",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "✖ history preserves backend exact decimal strings beyond numeric plot precision (20.2766ms)",
+        "✖ invalid or conflicting exact history values fail only the history resource (4.2613ms)"
+      ]
+    },
+    "feature-6-detail-fe/audit-3-source-ui-red.log": {
+      "sha256": "c30908ce031c8ef8dff61e3261f87923b19d0918c69cc02654804f3f63a62686",
+      "summary": [
+        "✖ mixed-source history explains refusal and retains each source beside its original value (32.1449ms)",
+        "ℹ tests 1",
+        "ℹ pass 0",
+        "ℹ fail 1",
+        "✖ mixed-source history explains refusal and retains each source beside its original value (32.1449ms)"
+      ]
+    },
+    "feature-6-detail-fe/audit-3-sources-red.log": {
+      "sha256": "c97b5b94d41174d109b99f644a5645ce2db9bd4338d634bb536ed779e372d40d",
+      "summary": [
+        "✖ history keeps source identities so different sources cannot become one chart series (29.4771ms)",
+        "✖ chart refuses mixed source identities while preserving the original labelled rows (20.4541ms)",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "✖ history keeps source identities so different sources cannot become one chart series (29.4771ms)",
+        "✖ chart refuses mixed source identities while preserving the original labelled rows (20.4541ms)"
+      ]
+    },
+    "feature-6-detail-fe/audit-4-calendar-red.log": {
+      "sha256": "173eb096ba6999888d24940fadc13e9e201792d910b908443f32067de7f1e174",
+      "summary": [
+        "✖ missing regular calendar periods split lines without manufacturing observations or zeroes (9.9994ms)",
+        "✖ calendar splitting avoids invented daily calendars and refuses invalid regular sequencing (1.3286ms)",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "✖ missing regular calendar periods split lines without manufacturing observations or zeroes (9.9994ms)",
+        "✖ calendar splitting avoids invented daily calendars and refuses invalid regular sequencing (1.3286ms)"
+      ]
+    }
+  },
+  "limitations": [
+    "Local uncommitted repairs only; no commit, push, PR, merge, provider request or dependency installation.",
+    "Previous publication/readiness receipts describe the earlier committed snapshots, not these repaired working trees.",
+    "Real loopback integration uses synthetic scratch records; official provider data and official verification are not proven.",
+    "Canonical Hermes verification and PostgreSQL runtime remain unverified; explicit project interpreter used.",
+    "Daily business calendars and gaps without date metadata are not inferred; regular monthly/quarterly/semiannual/annual gaps are tested.",
+    "Generic numeric SQL operations on SQLite TEXT are unsupported; the repaired Admin value display offers no numeric sort and crafted ordering is tested.",
+    "Last-valid ingestion lifecycle and immutable versioned provenance are inherited separate-scope limitations.",
+    "Human visual acceptance remains pending; functional browser checks are not aesthetic approval.",
+    "The extreme precision synthetic dashboard fixture elicited existing Recharts duplicate tick-key console warnings; dashboard source was not changed. Runtime exception checks passed; this is not a clean-console claim."
+  ],
+  "commands": [
+    "project-python manage.py test indicators.tests --settings=backend.test_settings_indicators",
+    "project-python manage.py check --settings=backend.test_settings_indicators",
+    "project-python manage.py makemigrations --check --dry-run --settings=backend.test_settings_indicators",
+    "project-ruff check indicators/admin.py indicators/tests/test_admin_exact_value.py",
+    "project-python indicators/tests/run_frontend_integration.py --frontend-root E:/Deksi-Team/.hermes/worktrees/feature-7-source-trace-fe/frontend"
+  ],
+  "runtime": {
+    "python_executable": "E:/Deksi-Team/.hermes/worktrees/feature-1-login-be/backend/.venv/Scripts/python.exe",
+    "test_settings": "backend.test_settings_indicators",
+    "HERMES_TEST_SCRATCH": "C:/Users/Pongo/AppData/Local/hermes/cache/scratch"
+  },
+  "real_loopback_integration": {
+    "checks": [
+      "Real Django GETs return reviewed zero, exact values and all 24 shared-RAW observations",
+      "Actual Dashboard → Detail uses public API without login or synthetic interception",
+      "Keyboard Detail → Source Trace → return retains zero, source, period, RAW and selector",
+      "Native oldest-period selection beyond old 12-row limit survives source navigation and reload",
+      "Cross-origin browser RAW download matches digest; disk corruption is refused with HTTP 503",
+      "Real stored-value change refuses an old context instead of silently replacing it",
+      "Empty data never becomes zero and malformed revisions trigger no API loader",
+      "Exact history survives actual Django JSON through table and SVG tooltip without rounding",
+      "Actual mixed-source rows refuse one chart and retain both source identities",
+      "Actual January–March monthly history has two isolated segments and no invented February or zero",
+      "Real-API source page remains readable at 390/768/1440; no source-link fetch or console exception"
+    ],
+    "errors": [],
+    "api_interception": false,
+    "synthetic": true,
+    "owned_browser_profile_removed": true,
+    "scratch_database_removed": true,
+    "owned_backend_stopped": true,
+    "frontend_head": "94a05cd1fe5044d3d7e0f71ad6d0487edd5f921f",
+    "frontend_source_sha256": {
+      "src/features/indicators/api.ts": "ccac13e515a512e4ee442c2dccb7ca721a4fad632eebd3e433ae73969dfccab6",
+      "src/features/indicators/data.ts": "d9cbd7a1528da08c0feea1a0cf889d9cbe37062d9ad757b359818791714d1d07",
+      "src/features/indicators/types.ts": "2fc626b5e5973d973c0c079961119505b03b0bd58ad2e98138baa0166c3a5976",
+      "src/features/indicators/DetailPage.tsx": "5a0df3e45df8b66f335a7177970b2fc915e549f1566468027c657412c9850939"
+    }
+  }
+}

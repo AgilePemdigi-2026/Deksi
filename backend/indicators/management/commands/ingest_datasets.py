@@ -5,11 +5,12 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from indicators.ingest import ingest_local_datasets
-from indicators.updates import record_update_failure, record_update_success
+from indicators.updates import record_update_failure
 
 
 class Command(BaseCommand):
-    help = "Ingest dataset hasil scraping yang sudah ada dari folder scraping (BI xlsx dan BKPM zip CSV) ke RAW storage dan database."
+    help = ("Ingest dataset lokal BI/BKPM ke RAW dan kandidat; "
+            "perubahan memerlukan review Admin sebelum publikasi.")
 
     def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
@@ -28,7 +29,6 @@ class Command(BaseCommand):
         except Exception as exc:
             record_update_failure("Dataset BI dan BKPM", updated_by=user, message=str(exc))
             raise
-        count = summary["bi_rows"] + summary["bkpm_quarters"]
 
         self.stdout.write(f"Folder dataset : {summary['scraping_dir']}")
         self.stdout.write(f"Baris BI       : {summary['bi_rows']}")
@@ -39,10 +39,4 @@ class Command(BaseCommand):
             for error in summary["errors"]:
                 self.stdout.write(self.style.WARNING(f"  - {error}"))
         else:
-            record_update_success(
-                "Dataset BI dan BKPM",
-                updated_by=user,
-                observation_count=count,
-                message="Ingest dataset lokal berhasil.",
-            )
-            self.stdout.write(self.style.SUCCESS("Semua dataset berhasil diproses tanpa error."))
+            self.stdout.write(self.style.SUCCESS("Pemrosesan selesai; perubahan menunggu review, bukan publikasi."))

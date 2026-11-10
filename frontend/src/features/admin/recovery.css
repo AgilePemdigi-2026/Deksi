@@ -1,0 +1,11 @@
+.login-page.recovery-page .recovery-back{display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:19px;font-size:13px;text-decoration:underline;text-underline-offset:4px}
+.login-page.recovery-page h1{overflow-wrap:break-word}
+.login-page.recovery-page .form-intro{margin-bottom:30px}
+.login-page.recovery-page .recovery-secondary{min-height:44px;padding:10px 0;background:transparent;font-size:13px;text-decoration:underline;text-underline-offset:4px}
+.login-page.recovery-page .recovery-note{font-size:13px;line-height:1.6;color:var(--muted);margin:0 0 22px}
+.login-page.recovery-page .recovery-status{font-size:13px;line-height:1.6;margin:16px 0 0;overflow-wrap:anywhere}
+.login-page.recovery-page .recovery-status:empty{margin:0}
+.login-page.recovery-page .recovery-password-help{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 24px}
+.login-page.recovery-page .recovery-cta-link{width:100%;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 21px;border:1px solid var(--ink);border-radius:5px;background:var(--ink);color:var(--white);font-size:16px;font-weight:600}
+.login-page.recovery-page #recovery-boundary{max-width:390px}
+@media(max-width:760px){.login-page.recovery-page .login-form-panel{padding-bottom:37px}.login-page.recovery-page h1{font-size:clamp(40px,12vw,52px)}}
