@@ -7,6 +7,10 @@ class InactiveSourceError(ValidationError):
     pass
 
 
+class ActiveSyncError(ValidationError):
+    pass
+
+
 def require_active_source(source: Source) -> None:
     if source.status != Source.SourceStatus.ACTIVE:
         raise InactiveSourceError(f"Sumber {source.source_id} tidak aktif; akuisisi dibatalkan.")
