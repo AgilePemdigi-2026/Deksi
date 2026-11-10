@@ -25,13 +25,18 @@ export default function LoginPage() {
   const inFlight = useRef(false)
   useEffect(() => { document.title = 'Masuk Admin · DEKSI' }, [])
 
-  const loadSession = useCallback((controller: AbortController) => auth.session(controller.signal).then(current => {
+  const loadSession = useCallback((controller: AbortController) => auth.session(controller.signal).then(async current => {
     if (controller.signal.aborted) return
     setUser(current)
     setReady(true)
     if (current) {
       if (password.current) password.current.value = ''
       setRevealed(false)
+      setStatus('Memeriksa akses dashboard Admin…')
+      await auth.confirmPortalSession(current, controller.signal)
+      if (controller.signal.aborted) return
+      window.location.replace('/admin/sumber')
+      return
     }
     setStatus(current ? 'Sesi Admin aktif.' : '')
   }).catch(error => {
@@ -83,7 +88,10 @@ export default function LoginPage() {
         if (password.current) password.current.value = ''
         setRevealed(false)
         setUser(current)
-        setStatus('Berhasil masuk. Sesi Admin telah dikonfirmasi server.')
+        setStatus('Sesi login berhasil. Memeriksa akses dashboard Admin…')
+        await auth.confirmPortalSession(current, controller.signal)
+        if (controller.signal.aborted) return
+        window.location.replace('/admin/sumber')
       } catch (error) {
         if (controller.signal.aborted) return
         const failure = error instanceof AuthError ? error : new AuthError('invalid_response')
@@ -158,7 +166,7 @@ export default function LoginPage() {
             <button type="submit" className="submit-button" id="login-submit" disabled={pending || checking || !ready}><span>{pending ? 'Memproses…' : 'Masuk'}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12" /></svg></button>
             <p id="prototype-note" className="prototype-note"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="M8 7v4m0-7v1" /></svg><span>Autentikasi menggunakan sesi server.<br />Pengunjung publik tetap tidak memerlukan akun.</span></p>
           </form>
-          {user && <section id="admin-session" className="session-panel" aria-label="Sesi Admin"><p>Masuk sebagai <strong id="session-user">{user.username}</strong>.</p><p>Sesi dikelola server. Halaman ini tidak membuat dashboard Admin baru.</p></section>}
+          {user && <section id="admin-session" className="session-panel" aria-label="Sesi Admin"><p>Masuk sebagai <strong id="session-user">{user.username}</strong>.</p><p>Jika akses dashboard belum dapat dipastikan, periksa status sesi sebelum melanjutkan.</p></section>}
           <p id="form-status" className="form-status" role="status" aria-live="polite" aria-atomic="true">{status}</p>
           {(user || authError?.code === 'forbidden') && <button id="auth-logout" className="submit-button" type="button" disabled={checking || pending} onClick={() => void logout()}>{pending ? 'Memproses…' : 'Keluar'}</button>}
           {(authError || user) && <button id="session-refresh" type="button" className="session-refresh" disabled={checking || pending} onClick={() => void refreshSession()}>Periksa status sesi</button>}
@@ -169,7 +177,7 @@ export default function LoginPage() {
     <dialog ref={info} className="info-dialog" id="prototype-info" aria-labelledby="info-title" aria-describedby="info-body">
       <div className="dialog-top"><h2 id="info-title">Tentang Login Admin.</h2><button type="button" className="dialog-close" id="close-info" aria-label="Tutup informasi Login Admin" onClick={() => info.current?.close()}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button></div>
       <p id="info-body">Halaman <strong>Login Admin DEKSI</strong> mengirim kredensial ke backend Django untuk membuat sesi server. Token sesi tidak disimpan di localStorage atau sessionStorage. Gunakan koneksi HTTPS pada deployment.</p>
-      <p>Pengunjung publik tidak perlu akun. Tautan Lupa kata sandi membuka prototype pemulihan; pengiriman email dan perubahan kata sandi belum terhubung. Pendaftaran dan dashboard Admin React tidak disediakan melalui halaman ini.</p>
+      <p>Pengunjung publik tidak perlu akun. Setelah akses Admin dikonfirmasi, Anda diarahkan ke Kelola Sumber. Pendaftaran publik tidak disediakan.</p>
       <p>Kolase ilustratif dari foto <a href="https://www.pexels.com/photo/jakarta-s-bustling-financial-district-skyline-35808558/" target="_blank" rel="noopener noreferrer">gedung bisnis Jakarta</a> dan <a href="https://www.pexels.com/photo/a-person-holding-indonesian-money-8463694/" target="_blank" rel="noopener noreferrer">uang rupiah</a>. Sumber: Pexels, dengan <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels License</a>. Foto dipotong, diubah ke monokrom, dan digabungkan; bukan grafik atau data indikator ekonomi. Tidak menyiratkan afiliasi atau dukungan pihak yang tergambar.</p>
     </dialog>
   </div>

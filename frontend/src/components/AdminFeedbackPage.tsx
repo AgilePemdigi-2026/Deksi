@@ -283,7 +283,7 @@ export function AdminFeedbackPage() {
           </p>
         </div>
         <div className="admin-fb-actions">
-          <a href="/#/admin/sumber" className="admin-fb-btn secondary">
+          <a href="/admin/sumber" className="admin-fb-btn secondary">
             Kelola Sumber Data
           </a>
           <a href="/" className="admin-fb-btn secondary">
