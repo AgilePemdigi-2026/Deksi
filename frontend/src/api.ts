@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { SyncHistoryQuery, SyncHistoryResult } from "./features/sync-history/types";
+import { createAuthClient } from "./features/admin/auth";
 
 export const API_BASE = "/api";
 
@@ -404,7 +405,7 @@ export async function adminLogin(username: string, password: string): Promise<vo
 }
 
 export async function adminLogout(): Promise<void> {
-  await adminFetch("/admin/logout/", { method: "POST" });
+  await createAuthClient("").logout();
 }
 
 export async function fetchAcquisitionMethods(): Promise<{ methods: AcquisitionMethod[]; frequencies: string[] }> {

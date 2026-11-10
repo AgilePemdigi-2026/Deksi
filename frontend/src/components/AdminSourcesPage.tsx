@@ -47,6 +47,8 @@ export function AdminSourcesPage() {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const [sources, setSources] = useState<AdminSourceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,10 +115,18 @@ export function AdminSourcesPage() {
   };
 
   const doLogout = async () => {
-    await adminLogout();
-    editRequest.current += 1;
-    setAuthenticated(false);
-    setSources([]);
+    setLogoutLoading(true);
+    setLogoutError(null);
+    try {
+      await adminLogout();
+      editRequest.current += 1;
+      setAuthenticated(false);
+      setSources([]);
+    } catch {
+      setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
+    } finally {
+      setLogoutLoading(false);
+    }
   };
 
   const set = (key: keyof typeof EMPTY_FORM, value: string) => {
@@ -351,10 +361,11 @@ export function AdminSourcesPage() {
             <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
             <span>
               <button type="button" className="tab" disabled={toggling} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
-              <button type="button" className="tab" disabled={toggling} onClick={doLogout}>Keluar</button>
+              <button type="button" className="tab" disabled={toggling || saving || logoutLoading} onClick={doLogout}>Keluar</button>
             </span>
           </div>
 
+          {logoutError && <p className="summary-error" role="alert">{logoutError}</p>}
           {success && <p className="summary-loading">{success}</p>}
           {toggleError && <p className="summary-error" role="alert">{toggleError}</p>}
           {loading && <p className="summary-loading">Memuat registry sumber…</p>}
