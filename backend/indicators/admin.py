@@ -1,10 +1,18 @@
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
-from indicators.feedback_model import Feedback
+from indicators.feedback_model import Feedback, FeedbackAuditLog
 from indicators.lifecycle import review_candidate
-from indicators.models import DataUpdateLog, Indicator, Observation, ObservationCandidate, RawFile, Source, SourceRevision
-from indicators.updates import record_update_success
+from indicators.models import (
+    DataUpdateLog,
+    Indicator,
+    Observation,
+    ObservationCandidate,
+    RawFile,
+    Source,
+    SourceRevision,
+)
 
 
 @admin.register(Source)
@@ -156,10 +164,42 @@ class FeedbackAdmin(admin.ModelAdmin):
 
     @admin.action(description="Tandai sebagai Diselesaikan", permissions=["change"])
     def action_mark_resolved(self, request, queryset):
-        updated = queryset.update(status=Feedback.Status.RESOLVED)
+        updated = self._update_status(request, queryset, Feedback.Status.RESOLVED)
         self.message_user(request, f"{updated} umpan balik ditandai sebagai Diselesaikan.")
 
     @admin.action(description="Tandai sebagai Sedang Ditinjau", permissions=["change"])
     def action_mark_in_review(self, request, queryset):
-        updated = queryset.update(status=Feedback.Status.IN_REVIEW)
+        updated = self._update_status(request, queryset, Feedback.Status.IN_REVIEW)
         self.message_user(request, f"{updated} umpan balik ditandai sebagai Sedang Ditinjau.")
+
+    def _update_status(self, request, queryset, new_status):
+        updated = 0
+        changed_by = (request.user.get_full_name() or request.user.get_username() or "Admin")[:150]
+        with transaction.atomic():
+            for feedback in queryset:
+                old_status = feedback.status
+                FeedbackAuditLog.objects.create(
+                    feedback=feedback,
+                    old_status=old_status,
+                    new_status=new_status,
+                    changed_by=changed_by,
+                )
+                feedback.status = new_status
+                feedback.save(update_fields=["status", "updated_at"])
+                updated += 1
+        return updated
+
+
+@admin.register(FeedbackAuditLog)
+class FeedbackAuditLogAdmin(admin.ModelAdmin):
+    list_display = ("feedback", "old_status", "new_status", "changed_by", "changed_at")
+    list_filter = ("new_status", "old_status")
+    search_fields = ("feedback__description", "notes", "changed_by")
+    readonly_fields = ("feedback", "old_status", "new_status", "notes", "changed_by", "changed_at")
+    ordering = ("-changed_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
