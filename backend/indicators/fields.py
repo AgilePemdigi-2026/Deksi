@@ -10,13 +10,12 @@ from django.db import models
 
 class ObservationDecimalField(models.DecimalField):
     def get_internal_type(self):
-        # Avoid SQLite's DecimalField float converter; other engines keep NUMERIC below.
-        return "TextField"
+        return "DecimalField"
 
     def db_type(self, connection):
         if connection.vendor == "sqlite":
             return "text"
-        return connection.data_types["DecimalField"] % self.db_type_parameters(connection)
+        return super().db_type(connection)
 
     def get_db_prep_value(self, value, connection, prepared=False):
         value = self.to_python(value)

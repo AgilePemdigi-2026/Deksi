@@ -62,4 +62,7 @@ urlpatterns = [
         source_admin_views.admin_source_update,
         name="admin-source-update",
     ),
+
+    # ── Fitur 15: Daftar Umpan Balik (Admin) ────────────────────────────────
+    path("admin/feedback/", feedback_views.admin_feedback_list, name="admin-feedback-list"),
 ]

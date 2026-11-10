@@ -24,6 +24,6 @@ export function EditorialFooter({ onInfo }: { onInfo: () => void }) {
   return <footer className="editorial-footer" id="tentang">
     <div><a className="footer-wordmark" href="#dashboard" aria-label="DEKSI, kembali ke awal"><BrandMark />DEKSI</a><p>Deteksi Ekonomi Indonesia.<br />Data, konteks, dan sumber dibaca bersama.</p><p className="footer-fine">Publik tanpa akun. Metadata sumber<br />bukan klaim kemitraan atau verifikasi.</p></div>
     <div><h2>PORTAL INSTITUSI</h2><a href="https://www.bps.go.id/" target="_blank" rel="noopener noreferrer">Badan Pusat Statistik ↗</a><a href="https://www.bi.go.id/" target="_blank" rel="noopener noreferrer">Bank Indonesia ↗</a><a href="https://www.kemenkeu.go.id/" target="_blank" rel="noopener noreferrer">Kementerian Keuangan ↗</a><a href="https://www.bkpm.go.id/" target="_blank" rel="noopener noreferrer">Kementerian Investasi / BKPM ↗</a></div>
-    <div><h2>TRANSPARANSI</h2><button type="button" onClick={onInfo}>Cara membaca data ↗</button><button type="button" onClick={onInfo}>Sumber & kredit visual ↗</button><a href="#/admin/sumber">Admin · Kelola Sumber ↗</a></div>
+    <div><h2>TRANSPARANSI</h2><button type="button" onClick={onInfo}>Cara membaca data ↗</button><button type="button" onClick={onInfo}>Sumber & kredit visual ↗</button><a href="#/admin/sumber">Admin · Kelola Sumber ↗</a><a href="#/admin/feedback">Admin · Kelola Umpan Balik ↗</a></div>
   </footer>
 }
