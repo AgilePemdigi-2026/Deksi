@@ -48,6 +48,27 @@ services:
       retries: 5
       start_period: 30s
 
+  resync-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.production
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: backend.settings_production
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in Coolify}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?Set ALLOWED_HOSTS in Coolify}
+      POSTGRES_DB: ${POSTGRES_DB:-deksi}
+      POSTGRES_USER: ${POSTGRES_USER:-deksi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      BPS_API_KEY: ${BPS_API_KEY:-}
+      BPS_API_BASE_URL: https://webapi.bps.go.id/v1
+    command: ["python", "manage.py", "process_resync"]
+    depends_on:
+      backend:
+        condition: service_healthy
+
   frontend:
     build:
       context: .

@@ -234,4 +234,5 @@ class DataUpdateLog(models.Model):
 
 # Re-export agar migration discovery berfungsi dari satu modul
 from indicators.feedback_model import Feedback, FeedbackAuditLog  # noqa: E402, F401
+from indicators.resync_model import ResyncJob  # noqa: E402, F401
 from indicators.sync_history_model import SyncRun  # noqa: E402, F401

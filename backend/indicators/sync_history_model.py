@@ -10,6 +10,7 @@ class SyncRun(models.Model):
         RUNNING = "running", "Running"
         SUCCESS = "success", "Success"
         FAILED = "failed", "Failed"
+        UNKNOWN = "unknown", "Unknown"
 
     source = models.ForeignKey(
         "indicators.Source", on_delete=models.SET_NULL, null=True, blank=True,

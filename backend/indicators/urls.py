@@ -1,6 +1,6 @@
 from django.urls import path
 
-from indicators import dashboard_views, feedback_views, source_admin_views, sync_history_views, views
+from indicators import dashboard_views, feedback_views, resync_views, source_admin_views, sync_history_views, views
 
 urlpatterns = [
     # ── Sistem ──────────────────────────────────────────────────────────────
@@ -34,6 +34,10 @@ urlpatterns = [
 
     # ── Fitur 10-11: Kelola Sumber Data (Admin, session auth + staf) ─────────
     path("admin/sync-history/", sync_history_views.admin_sync_history, name="admin-sync-history"),
+    path("admin/resync-jobs/<int:job_id>/", resync_views.resync_status, name="admin-resync-status"),
+    path("admin/resync-jobs/<int:job_id>/reconcile/", resync_views.reconcile_resync, name="admin-resync-reconcile"),
+    path("admin/sources/<str:source_id>/resync/", resync_views.request_resync, name="admin-source-resync"),
+    path("admin/sources/<str:source_id>/resync-active/", resync_views.active_resync, name="admin-source-resync-active"),
     path("admin/session/", source_admin_views.admin_session, name="admin-session"),
     path("admin/login/", source_admin_views.admin_login, name="admin-login"),
     path("admin/logout/", source_admin_views.admin_logout, name="admin-logout"),

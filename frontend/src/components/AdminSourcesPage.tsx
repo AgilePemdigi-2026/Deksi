@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import ResyncAction from "../features/resync/ResyncAction";
 import {
   adminLogin,
   adminLogout,
@@ -380,6 +381,7 @@ export function AdminSourcesPage() {
                   <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
                   <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
                   <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                  {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
                   <button type="button" className="source-trace-link" disabled={toggling} onClick={() => startEdit(s.sourceId)}>
                     Edit ↗
                   </button>

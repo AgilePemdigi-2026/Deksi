@@ -1,4 +1,4 @@
-export type SyncStatus = 'running' | 'success' | 'failed'
+export type SyncStatus = 'queued' | 'running' | 'success' | 'failed' | 'cancelled' | 'unknown'
 
 export interface SyncHistoryQuery {
   sourceId?: string
@@ -17,6 +17,10 @@ export interface SyncHistoryItem {
   actor: string | null
   itemCount: number | null
   message: string | null
+  resyncJobId?: string | null
+  resolvedBy?: string | null
+  resolvedAt?: string | null
+  resolutionReason?: string | null
 }
 
 export interface SyncHistoryResult {

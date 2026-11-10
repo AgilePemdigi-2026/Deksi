@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { LoadSyncHistory, SyncHistoryQuery, SyncHistoryResult, SyncStatus } from './types'
+import { reconcileAdminResyncJob } from '../../api'
 import './sync-history.css'
 
 type Props = { loadHistory?: LoadSyncHistory }
 type State = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready'; data: SyncHistoryResult }
 type Settled = { query: SyncHistoryQuery; retry: number; loader: LoadSyncHistory; state: State }
-const statusLabels: Record<SyncStatus, string> = { running: 'Berlangsung', success: 'Berhasil', failed: 'Gagal' }
+const statusLabels: Record<SyncStatus, string> = { queued: 'Antrean', running: 'Berlangsung', success: 'Berhasil', failed: 'Gagal', cancelled: 'Dibatalkan', unknown: 'Tidak diketahui' }
+export function labelSyncStatus(status: SyncStatus): string { return statusLabels[status] }
 const safeErrors = new Set([
   'Sesi admin telah berakhir atau diperlukan. Silakan masuk kembali.',
   'Anda tidak berwenang melihat riwayat sinkronisasi.',
@@ -22,6 +24,28 @@ function dateText(value: string | null): string {
   calendar.setUTCFullYear(year, month - 1, day)
   if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 || calendar.getUTCDate() !== day) return 'Tidak tersedia'
   return value
+}
+
+function UnknownResolution({ id, onDone }: { id: string; onDone: () => void }) {
+  const [checked, setChecked] = useState(false)
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  async function submit() {
+    if (!checked || !reason.trim() || busy) return
+    setBusy(true); setError('')
+    try { await reconcileAdminResyncJob(id, { confirmed: true, reason }); onDone() }
+    catch { setError('Rekonsiliasi belum dapat dipastikan. Muat ulang status sebelum tindakan lain.') }
+    finally { setBusy(false) }
+  }
+  return <details className="sync-history__reconcile">
+    <summary>Tinjau hasil tidak diketahui</summary>
+    <p role="alert">Tindakan manual: hasil tetap “tidak diketahui”, bukan sukses atau gagal. Pastikan worker lama telah dihentikan serta riwayat dan bukti operasional sudah diperiksa. Rekonsiliasi tidak membatalkan request yang sedang berjalan.</p>
+    <label><input type="checkbox" checked={checked} onChange={event => setChecked(event.target.checked)} /> Saya sudah memastikan worker lama berhenti dan memeriksa bukti terkait.</label>
+    <label>Alasan pemeriksaan<textarea value={reason} onChange={event => setReason(event.target.value)} /></label>
+    {error && <p role="alert">{error}</p>}
+    <button type="button" disabled={!checked || !reason.trim() || busy} onClick={() => void submit()}>{busy ? 'Menyimpan…' : 'Catat rekonsiliasi manual'}</button>
+  </details>
 }
 
 export default function SyncHistoryPage({ loadHistory }: Props = {}) {
@@ -75,7 +99,7 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
           <label htmlFor="sync-source">ID sumber<input id="sync-source" value={draftSource} onChange={event => setDraftSource(event.target.value)} /></label>
           <button type="submit">Terapkan sumber</button>
           <label htmlFor="sync-status">Status<select id="sync-status" value={query.status ?? ''} onChange={event => setQuery(current => ({ ...current, status: (event.target.value || undefined) as SyncStatus | undefined, page: 1 }))}>
-            <option value="">Semua status</option><option value="running">Berlangsung</option><option value="success">Berhasil</option><option value="failed">Gagal</option>
+            <option value="">Semua status</option><option value="running">Berlangsung</option><option value="success">Berhasil</option><option value="failed">Gagal</option><option value="unknown">Tidak diketahui</option>
           </select></label>
         </form>}
         <div className="sync-history__table-wrap" role="region" aria-label="Tabel riwayat sinkronisasi" tabIndex={0}>
@@ -96,9 +120,10 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
                 </div>
               </td></tr> : state.data.items.map(item => <tr className="sync-history__row" key={item.id}>
                 <td>{dateText(item.startedAt)}</td><td>{item.sourceName || 'Tidak tersedia'}<span className="sync-history__subtext">ID: {item.sourceId || 'Tidak tersedia'}</span></td>
-                <td>{statusLabels[item.status] ?? 'Tidak tersedia'}{item.status === 'running' && <span className="sync-history__subtext">Hasil akhir belum tercatat; proses belum tentu masih aktif.</span>}</td>
+                <td>{statusLabels[item.status] ?? 'Tidak tersedia'}{item.status === 'running' && <span className="sync-history__subtext">Hasil akhir belum tercatat; proses belum tentu masih aktif.</span>}{item.status === 'unknown' && <span className="sync-history__subtext">Hasil tidak diketahui; bukan sukses atau gagal. finishedAt tetap kosong.</span>}{item.resolvedBy && <span className="sync-history__subtext">Ditinjau {item.resolvedBy} · {dateText(item.resolvedAt ?? null)} · {item.resolutionReason}</span>}</td>
                 <td>{dateText(item.finishedAt)}</td><td>{item.actor ?? 'Tidak tersedia'}</td><td>{item.itemCount ?? 'Tidak tersedia'}</td><td>
                   {item.message ?? 'Tidak tersedia'}
+                  {item.status === 'running' && item.resyncJobId && <UnknownResolution id={item.resyncJobId} onDone={() => setRetry(value => value + 1)} />}
                   {item.status === 'failed' && <details><summary>Detail kegagalan</summary>
                     <p>Sumber: {item.sourceName || 'Tidak tersedia'} ({item.sourceId || 'Tidak tersedia'})</p>
                     <p>Mulai: {dateText(item.startedAt)} · Selesai: {dateText(item.finishedAt)}</p>
@@ -129,6 +154,7 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
           <div><dt><span className="sync-history__dot sync-history__dot--running" />Berlangsung</dt><dd>Proses telah dimulai, tetapi hasil akhir belum tercatat. Ini tidak memastikan proses masih aktif.</dd></div>
           <div><dt><span className="sync-history__dot sync-history__dot--success" />Berhasil</dt><dd>Proses pengambilan data selesai sesuai ketentuan. Bukan tanda data sudah direview atau dipublikasikan.</dd></div>
           <div><dt><span className="sync-history__dot sync-history__dot--failed" />Gagal</dt><dd>Proses berakhir dengan kegagalan yang tercatat.</dd></div>
+          <div><dt>Tidak diketahui</dt><dd>Hasil eksekusi belum dapat dipastikan. Ini bukan sukses atau gagal, dan bukan izin untuk mengirim ulang. Rekonsiliasi hanya mencatat pemeriksaan staf; request lama yang sedang berjalan tidak otomatis dibatalkan.</dd></div>
         </dl>
       </section>
     </main>

@@ -342,6 +342,20 @@ export interface AcquisitionMethod {
   description: string;
 }
 
+export type ResyncStatus = "queued" | "running" | "success" | "failed" | "cancelled" | "unknown";
+
+export interface AdminResyncJob {
+  id: string;
+  sourceId: string;
+  status: ResyncStatus;
+  requestedAt: string;
+  finishedAt: string | null;
+  runId: string | null;
+  message: string | null;
+}
+
+export interface AdminResyncAccepted { id: string; status: "queued" | "running" }
+
 export interface AdminSourceEntry {
   sourceId: string;
   sourceName: string;
@@ -519,6 +533,48 @@ export async function loadAdminSyncHistory(
     clearTimeout(timeout);
     signal.removeEventListener("abort", onAbort);
   }
+}
+
+export async function requestAdminBpsResync(sourceId: string, requestId: string): Promise<AdminResyncAccepted> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/resync/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestId }),
+  });
+  if (res.status === 401) throw new Error("Sesi admin berakhir. Periksa riwayat sebelum mengambil tindakan lain.");
+  if (!res.ok) throw new Error(`Permintaan sinkronisasi belum dapat dipastikan (HTTP ${res.status}). Periksa riwayat sebelum mengulang.`);
+  const body = await res.json() as AdminResyncAccepted;
+  if (!body?.id || !["queued", "running"].includes(body.status)) throw new Error("Respons permintaan tidak dapat dipastikan. Periksa riwayat sebelum mengulang.");
+  return body;
+}
+
+export async function fetchAdminResyncJob(id: string): Promise<AdminResyncJob> {
+  const res = await adminFetch(`/admin/resync-jobs/${encodeURIComponent(id)}/`);
+  if (res.status === 401) throw new Error("Sesi admin telah berakhir. Silakan masuk kembali.");
+  if (!res.ok) throw new Error(`Status sinkronisasi tidak dapat dimuat (HTTP ${res.status}).`);
+  return await res.json() as AdminResyncJob;
+}
+
+export async function fetchActiveAdminResync(sourceId: string): Promise<AdminResyncJob | null> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/resync-active/`);
+  if (!res.ok) throw new Error("Status antrean tidak dapat diperiksa. Muat ulang sebelum melanjutkan.");
+  const body = await res.json() as { job: AdminResyncJob | null };
+  if (!body || !(body.job === null || (typeof body.job?.id === "string" &&
+      ["queued", "running"].includes(body.job.status)))) {
+    throw new Error("Status antrean tidak dapat dipastikan. Muat ulang sebelum melanjutkan.");
+  }
+  return body.job;
+}
+
+export async function reconcileAdminResyncJob(id: string, payload: { confirmed: true; reason: string }): Promise<AdminResyncJob> {
+  if (payload.confirmed !== true || !payload.reason.trim()) throw new Error("Konfirmasi pemeriksaan dan alasan wajib diisi.");
+  const res = await adminFetch(`/admin/resync-jobs/${encodeURIComponent(id)}/reconcile/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmed: true, reason: payload.reason.trim() }),
+  });
+  if (!res.ok) throw new Error(`Rekonsiliasi tidak dapat dipastikan (HTTP ${res.status}). Muat ulang status sebelum mencoba lagi.`);
+  return await res.json() as AdminResyncJob;
 }
 
 export async function fetchAdminSourceRevisions(sourceId: string): Promise<AdminRevision[]> {

@@ -1,5 +1,7 @@
 import calendar
+import logging
 import time
+from contextlib import nullcontext
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
@@ -73,6 +75,24 @@ class BpsError(Exception):
     pass
 
 
+class _RedactBpsHttpxLog(logging.Filter):
+    """Preserve HTTPX request logs without exposing BPS URL keys."""
+
+    def filter(self, record):
+        if isinstance(record.args, tuple):
+            values = []
+            for value in record.args:
+                text = str(value)
+                if text.startswith("https://webapi.bps.go.id/v1/") and "/key/" in text:
+                    value = text.split("/key/", 1)[0] + "/key/[REDACTED]"
+                values.append(value)
+            record.args = tuple(values)
+        return True
+
+
+_BPS_HTTPX_REDACTION = _RedactBpsHttpxLog()
+
+
 class BpsNotConfigured(BpsError):  # noqa: N818 - preserve the existing public exception name
     pass
 
@@ -91,25 +111,24 @@ def _request(path: str, params: dict | None = None) -> dict:
         raise BpsNotConfigured(
             "BPS_API_KEY belum diisi. Tambahkan BPS_API_KEY pada backend/.env lalu jalankan ulang backend."
         )
+    if base_url() != "https://webapi.bps.go.id/v1":
+        raise BpsError("Konfigurasi alamat WebAPI BPS tidak diizinkan.")
     url = f"{base_url()}{path}/key/{key}"
+    logging.getLogger("httpx").addFilter(_BPS_HTTPX_REDACTION)
     try:
-        response = httpx.get(url, params=params, timeout=30, follow_redirects=True)
+        response = httpx.get(url, params=params, timeout=30, follow_redirects=False)
     except httpx.HTTPError as exc:
-        raise BpsError(f"Koneksi ke WebAPI BPS gagal: {exc.__class__.__name__}") from exc
+        raise BpsError(f"Koneksi ke WebAPI BPS gagal: {exc.__class__.__name__}") from None
+    if 300 <= response.status_code < 400:
+        raise BpsError("Pengalihan WebAPI BPS tidak diizinkan.")
     if response.status_code >= 400:
-        message = "permintaan ditolak"
-        try:
-            body = response.json()
-            message = body.get("message") or body.get("status") or message
-        except ValueError:
-            pass
-        raise BpsError(f"WebAPI BPS menolak permintaan (HTTP {response.status_code}): {message}")
+        raise BpsError(f"WebAPI BPS menolak permintaan (HTTP {response.status_code}).")
     try:
         body = response.json()
     except ValueError as exc:
         raise BpsError("Respons WebAPI BPS bukan JSON yang valid.") from exc
     if body.get("status") != "OK":
-        raise BpsError(f"WebAPI BPS mengembalikan status {body.get('status') or 'tidak dikenal'}.")
+        raise BpsError("WebAPI BPS mengembalikan status tidak berhasil.")
     return body
 
 
@@ -305,24 +324,27 @@ def sync_bps_indicators(start_year: int = 2016, end_year: int | None = None) -> 
     return result
 
 
-def _sync_bps_started(source, start_year, end_year):
+def _sync_bps_started(source, start_year, end_year, *, write_guard=None):
     from .lifecycle import stage_observation
 
     total = 0
     errors: list[str] = []
     latest: dict[str, str] = {}
+    guard = write_guard or nullcontext
     for series in BPS_SERIES:
-        indicator = _get_or_create_indicator(series)
+        with guard():
+            indicator = _get_or_create_indicator(series)
         try:
             points = fetch_series(series, start_year=start_year, end_year=end_year)
         except BpsError as exc:
             errors.append(f"{series['code']}: {exc}")
             continue
         for point in points:
-            stage_observation(indicator_id=indicator.pk, source_id=source.pk,
-                observation_date=point["observation_date"], data_type=point["data_type"],
-                period_label=point["period_label"], frequency=point["frequency"],
-                value=point["value"], unit=point["unit"])
+            with guard():
+                stage_observation(indicator_id=indicator.pk, source_id=source.pk,
+                    observation_date=point["observation_date"], data_type=point["data_type"],
+                    period_label=point["period_label"], frequency=point["frequency"],
+                    value=point["value"], unit=point["unit"])
             total += 1
         if points:
             latest[series["code"]] = max(points, key=lambda point: point["observation_date"])["period_label"]

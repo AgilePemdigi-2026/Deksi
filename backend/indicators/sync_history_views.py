@@ -40,7 +40,7 @@ def admin_sync_history(request):
     except (ValueError, TypeError):
         return json_error("Parameter riwayat sinkronisasi tidak valid.", status=400)
 
-    qs = SyncRun.objects.select_related("actor").all()
+    qs = SyncRun.objects.select_related("actor", "resyncjob__resolved_by").all()
     if source_id is not None:
         qs = qs.filter(source_id_snapshot=source_id)
     if status is not None:
@@ -48,17 +48,24 @@ def admin_sync_history(request):
     qs = qs.order_by("-started_at", "-id")
     total = qs.count()
     rows = qs[(page - 1) * page_size:page * page_size]
-    items = [{
-        "id": str(row.pk),
-        "sourceId": row.source_id_snapshot or None,
-        "sourceName": row.source_name_snapshot or None,
-        "status": row.status,
-        "startedAt": row.started_at.isoformat() if row.started_at else None,
-        "finishedAt": row.finished_at.isoformat() if row.finished_at else None,
-        "actor": row.actor.get_username() if row.actor else None,
-        "itemCount": row.item_count,
-        "message": row.safe_message,
-    } for row in rows]
+    items = []
+    for row in rows:
+        job = getattr(row, "resyncjob", None)
+        items.append({
+            "id": str(row.pk),
+            "sourceId": row.source_id_snapshot or None,
+            "sourceName": row.source_name_snapshot or None,
+            "status": row.status,
+            "startedAt": row.started_at.isoformat() if row.started_at else None,
+            "finishedAt": row.finished_at.isoformat() if row.finished_at else None,
+            "actor": row.actor.get_username() if row.actor else None,
+            "itemCount": row.item_count,
+            "message": row.safe_message,
+            "resyncJobId": str(job.pk) if job else None,
+            "resolvedBy": job.resolved_by.get_username() if job and job.resolved_by else None,
+            "resolvedAt": job.resolved_at.isoformat() if job and job.resolved_at else None,
+            "resolutionReason": job.resolution_reason or None if job else None,
+        })
     return json_success({
         "items": items,
         "pagination": {

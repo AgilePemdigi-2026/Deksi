@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from indicators.models import Source
-from indicators.source_status import InactiveSourceError
+from indicators.source_status import ActiveSyncError, InactiveSourceError
 from indicators.sync_history_model import SyncRun
 
 
@@ -16,6 +16,11 @@ def begin_sync_run(*, source: Source, actor=None, started_at=None) -> SyncRun:
             raise InactiveSourceError(
                 f"Sumber {locked_source.source_id} tidak aktif; akuisisi dibatalkan."
             )
+        from indicators.resync_model import ResyncJob
+
+        if (SyncRun.objects.filter(source=locked_source, status=SyncRun.Status.RUNNING).exists()
+                or ResyncJob.objects.filter(source=locked_source, status__in=["queued", "running"]).exists()):
+            raise ActiveSyncError("Sumber memiliki sinkronisasi atau antrean aktif.")
         return create_sync_run(source=locked_source, actor=actor, started_at=started_at)
 
 # Only deliberately bounded, generic operator-facing messages are persisted.
