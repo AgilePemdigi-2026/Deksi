@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   adminLogin,
   adminLogout,
@@ -39,6 +39,8 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 export function AdminSourcesPage() {
+  const editRequest = useRef(0);
+  const toggleBusy = useRef(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -59,10 +61,14 @@ export function AdminSourcesPage() {
   const [revisions, setRevisions] = useState<AdminRevision[]>([]);
   const [revisionsLoading, setRevisionsLoading] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [initialForm, setInitialForm] = useState<typeof EMPTY_FORM | null>(null);
+  const [initialRevision, setInitialRevision] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -108,6 +114,7 @@ export function AdminSourcesPage() {
 
   const doLogout = async () => {
     await adminLogout();
+    editRequest.current += 1;
     setAuthenticated(false);
     setSources([]);
   };
@@ -144,7 +151,14 @@ export function AdminSourcesPage() {
   };
 
   const submit = async () => {
-    const problem = validate();
+    if (mode === "edit" && (initialForm === null || initialRevision === null)) {
+      setFormError("Detail sumber belum tersedia. Buka kembali sebelum menyimpan.");
+      return;
+    }
+    const statusOnly = mode === "edit" && initialForm !== null && form.status !== initialForm.status &&
+      (Object.keys(EMPTY_FORM) as (keyof typeof EMPTY_FORM)[])
+        .filter((key) => key !== "status").every((key) => form[key] === initialForm[key]);
+    const problem = statusOnly ? null : validate();
     if (problem) {
       setFormError(problem);
       return;
@@ -153,7 +167,8 @@ export function AdminSourcesPage() {
     setFormError(null);
     try {
       if (mode === "edit" && editingId) {
-        const result = await updateAdminSource(editingId, {
+        const result = await updateAdminSource(editingId, statusOnly ? { status: form.status, expectedRevision: initialRevision! } : {
+          expectedRevision: initialRevision!,
           sourceName: form.sourceName.trim(),
           institution: form.institution.trim(),
           primaryUrl: form.primaryUrl.trim(),
@@ -198,10 +213,15 @@ export function AdminSourcesPage() {
   };
 
   const resetForm = () => {
+    editRequest.current += 1;
+    setDetailLoading(false);
+    setRevisionsLoading(false);
     setShowForm(false);
     setMode("add");
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setInitialForm(null);
+    setInitialRevision(null);
     setDirty(false);
     setFormError(null);
     setRevisions([]);
@@ -218,17 +238,47 @@ export function AdminSourcesPage() {
     setSuccess(null);
   };
 
+  const toggleSource = async (source: AdminSourceEntry) => {
+    if (toggleBusy.current || showForm || !["active", "inactive"].includes(source.status)) return;
+    toggleBusy.current = true;
+    setToggling(true);
+    setToggleError(null);
+    setSuccess(null);
+    try {
+      const detail = await fetchAdminSourceDetail(source.sourceId);
+      if (detail.status !== source.status || !Number.isInteger(detail.revisionVersion)) {
+        throw new Error("Status sumber berubah. Muat ulang sebelum mencoba kembali.");
+      }
+      const status = detail.status === "active" ? "inactive" : "active";
+      await updateAdminSource(source.sourceId, {status, expectedRevision: detail.revisionVersion});
+      setSuccess(`Status ${source.sourceId} berhasil diubah.`);
+      await reload();
+    } catch (e) {
+      setToggleError(e instanceof Error ? e.message : "Status sumber tidak dapat diubah.");
+    } finally {
+      toggleBusy.current = false;
+      setToggling(false);
+    }
+  };
+
   const startEdit = async (sourceId: string) => {
     if (dirty && showForm && !window.confirm("Batalkan perubahan berjalan dan edit sumber lain?")) return;
+    const requestId = ++editRequest.current;
     setShowForm(true);
     setMode("edit");
     setEditingId(sourceId);
+    setInitialForm(null);
+    setInitialRevision(null);
+    setForm(EMPTY_FORM);
+    setRevisions([]);
+    setRevisionsLoading(false);
     setSuccess(null);
     setFormError(null);
     setDetailLoading(true);
     try {
       const detail = await fetchAdminSourceDetail(sourceId);
-      setForm({
+      if (requestId !== editRequest.current) return;
+      const loadedForm = {
         sourceId: detail.sourceId,
         sourceName: detail.sourceName,
         institution: detail.institution,
@@ -240,17 +290,20 @@ export function AdminSourcesPage() {
         frequency: detail.frequency,
         updateSchedule: detail.updateSchedule,
         status: detail.status,
-      });
+      };
+      setForm(loadedForm);
+      setInitialForm(loadedForm);
+      setInitialRevision(Number.isInteger(detail.revisionVersion) ? detail.revisionVersion : null);
       setDirty(false);
       setRevisionsLoading(true);
       fetchAdminSourceRevisions(sourceId)
-        .then(setRevisions)
-        .catch(() => setRevisions([]))
-        .finally(() => setRevisionsLoading(false));
+        .then((rows) => { if (requestId === editRequest.current) setRevisions(rows); })
+        .catch(() => { if (requestId === editRequest.current) setRevisions([]); })
+        .finally(() => { if (requestId === editRequest.current) setRevisionsLoading(false); });
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Detail sumber tidak dapat dimuat.");
+      if (requestId === editRequest.current) setFormError(e instanceof Error ? e.message : "Detail sumber tidak dapat dimuat.");
     } finally {
-      setDetailLoading(false);
+      if (requestId === editRequest.current) setDetailLoading(false);
     }
   };
 
@@ -271,6 +324,7 @@ export function AdminSourcesPage() {
         <a href="/">Beranda</a>
         <a href="/sumber-data">Sumber Data</a>
         <a href="/admin/sumber-data" aria-current="page">Kelola Sumber</a>
+        <a href="/admin/riwayat-sinkronisasi">Riwayat Sinkronisasi</a>
         <a href="/#/admin/feedback">Kelola Umpan Balik</a>
       </nav>
 
@@ -296,12 +350,13 @@ export function AdminSourcesPage() {
           <div className="source-detail-head">
             <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
             <span>
-              <button type="button" className="tab" onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
-              <button type="button" className="tab" onClick={doLogout}>Keluar</button>
+              <button type="button" className="tab" disabled={toggling} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
+              <button type="button" className="tab" disabled={toggling} onClick={doLogout}>Keluar</button>
             </span>
           </div>
 
           {success && <p className="summary-loading">{success}</p>}
+          {toggleError && <p className="summary-error" role="alert">{toggleError}</p>}
           {loading && <p className="summary-loading">Memuat registry sumber…</p>}
           {!loading && error && <p className="summary-error">{error}</p>}
 
@@ -314,8 +369,13 @@ export function AdminSourcesPage() {
                   <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
                   <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
                   <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
-                  <button type="button" className="source-trace-link" onClick={() => startEdit(s.sourceId)}>
+                  <button type="button" className="source-trace-link" disabled={toggling} onClick={() => startEdit(s.sourceId)}>
                     Edit ↗
+                  </button>
+                  <button type="button" className="source-trace-link" disabled={toggling || showForm || !["active", "inactive"].includes(s.status)}
+                    aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
+                    onClick={() => void toggleSource(s)}>
+                    {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
                   </button>
                 </article>
               ))}

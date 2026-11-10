@@ -13,6 +13,8 @@ import './features/indicators/features.css'
 import { SourceDataPage, type SourcePageSelection } from './components/SourceDataPage'
 import { AdminSourcesPage } from './components/AdminSourcesPage'
 import { AdminFeedbackPage } from './components/AdminFeedbackPage'
+import SyncHistoryPage from './features/sync-history/SyncHistoryPage'
+import { loadAdminSyncHistory } from './api'
 
 const recoveryClient = createRecoveryClient(authOrigin())
 
@@ -56,6 +58,7 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
   }
   if (path === '/admin/sumber' || path === '/admin/sumber-data') return <AdminSourcesPage />
   if (path === '/admin/feedback' || path === '/admin/umpan-balik') return <AdminFeedbackPage />
+  if (path === '/admin/riwayat-sinkronisasi') return <SyncHistoryPage loadHistory={loadAdminSyncHistory} />
   const route = parseRoute(path, search)
   if (route.kind === 'dashboard') return <Dashboard />
   if (route.kind === 'detail') return <DetailScreen route={route} />

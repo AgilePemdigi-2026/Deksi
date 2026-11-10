@@ -174,5 +174,6 @@ def review_candidate(candidate_id, user, *, publish=True, notes=""):
         except IntegrityError as exc:
             raise CandidateConflictError("Observasi sudah dibuat oleh review lain.") from exc
     record_update_success(row.source.institution, updated_by=user, observation_count=1,
-                          message=f"Publikasi kandidat {candidate.pk} melalui review Admin.")
+                          message=f"Publikasi kandidat {candidate.pk} melalui review Admin.",
+                          event_kind="publication")
     return row

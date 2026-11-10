@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { SyncHistoryQuery, SyncHistoryResult } from "./features/sync-history/types";
 
 export const API_BASE = "/api";
 
@@ -371,7 +372,16 @@ export interface SourceCreatePayload {
 }
 
 async function adminFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init });
+  const method = (init?.method ?? "GET").toUpperCase();
+  const headers = new Headers(init?.headers);
+  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: "include" });
+    if (!bootstrap.ok) throw new Error("Token keamanan tidak tersedia.");
+    const body = await bootstrap.json();
+    if (typeof body?.csrfToken !== "string" || !body.csrfToken) throw new Error("Token keamanan tidak tersedia.");
+    headers.set("X-CSRFToken", body.csrfToken);
+  }
+  const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init, headers });
   return res;
 }
 
@@ -427,6 +437,7 @@ export async function createAdminSource(payload: SourceCreatePayload): Promise<A
 
 export interface AdminSourceDetail extends AdminSourceEntry {
   revisionCount: number;
+  revisionVersion: number;
 }
 
 export interface AdminRevision {
@@ -440,6 +451,7 @@ export interface AdminRevision {
 }
 
 export interface SourceUpdatePayload {
+  expectedRevision: number;
   sourceName?: string;
   institution?: string;
   primaryUrl?: string;
@@ -465,6 +477,47 @@ export async function fetchAdminSourceDetail(sourceId: string): Promise<AdminSou
     throw new Error(`HTTP ${res.status}`);
   }
   return (await res.json()) as AdminSourceDetail;
+}
+
+export async function loadAdminSyncHistory(
+  query: SyncHistoryQuery,
+  options: { signal: AbortSignal; timeoutMs?: number },
+): Promise<SyncHistoryResult> {
+  const params = new URLSearchParams({page: String(query.page), pageSize: String(query.pageSize)});
+  if (query.sourceId) params.set("sourceId", query.sourceId);
+  if (query.status) params.set("status", query.status);
+
+  const timeoutController = new AbortController();
+  const timeout = setTimeout(() => timeoutController.abort(), options.timeoutMs ?? 15_000);
+  const signal = AbortSignal.any([options.signal, timeoutController.signal]);
+  let onAbort = () => {};
+  const cancelled = new Promise<never>((_, reject) => {
+    onAbort = () => reject(new DOMException("The operation was aborted", "AbortError"));
+    if (signal.aborted) onAbort();
+    else signal.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    return await Promise.race([cancelled, (async () => {
+      if (signal.aborted) throw new DOMException("The operation was aborted", "AbortError");
+      const response = await adminFetch(`/admin/sync-history/?${params}`, { signal });
+      if (!response.ok) {
+        if (response.status === 401) throw new Error("Sesi admin telah berakhir atau diperlukan. Silakan masuk kembali.");
+        if (response.status === 403) throw new Error("Anda tidak berwenang melihat riwayat sinkronisasi.");
+        throw new Error("Gagal memuat riwayat sinkronisasi.");
+      }
+      return await response.json() as SyncHistoryResult;
+    })()]);
+  } catch (error) {
+    if (options.signal.aborted) throw new DOMException("The operation was aborted", "AbortError");
+    if (timeoutController.signal.aborted) throw new Error("Waktu tunggu pemuatan riwayat sinkronisasi habis. Silakan coba lagi.");
+    if (error instanceof Error && error.message.startsWith("Sesi admin")) throw error;
+    if (error instanceof Error && error.message.startsWith("Anda tidak berwenang")) throw error;
+    if (error instanceof Error && error.message.startsWith("Gagal memuat riwayat")) throw error;
+    throw new Error("Koneksi ke layanan riwayat sinkronisasi bermasalah. Silakan coba lagi.");
+  } finally {
+    clearTimeout(timeout);
+    signal.removeEventListener("abort", onAbort);
+  }
 }
 
 export async function fetchAdminSourceRevisions(sourceId: string): Promise<AdminRevision[]> {

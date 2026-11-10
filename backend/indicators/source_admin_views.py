@@ -16,12 +16,12 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction
-from django.views.decorators.csrf import csrf_exempt
+
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.http import require_http_methods
 
 from indicators.models import RawFile, Source, SourceRevision, source_config_snapshot
-from indicators.updates import record_update_success
+
 from indicators.views import json_error, json_success
 
 logger = logging.getLogger(__name__)
@@ -244,14 +244,6 @@ def _record_revision(source: Source, action: str, before: dict, user) -> dict:
         changed_fields=changed,
         updated_by=user,
     )
-    verb = "Tambah" if action == SourceRevision.Action.CREATE else "Edit"
-    record_update_success(
-        f"sumber:{source.source_id}",
-        updated_by=user,
-        observation_count=0,
-        message=f"{verb} sumber {source.source_id} ({source.institution}) via Admin. "
-        f"Ubah: {', '.join(changed) or '-'}.",
-    )
     return _serialize_revision(revision)
 
 
@@ -312,7 +304,6 @@ def _serialize_admin_entry(source: Source) -> dict:
 # ---------------------------------------------------------------------------
 
 
-@csrf_exempt
 @require_POST
 def admin_login(request):
     data, parse_error = _parse_json_body(request)
@@ -331,7 +322,6 @@ def admin_login(request):
     return json_success({"username": user.get_username(), "isStaff": True})
 
 
-@csrf_exempt
 @require_POST
 def admin_logout(request):
     logout(request)
@@ -377,7 +367,6 @@ def admin_source_list(request):
     )
 
 
-@csrf_exempt
 @require_POST
 def admin_source_create(request):
     denied = _require_staff(request)
@@ -416,16 +405,6 @@ def admin_source_create(request):
     if Source.objects.filter(source_id__iexact=source_id).exists():
         return json_error(f"Sumber '{source_id}' sudah terdaftar.", status=409)
 
-    # ── Probing aksesibilitas SEBELUM menyimpan (tanpa sinkronisasi) ────
-    if values["endpoint_url"].startswith("http"):
-        reachable, reason = _probe_endpoint_reachable(values["endpoint_url"])
-        if not reachable:
-            logger.warning("Tolak sumber %s: %s", source_id, reason)
-            return json_error(
-                f"Endpoint tidak dapat diakses ({reason}). "
-                "Konfigurasi ditolak; data lama dipertahankan.",
-                status=400,
-            )
 
     # ── Simpan atomik + revisi v1 + audit ───────────────────────────────
     with transaction.atomic():
@@ -460,8 +439,11 @@ def admin_source_detail(request, source_id: str):
     source, error = _get_staff_source(source_id)
     if error is not None:
         return error
-    entry = _serialize_admin_entry(source)
-    entry["revisionCount"] = source.revisions.count()
+    with transaction.atomic():
+        source = Source.objects.select_for_update().get(pk=source.pk)
+        entry = _serialize_admin_entry(source)
+        entry["revisionCount"] = source.revisions.count()
+        entry["revisionVersion"] = source.revisions.order_by("-version").values_list("version", flat=True).first() or 0
     return json_success(entry)
 
 
@@ -479,7 +461,6 @@ def admin_source_revisions(request, source_id: str):
     )
 
 
-@csrf_exempt
 @require_http_methods(["PUT", "PATCH"])
 def admin_source_update(request, source_id: str):
     denied = _require_staff(request)
@@ -497,43 +478,33 @@ def admin_source_update(request, source_id: str):
     if incoming_id and incoming_id.upper() != source.source_id.upper():
         return json_error("Field 'sourceId' tidak dapat diubah.", status=400)
 
-    before = source_config_snapshot(source)
-    values = {
-        "source_name": _resolve_field(data, source.source_name, "sourceName", "source_name"),
-        "institution": _resolve_field(data, source.institution, "institution"),
-        "primary_url": _resolve_field(data, source.primary_url, "primaryUrl", "primary_url"),
-        "description": _resolve_field(data, source.description, "description"),
-        "method": _resolve_field(
-            data, source.acquisition_method, "acquisitionMethod", "acquisition_method"
-        ),
-        "endpoint_url": _resolve_field(
-            data, source.endpoint_url, "endpointUrl", "endpoint_url"
-        ),
-        "data_format": _resolve_field(data, source.data_format, "dataFormat", "data_format"),
-        "frequency": _resolve_field(data, source.frequency, "frequency"),
-        "update_schedule": _resolve_field(
-            data, source.update_schedule, "updateSchedule", "update_schedule"
-        ),
-        "status": _resolve_field(data, source.status, "status") or "active",
-    }
-    problem = _validate_values(values, source_pk=source.pk)
-    if problem:
-        return json_error(problem, status=400)
-
-    endpoint_changed = values["endpoint_url"] != (source.endpoint_url or "")
-    method_changed = values["method"] != (source.acquisition_method or "")
-    if (endpoint_changed or method_changed) and values["endpoint_url"].startswith("http"):
-        reachable, reason = _probe_endpoint_reachable(values["endpoint_url"])
-        if not reachable:
-            logger.warning("Tolak edit %s: %s", source.source_id, reason)
-            return json_error(
-                f"Endpoint tidak dapat diakses ({reason}). "
-                "Perubahan ditolak; konfigurasi terakhir yang valid dipertahankan.",
-                status=400,
-            )
-
     with transaction.atomic():
         source = Source.objects.select_for_update().get(pk=source.pk)
+        expected = data.get("expectedRevision")
+        if type(expected) is not int or expected < 0:
+            return json_error("Versi revisi wajib diisi dengan benar. Buka kembali sebelum menyimpan.", status=400)
+        latest = source.revisions.order_by("-version").values_list("version", flat=True).first() or 0
+        if expected != latest:
+            return json_error("Sumber telah diubah. Buka kembali sebelum menyimpan.", status=409)
+        before = source_config_snapshot(source)
+        values = {
+            "source_name": _resolve_field(data, source.source_name, "sourceName", "source_name"),
+            "institution": _resolve_field(data, source.institution, "institution"),
+            "primary_url": _resolve_field(data, source.primary_url, "primaryUrl", "primary_url"),
+            "description": _resolve_field(data, source.description, "description"),
+            "method": _resolve_field(data, source.acquisition_method, "acquisitionMethod", "acquisition_method"),
+            "endpoint_url": _resolve_field(data, source.endpoint_url, "endpointUrl", "endpoint_url"),
+            "data_format": _resolve_field(data, source.data_format, "dataFormat", "data_format"),
+            "frequency": _resolve_field(data, source.frequency, "frequency"),
+            "update_schedule": _resolve_field(data, source.update_schedule, "updateSchedule", "update_schedule"),
+            "status": _resolve_field(data, source.status, "status") or "active",
+        }
+        if set(data) - {"expectedRevision"} == {"status"}:
+            problem = None if data["status"] in ("active", "inactive") else "Field 'status' harus 'active' atau 'inactive'."
+        else:
+            problem = _validate_values(values, source_pk=source.pk)
+        if problem:
+            return json_error(problem, status=400)
         source.source_name = values["source_name"][:200]
         source.institution = values["institution"][:200]
         source.primary_url = values["primary_url"]

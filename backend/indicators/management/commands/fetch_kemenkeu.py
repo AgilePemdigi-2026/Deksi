@@ -6,6 +6,8 @@ from django.core.management.base import BaseCommand
 
 from indicators import fiscal, kemenkeu
 from indicators.kemenkeu_discovery import DEFAULT_ARCHIVE_URLS, discover_kita_urls
+from indicators.models import Source
+from indicators.source_status import InactiveSourceError, require_active_source
 from indicators.updates import record_update_failure
 
 
@@ -76,6 +78,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        source = Source.objects.filter(source_id="KEMENKEU").first()
+        if source is not None:
+            require_active_source(source)
         urls = options["urls"] or kemenkeu.DEFAULT_KITA_URLS
         if options.get("discover"):
             bases = options.get("base_urls") or DEFAULT_ARCHIVE_URLS
@@ -127,6 +132,9 @@ class Command(BaseCommand):
                     url, scrap_dir=options["scrap_dir"],
                     no_scrap_copy=options["no_scrap_copy"],
                 )
+            except InactiveSourceError as exc:
+                self.stdout.write(self.style.WARNING(str(exc)))
+                break
             except (kemenkeu.KitaError, ValidationError) as exc:
                 record_update_failure("APBN KiTa Kemenkeu", updated_by=user, message=f"{url}: {exc}")
                 self.stderr.write(self.style.ERROR(f"Ekstraksi dibatalkan: {exc}"))
@@ -173,7 +181,10 @@ class Command(BaseCommand):
                         scrap_dir=scrap_dir, no_scrap_copy=True,
                     )
                     parsed = None
-            except kemenkeu.KitaError as exc:
+            except InactiveSourceError as exc:
+                self.stdout.write(self.style.WARNING(str(exc)))
+                break
+            except (kemenkeu.KitaError, ValidationError) as exc:
                 self.stderr.write(self.style.ERROR(f"Gagal: {exc}"))
                 if not dry_run:
                     record_update_failure("APBN KiTa Kemenkeu", updated_by=user,
