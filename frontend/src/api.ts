@@ -400,6 +400,61 @@ async function adminFetch(path: string, init?: RequestInit) {
   return res;
 }
 
+export interface ReviewCandidate {
+  id: number; fingerprint: string; indicator: string; indicatorName: string;
+  sourceId: string; sourceName: string; sourceUrl: string; period: string | null;
+  observationDate: string | null; publicationDate: string | null; frequency: string | null;
+  dataType: string | null; value: string | null; unit: string | null; rawFileId: number | null;
+  previousValue: string | null; previousUnit: string | null; previousPeriod: string | null;
+  status: string; createdAt: string; reviewedAt: string | null; reviewedBy: string | null; reviewNotes: string;
+}
+
+export interface CandidatePage {
+  items: ReviewCandidate[]; page: number; pageSize: number; total: number; hasNext: boolean;
+}
+
+export class CandidateReviewError extends Error {
+  readonly kind: 'conflict' | 'unauthenticated' | 'forbidden';
+  constructor(kind: 'conflict' | 'unauthenticated' | 'forbidden', message: string) {
+    super(message);
+    this.kind = kind;
+  }
+}
+
+export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'rejected' = 'pending'): Promise<CandidatePage> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`);
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) throw new Error('Sesi atau izin review Admin diperlukan.');
+    throw new Error('Daftar kandidat tidak dapat dimuat.');
+  }
+  const body = await res.json() as CandidatePage;
+  if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons kandidat tidak valid.');
+  return body;
+}
+
+export async function submitCandidateReview(sourceId: string, candidate: ReviewCandidate, decision: 'publish' | 'reject', notes: string): Promise<void> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${candidate.id}/review/`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+  });
+  if (res.status === 409) throw new CandidateReviewError('conflict', 'Kandidat berubah atau sudah direview. Periksa status terbaru.');
+  if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+  if (res.status === 403) throw new CandidateReviewError('forbidden', 'Review ditolak: periksa izin Admin dan token keamanan.');
+  if (!res.ok) throw new Error('Review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+  const result = await res.json() as { id?: number; status?: string };
+  if (result.id !== candidate.id || result.status !== (decision === 'publish' ? 'published' : 'rejected')) {
+    throw new Error('Hasil review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+  }
+}
+
+export async function fetchReviewCandidate(sourceId: string, id: number): Promise<ReviewCandidate> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${id}/`);
+  if (!res.ok) throw new Error('Status kandidat tidak dapat dipastikan.');
+  const body = await res.json() as { candidate?: ReviewCandidate };
+  if (!body.candidate || body.candidate.id !== id || body.candidate.sourceId !== sourceId) throw new Error('Status kandidat tidak valid.');
+  return body.candidate;
+}
+
 export async function fetchAdminSession(): Promise<AdminSession> {
   const res = await adminFetch("/admin/session/");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ResyncAction from "../features/resync/ResyncAction";
+import CandidateReview from "../features/candidates/CandidateReview";
 import {
   adminLogin,
   adminLogout,
@@ -40,6 +41,8 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 export function AdminSourcesPage() {
+  const [reviewSource, setReviewSource] = useState<string | null>(null);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const editRequest = useRef(0);
   const toggleBusy = useRef(false);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -122,6 +125,7 @@ export function AdminSourcesPage() {
       await adminLogout();
       editRequest.current += 1;
       setAuthenticated(false);
+      setReviewSource(null);
       setSources([]);
       window.location.replace("/admin/login");
     } catch {
@@ -362,8 +366,8 @@ export function AdminSourcesPage() {
           <div className="source-detail-head">
             <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
             <span>
-              <button type="button" className="tab" disabled={toggling} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
-              <button type="button" className="tab" disabled={toggling || saving || logoutLoading} onClick={doLogout}>Keluar</button>
+              <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
+              <button type="button" className="tab" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>Keluar</button>
             </span>
           </div>
 
@@ -383,10 +387,11 @@ export function AdminSourcesPage() {
                   <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
                   <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
                   {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
-                  <button type="button" className="source-trace-link" disabled={toggling} onClick={() => startEdit(s.sourceId)}>
+                  {!showForm && <button type="button" className="source-trace-link" disabled={reviewBusy} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
+                  <button type="button" className="source-trace-link" disabled={toggling || reviewBusy} onClick={() => startEdit(s.sourceId)}>
                     Edit ↗
                   </button>
-                  <button type="button" className="source-trace-link" disabled={toggling || showForm || !["active", "inactive"].includes(s.status)}
+                  <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
                     aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
                     onClick={() => void toggleSource(s)}>
                     {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
@@ -395,6 +400,8 @@ export function AdminSourcesPage() {
               ))}
             </div>
           )}
+
+          {reviewSource && <CandidateReview key={reviewSource} sourceId={reviewSource} onClose={() => setReviewSource(null)} onBusyChange={setReviewBusy} />}
 
           {showForm && (
             <article className="trace-panel" aria-label={mode === "edit" ? "Form edit sumber" : "Form tambah sumber"}>
