@@ -12,7 +12,7 @@ const uncertainKey = (sourceId: string) => `deksi-review-uncertain:${encodeURICo
 function readUncertain(sourceId: string): { ids: number[]; stored: boolean } {
   if (typeof window === 'undefined') return { ids: [], stored: false }
   try {
-    const parsed: unknown = JSON.parse(window.sessionStorage.getItem(uncertainKey(sourceId)) || '[]')
+    const parsed: unknown = JSON.parse(window.sessionStorage.getItem(uncertainKey(sourceId)) ?? '[]')
     if (!Array.isArray(parsed) || !parsed.every(id => Number.isSafeInteger(id) && id > 0)) throw new Error('invalid session marker')
     return { ids: [...new Set([...parsed, ...(transientUncertain.get(sourceId) || [])])], stored: true }
   } catch {
@@ -26,7 +26,10 @@ function writeUncertain(sourceId: string, ids: number[]): boolean {
       const serialized = JSON.stringify(ids)
       window.sessionStorage.setItem(uncertainKey(sourceId), serialized)
       if (window.sessionStorage.getItem(uncertainKey(sourceId)) !== serialized) throw new Error('session readback failed')
-    } else window.sessionStorage.removeItem(uncertainKey(sourceId))
+    } else {
+      window.sessionStorage.removeItem(uncertainKey(sourceId))
+      if (window.sessionStorage.getItem(uncertainKey(sourceId)) !== null) throw new Error('session removal failed')
+    }
     transientUncertain.delete(sourceId)
     return true
   } catch { return false }
@@ -46,7 +49,8 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   const [message, setMessage] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
   const [initialUncertain] = useState(() => readUncertain(sourceId))
-  const [initialReadOk] = useState(initialUncertain.stored)
+  const [initialReadOk, setInitialReadOk] = useState(initialUncertain.stored)
+  const [storageAcknowledged, setStorageAcknowledged] = useState(false)
   const [uncertain, setUncertain] = useState(initialUncertain.ids)
   const [stored, setStored] = useState(initialUncertain.stored)
   const [acknowledged, setAcknowledged] = useState(false)
@@ -74,12 +78,47 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   }, [sourceId, page, status, reload])
 
   const refresh = useCallback(() => setReload(n => n + 1), [])
+  const recoverStorage = () => {
+    if (!storageAcknowledged || submission.current) return
+    try {
+      const raw = window.sessionStorage.getItem(uncertainKey(sourceId))
+      let valid = raw === null
+      if (raw !== null) {
+        try {
+          const parsed: unknown = JSON.parse(raw)
+          valid = Array.isArray(parsed) && parsed.every(id => Number.isSafeInteger(id) && id > 0)
+        } catch { valid = false }
+      }
+      // Never discard a valid marker that became readable after the failure.
+      if (!valid) {
+        window.sessionStorage.removeItem(uncertainKey(sourceId))
+        if (window.sessionStorage.getItem(uncertainKey(sourceId)) !== null) throw new Error('removal failed')
+      }
+      const recovered = readUncertain(sourceId)
+      if (!recovered.stored) throw new Error('storage unavailable')
+      uncertainRef.current = recovered.ids
+      setUncertain(recovered.ids)
+      setStored(true)
+      setInitialReadOk(true)
+      setStorageAcknowledged(false)
+      setActionError(null)
+      setMessage('Penyimpanan penanda dapat digunakan kembali. Tetap periksa riwayat sebelum keputusan.')
+    } catch {
+      setActionError('Penyimpanan penanda belum dapat dipulihkan. Keputusan tetap diblokir.')
+    }
+  }
   const markUncertain = (id: number, value: boolean) => {
-    const ids = uncertainRef.current.filter(item => item !== id)
+    const latest = readUncertain(sourceId)
+    if (!latest.stored) {
+      setStored(false)
+      return false
+    }
+    const existing = [...new Set([...uncertainRef.current, ...latest.ids])]
+    const ids = existing.filter(item => item !== id)
     if (value) ids.push(id)
     const persisted = writeUncertain(sourceId, ids)
-    if (value && !persisted) {
-      transientUncertain.set(sourceId, uncertainRef.current)
+    if (!persisted) {
+      transientUncertain.set(sourceId, existing)
       setStored(false)
       return false
     }
@@ -122,7 +161,9 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     }
     try {
       const current = await fetchReviewCandidate(sourceId, id)
-      if (current.status === 'published' || current.status === 'rejected') markUncertain(id, false)
+      if ((current.status === 'published' || current.status === 'rejected') && !markUncertain(id, false)) {
+        setActionError('Status kandidat telah dibaca, tetapi penanda belum bisa diperbarui. Periksa penyimpanan sebelum melanjutkan.')
+      }
       setMessage(`Status kandidat #${id} saat diperiksa: ${current.status}. ${accepted ? 'Respons review diterima.' : 'Pastikan riwayat sebelum mengambil tindakan lain.'}`)
     } catch {
       if (accepted) markUncertain(id, true)
@@ -145,8 +186,8 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       const terminal = current.status === 'published' || current.status === 'rejected'
       setMessage(`Status saat ini: ${current.status}. ${current.status === 'pending' ? 'Status ini tidak membuktikan proses sebelumnya sudah selesai.' : terminal ? 'Status terminal berhasil dibaca.' : 'Status ini belum dapat dipastikan.'}`)
       if (terminal || (current.status === 'pending' && allowRetry)) {
-        markUncertain(current.id, false)
-        setAcknowledged(false)
+        if (markUncertain(current.id, false)) setAcknowledged(false)
+        else setActionError('Status kandidat telah dibaca, tetapi penanda belum bisa diperbarui. Periksa penyimpanan sebelum melanjutkan.')
       }
     } catch {
       setActionError('Status kandidat belum dapat dipastikan. Pemeriksaan tidak membuka keputusan ulang.')
@@ -177,12 +218,16 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     {message && <p role="status">{message}</p>}
     {error && <p role="alert">{error}</p>}
     {actionError && <p role="alert">{actionError}</p>}
-    {!initialReadOk && <p role="alert">Penanda keputusan sebelumnya tidak dapat dibaca. Keputusan diblokir; periksa penyimpanan browser dan riwayat, lalu tutup dan buka kembali panel ini.</p>}
+    {!initialReadOk && <div className="candidate-review__storage-recovery" role="alert">
+      <p>Penanda keputusan sebelumnya tidak dapat dibaca. Keputusan diblokir. Pemulihan menghapus hanya penanda yang rusak; daftar keputusan yang belum pasti mungkin tidak dapat dipulihkan.</p>
+      <label><input type="checkbox" checked={storageAcknowledged} onChange={event => setStorageAcknowledged(event.target.checked)} /> Saya telah memeriksa semua kandidat dan riwayat sumber, dan memahami proses sebelumnya mungkin masih berjalan.</label>{' '}
+      <button type="button" className="tab" disabled={!storageAcknowledged} onClick={recoverStorage}>Pulihkan penyimpanan penanda</button>
+    </div>}
     {result && <>
       {result.items.length === 0 ? <p className="candidate-review__empty">Tidak ada kandidat pada halaman ini.</p> : <ul className="candidate-review__list">
         {result.items.map(item => <li key={item.id}>
           <button type="button" className="candidate-review__item" aria-pressed={selected?.id === item.id} disabled={busy} onClick={() => { setSelected(item); setDecision(null); setNotes(''); setAcknowledged(false); setSourceChecked(false) }}>
-            <span className="candidate-review__item-name">{item.indicatorName}</span>{' '}
+            <span className="candidate-review__item-name">{unavailable(item.indicatorName)}</span>{' '}
             <span className="candidate-review__item-meta">{unavailable(item.period)} · #{item.id}</span>{' '}
             <span className="candidate-review__item-value">{unavailable(item.value)} {unavailable(item.unit)}</span>
           </button>
@@ -194,7 +239,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       </div>
     </>}
     {selected && <article className="trace-panel candidate-review__detail" aria-label={`Detail kandidat ${selected.id}`}>
-      <h4>{selected.indicatorName} · {unavailable(selected.period)} · #{selected.id}</h4>
+      <h4>{unavailable(selected.indicatorName)} · {unavailable(selected.period)} · #{selected.id}</h4>
       <dl>
         <dt>Nilai dan satuan</dt><dd>{unavailable(selected.value)} {unavailable(selected.unit)}</dd>
         <dt>Observasi sebelumnya pada basis kandidat</dt><dd>{selected.previousValue == null ? 'Tidak tersedia' : `${selected.previousValue} ${unavailable(selected.previousUnit)} · ${unavailable(selected.previousPeriod)}`}</dd>
@@ -229,7 +274,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <button type="button" className="tab" disabled={busy} onClick={() => setDecision('reject')}>Tolak kandidat</button>
       </div>}
       {decision && <div className="candidate-review__confirmation">
-        <p>Konfirmasi {decision === 'publish' ? 'publikasi' : 'penolakan'} kandidat #{selected.id}: {selected.indicatorName}, {unavailable(selected.period)}, {unavailable(selected.value)} {unavailable(selected.unit)}.</p>
+        <p>Konfirmasi {decision === 'publish' ? 'publikasi' : 'penolakan'} kandidat #{selected.id}: {unavailable(selected.indicatorName)}, {unavailable(selected.period)}, {unavailable(selected.value)} {unavailable(selected.unit)}.</p>
         {decision === 'publish' && <label className="candidate-review__source-check"><input type="checkbox" checked={sourceChecked} disabled={busy} onChange={event => setSourceChecked(event.target.checked)} /> Saya telah membandingkan indikator, nilai, satuan dan periode dengan sumber resmi.</label>}
         {decision === 'reject' && <label>Alasan penolakan <textarea value={notes} maxLength={500} onChange={event => setNotes(event.target.value)} /></label>}
         <button type="button" className="tab" disabled={busy || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}

@@ -86,6 +86,32 @@ class CandidateReviewApiTests(IndicatorCase):
         self.assertIsNone(missing['sourceName'])
         self.assertIsNone(missing['sourceUrl'])
 
+    def test_indicator_identity_comes_from_staging_snapshot_after_indicator_edit(self):
+        original_name = self.indicator.name
+        original_code = self.indicator.code
+        self.indicator.name = 'Indikator berubah'
+        self.indicator.code = 'indicator_changed'
+        self.indicator.save(update_fields=['name', 'code'])
+        self.client.force_login(self.reviewer)
+        for url in (self.url, f'{self.url}{self.candidate.pk}/'):
+            data = self.client.get(url).json()
+            item = data['items'][0] if 'items' in data else data['candidate']
+            self.assertEqual(item['indicatorName'], original_name)
+            self.assertEqual(item['indicator'], original_code)
+        body = {'decision': 'publish', 'fingerprint': self.candidate.fingerprint, 'notes': ''}
+        response = self.client.post(self.review_url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(Observation.objects.count(), 0)
+        body.update(decision='reject', notes='Bukti tidak sesuai')
+        response = self.client.post(self.review_url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+
+        ObservationCandidate.objects.filter(pk=self.candidate.pk).update(
+            base_snapshot={**self.candidate.base_snapshot, 'indicator': None})
+        missing = self.client.get(f'{self.url}{self.candidate.pk}/').json()['candidate']
+        self.assertIsNone(missing['indicatorName'])
+        self.assertIsNone(missing['indicator'])
+
     def test_publish_requires_permission_csrf_and_matching_fingerprint(self):
         self.client.force_login(self.reviewer)
         body = {'decision': 'publish', 'fingerprint': self.candidate.fingerprint, 'notes': ''}

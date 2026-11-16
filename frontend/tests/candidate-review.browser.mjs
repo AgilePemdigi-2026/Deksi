@@ -14,8 +14,9 @@ let releaseReview
 let forcedReviewStatus = 0
 let detailFailure = false
 let includeEvidence = false
-const candidate = () => ({ id: 1, fingerprint: 'a'.repeat(64), indicator: 'inflasi', indicatorName: 'Inflasi UJI',
-  sourceId: 'BPS', sourceName: 'BPS UJI', sourceUrl: 'https://example.test/', period: 'UJI 2024',
+let missingIdentity = false
+const candidate = () => ({ id: 1, fingerprint: 'a'.repeat(64), indicator: missingIdentity ? null : 'inflasi', indicatorName: missingIdentity ? null : 'Inflasi UJI',
+  sourceId: 'BPS', sourceName: missingIdentity ? null : 'BPS UJI', sourceUrl: missingIdentity ? null : 'https://example.test/', period: 'UJI 2024',
   observationDate: '2024-01-31', publicationDate: null, frequency: 'monthly', dataType: 'yoy',
   value: '3.250000', unit: '%', rawFileId: includeEvidence ? 9 : null,
   rawEvidence: includeEvidence ? { documentName: 'Dokumen sintetis', periodLabel: 'Periode sintetis', retrievedAt: null, checksumSha256: 'c'.repeat(64) } : null,
@@ -213,10 +214,33 @@ try {
   await click('Lihat Kandidat')
   await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  await evaluate("sessionStorage.setItem('deksi-review-uncertain:BPS', '[1,42]')")
   status = 'published'
   await click('Periksa status kandidat')
   await wait("document.body.innerText.includes('Status terminal berhasil dibaca')")
-  assert.equal(await evaluate("sessionStorage.getItem('deksi-review-uncertain:BPS')"), null, 'terminal read clears marker')
+  assert.deepEqual(await evaluate("JSON.parse(sessionStorage.getItem('deksi-review-uncertain:BPS'))"), [42], 'clearing one marker must preserve markers added while the panel was open')
+  await click('Tutup kandidat')
+  await evaluate("sessionStorage.removeItem('deksi-review-uncertain:BPS')")
+  status = 'pending'
+  await evaluate("sessionStorage.setItem('deksi-review-uncertain:BPS', '[1]')")
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  await evaluate("window.__removeBeforeFailure = Storage.prototype.removeItem; Storage.prototype.removeItem = function(k) { if (k !== 'deksi-review-uncertain:BPS') return window.__removeBeforeFailure.call(this, k) }")
+  status = 'published'
+  await click('Periksa status kandidat')
+  await wait("document.body.innerText.includes('penanda belum bisa diperbarui')")
+  assert.deepEqual(await evaluate("JSON.parse(sessionStorage.getItem('deksi-review-uncertain:BPS'))"), [1], 'silent removal failure must retain the original marker')
+  await click('Tutup kandidat')
+  await evaluate('Storage.prototype.removeItem = window.__removeBeforeFailure')
+  status = 'pending'
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  status = 'published'
+  await click('Periksa status kandidat')
+  await wait("document.body.innerText.includes('Status terminal berhasil dibaca')")
+  assert.equal(await evaluate("sessionStorage.getItem('deksi-review-uncertain:BPS')"), null, 'successful recovery clears the marker')
   await click('Tutup kandidat')
   status = 'pending'; releaseReview = undefined
   await evaluate("window.__originalSetItem = Storage.prototype.setItem; Storage.prototype.setItem = function(k, v) { if (k.startsWith('deksi-review-uncertain:')) throw new Error('synthetic quota'); return window.__originalSetItem.call(this, k, v) }")
@@ -246,6 +270,10 @@ try {
   assert(await evaluate("document.body.innerText.includes('Penanda keputusan sebelumnya tidak dapat dibaca')"), 'initial read failure must be visible')
   assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Setujui untuk publikasi'&&!b.disabled)"), false, 'unknown markers must block publication')
   assert.deepEqual(await evaluate("JSON.parse(sessionStorage.getItem('deksi-review-uncertain:BPS'))"), [1], 'previous marker must survive the failed read')
+  await evaluate("document.querySelector('.candidate-review__storage-recovery input').click()")
+  await click('Pulihkan penyimpanan penanda')
+  await wait("document.body.innerText.includes('Keputusan sebelumnya belum pasti')")
+  assert.deepEqual(await evaluate("JSON.parse(sessionStorage.getItem('deksi-review-uncertain:BPS'))"), [1], 'recovery must never remove a marker that has become readable')
   await click('Tutup kandidat')
   await evaluate('Storage.prototype.getItem = window.__getBeforeInitialFailure')
   await click('Lihat Kandidat')
@@ -269,6 +297,22 @@ try {
   await evaluate("sessionStorage.setItem('deksi-review-uncertain:BPS', '{invalid')")
   await click('Lihat Kandidat')
   await wait("document.body.innerText.includes('Penanda keputusan sebelumnya tidak dapat dibaca')")
+  assert(await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Pulihkan penyimpanan penanda')?.disabled"), 'recovery requires explicit human acknowledgement')
+  await evaluate("document.querySelector('.candidate-review__storage-recovery input').click()")
+  await evaluate("window.__removeBeforeCorruptRecovery = Storage.prototype.removeItem; Storage.prototype.removeItem = function(k) { if (k !== 'deksi-review-uncertain:BPS') return window.__removeBeforeCorruptRecovery.call(this, k) }")
+  await click('Pulihkan penyimpanan penanda')
+  await wait("document.body.innerText.includes('Penyimpanan penanda belum dapat dipulihkan')")
+  assert.equal(await evaluate("sessionStorage.getItem('deksi-review-uncertain:BPS')"), '{invalid', 'failed recovery preserves the corrupt value')
+  await evaluate('Storage.prototype.removeItem = window.__removeBeforeCorruptRecovery')
+  await click('Pulihkan penyimpanan penanda')
+  await wait("document.body.innerText.includes('Penyimpanan penanda dapat digunakan kembali')")
+  assert.equal(await evaluate("sessionStorage.getItem('deksi-review-uncertain:BPS')"), null, 'only a confirmed corrupt marker is removed')
+  await click('Tutup kandidat')
+  await evaluate("sessionStorage.removeItem('deksi-review-uncertain:BPS')")
+  await evaluate("sessionStorage.setItem('deksi-review-uncertain:BPS', '')")
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  assert(await evaluate("document.body.innerText.includes('Penanda keputusan sebelumnya tidak dapat dibaca')"), 'an empty stored value is corrupt, not a missing key')
   await click('Tutup kandidat')
   await evaluate("sessionStorage.removeItem('deksi-review-uncertain:BPS')")
   includeEvidence = true
@@ -276,6 +320,13 @@ try {
   await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
   assert(await evaluate("document.body.innerText.includes('Dokumen sintetis') && document.body.innerText.includes('Periode sintetis')"), 'available snapshot evidence should be visible')
+  await click('Tutup kandidat')
+  missingIdentity = true
+  await click('Lihat Kandidat')
+  await wait("document.querySelector('.candidate-review__item')")
+  await evaluate("document.querySelector('.candidate-review__item').click()")
+  assert(await evaluate("document.querySelector('article[aria-label=\"Detail kandidat 1\"]').innerText.includes('Tidak tersedia')"), 'missing snapshot identity must be explicit')
+  assert.equal(await evaluate("document.querySelector('article[aria-label=\"Detail kandidat 1\"] a')"), null, 'missing portal must not become a link')
   console.log('PASS: synthetic browser flow, explicit confirmation, one POST and exact readback')
 } catch (error) {
   console.error(error); console.error('Sanitized synthetic calls:', JSON.stringify(calls))
