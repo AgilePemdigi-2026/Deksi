@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   displayOrUnavailable,
   fetchSourceDetail,
@@ -35,10 +35,18 @@ function frequencyLabel(freq: string | undefined): string {
   return freq || displayOrUnavailable(freq);
 }
 
-function verificationOf(s: SourceEntry): { label: string; kind: "ok" | "warn" | "bad" } {
-  if (s.status === "inactive") return { label: "Dalam tinjauan", kind: "warn" };
-  if (s.available) return { label: "Terverifikasi", kind: "ok" };
-  return { label: "Perlu pembaruan", kind: "bad" };
+function availabilityOf(s: SourceEntry): { label: string; kind: "ok" | "warn" | "bad" } {
+  if (s.status === "inactive") return { label: "Nonaktif", kind: "warn" };
+  if (s.available) return { label: "Data tersedia", kind: "ok" };
+  return { label: "Belum ada data", kind: "bad" };
+}
+
+function csvCell(value: unknown): string {
+  const raw = value === null || value === undefined ? "" : String(value);
+  // Mitigasi formula spreadsheet: prefix nilai teks diawali =,+,-,@,tab,CR.
+  const needsGuard = /^[ \t\r\n]*[=+\-@]/.test(raw);
+  const guarded = needsGuard ? `'${raw}` : raw;
+  return `"${guarded.replace(/"/g, '""')}"`;
 }
 
 function toCatalogId(s: SourceEntry, idx: number): string {
@@ -62,6 +70,8 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
   const [verification, setVerification] = useState("Semua status");
   const [sort, setSort] = useState("Relevansi");
   const [page, setPage] = useState(1);
+  const activeSourceRef = useRef<string | null>(activeSource);
+  activeSourceRef.current = activeSource;
 
   useEffect(() => {
     setActiveSource(selection.sourceId ?? null);
@@ -100,42 +110,54 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
       setDetail(null);
       return;
     }
+    const requestSource = activeSource;
     let cancelled = false;
+    // Kosongkan detail lama agar trace/indikator sumber sebelumnya
+    // tidak tampil sebagai milik sumber baru selama fetch berjalan.
+    setDetail(null);
+    setActiveIndicator(null);
+    setActivePeriod(undefined);
     setDetailLoading(true);
     setDetailError(null);
-    fetchSourceDetail(activeSource)
+    fetchSourceDetail(requestSource)
       .then((body) => {
-        if (!cancelled) setDetail(body);
+        if (!cancelled && requestSource === activeSourceRef.current) setDetail(body);
       })
       .catch(() => {
-        if (!cancelled) setDetailError("Detail sumber tidak dapat dimuat. Metadata daftar di atas tetap berlaku.");
+        if (!cancelled && requestSource === activeSourceRef.current)
+          setDetailError("Detail sumber tidak dapat dimuat. Metadata daftar di atas tetap berlaku.");
       })
       .finally(() => {
-        if (!cancelled) setDetailLoading(false);
+        if (!cancelled && requestSource === activeSourceRef.current) setDetailLoading(false);
       });
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSource]);
 
-  const activeDetailIndicators = useMemo(() => detail?.indicatorDetails ?? [], [detail]);
+  const activeDetailIndicators = useMemo(
+    () => (detail && detail.sourceId === activeSource ? detail.indicatorDetails ?? [] : []),
+    [detail, activeSource],
+  );
 
   useEffect(() => {
     if (activeIndicator) return;
+    if (!detail || detail.sourceId !== activeSource) return;
     if (activeDetailIndicators.length > 0) setActiveIndicator(activeDetailIndicators[0].code);
-  }, [activeDetailIndicators, activeIndicator]);
+  }, [activeDetailIndicators, activeIndicator, detail, activeSource]);
 
   const institutions = useMemo(() => Array.from(new Set(sources.map((s) => s.institution).filter(Boolean))), [sources]);
   const categories = useMemo(() => Array.from(new Set(sources.map((s) => frequencyLabel(s.frequency)).filter(Boolean))), [sources]);
   const totalIndicators = useMemo(() => sources.reduce((a, s) => a + (s.indicatorCount || 0), 0), [sources]);
-  const verifiedCount = useMemo(() => sources.filter((s) => verificationOf(s).kind === "ok").length, [sources]);
+  const availableCount = useMemo(() => sources.filter((s) => availabilityOf(s).kind === "ok").length, [sources]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let rows = sources.filter((s) => {
       if (institution !== "Semua institusi" && s.institution !== institution) return false;
       if (category !== "Semua kategori" && frequencyLabel(s.frequency) !== category) return false;
-      const v = verificationOf(s).label;
+      const v = availabilityOf(s).label;
       if (verification !== "Semua status" && v !== verification) return false;
       if (!q) return true;
       const hay = `${s.sourceName} ${s.sourceId} ${s.institution} ${(s.indicators || []).join(" ")}`.toLowerCase();
@@ -152,7 +174,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
 
   const downloadCatalog = () => {
     const header = "source_id,source_name,institution,indicators,observations,frequency,latest_period,status\n";
-    const body = filtered.map((s) => [s.sourceId, `"${(s.sourceName || "").replace(/"/g, '""')}"`, `"${(s.institution || "").replace(/"/g, '""')}"`, s.indicatorCount, s.observationCount, frequencyLabel(s.frequency), `"${s.latestPeriod || ""}"`, verificationOf(s).label].join(",")).join("\n");
+    const body = filtered.map((s) => [csvCell(s.sourceId), csvCell(s.sourceName), csvCell(s.institution), String(s.indicatorCount ?? ""), String(s.observationCount ?? ""), csvCell(frequencyLabel(s.frequency)), csvCell(s.latestPeriod ?? ""), csvCell(availabilityOf(s).label)].join(",")).join("\n");
     const blob = new Blob([header + body], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -163,11 +185,19 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
   };
 
   const openDetail = (sourceId: string) => {
+    if (sourceId === activeSource) return;
+    setDetail(null);
+    setDetailError(null);
     setActiveSource(sourceId);
     setActiveIndicator(null);
     setActivePeriod(undefined);
     setPage(safePage);
   };
+
+  const pagerPages = useMemo(() => {
+    const set = new Set<number>([1, totalPages, safePage - 1, safePage, safePage + 1]);
+    return [...set].filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+  }, [totalPages, safePage]);
 
   return (
     <section className="sources-page catalog" id="sumber-data-page" aria-labelledby="sources-title">
@@ -177,7 +207,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
           <p className="catalog-kicker">KATALOG SUMBER RESMI</p>
           <h2 className="section-title" id="sources-title">Sumber Data</h2>
           <p className="section-sub">
-            Jelajahi publikasi resmi di balik indikator ekonomi DEKSI. Temukan cakupan data, jadwal rilis, dan jejak verifikasi setiap sumber.
+            Jelajahi publikasi resmi di balik indikator ekonomi DEKSI. Temukan cakupan data, jadwal rilis, dan ketersediaan data setiap sumber.
           </p>
         </div>
         <button type="button" className="catalog-download" onClick={downloadCatalog}>⭳ Unduh katalog</button>
@@ -187,10 +217,10 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
         <div className="catalog-stat"><p>SUMBER DATA</p><strong>{sources.length}</strong><span>Publikasi &amp; kumpulan data</span></div>
         <div className="catalog-stat"><p>INSTITUSI RESMI</p><strong>{institutions.length}</strong><span>{institutions.join(", ") || "—"}</span></div>
         <div className="catalog-stat"><p>CAKUPAN INDIKATOR</p><strong>{totalIndicators}</strong><span>Indikator ekonomi terpetakan</span></div>
-        <div className="catalog-stat"><p>SUMBER TERVERIFIKASI</p><strong>{verifiedCount} / {sources.length}</strong><span>{sources.length - verifiedCount} perlu perhatian</span></div>
+        <div className="catalog-stat"><p>SUMBER DENGAN DATA</p><strong>{availableCount} / {sources.length}</strong><span>{sources.length - availableCount} belum ada data / nonaktif</span></div>
       </div>
 
-      <p className="catalog-note">ⓘ Data live dari API DEKSI. Pembaruan mengikuti jadwal rilis institusi.</p>
+      <p className="catalog-note">ⓘ Data live dari API DEKSI. Jadwal yang tercatat berasal dari metadata sumber; waktu pembaruan aktual dapat berbeda.</p>
 
       <div className="catalog-explore">
         <div className="catalog-explore-head">
@@ -204,7 +234,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
           <label>Cari sumber data<input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Nama sumber, indikator, atau kata kunci..." /></label>
           <label>Institusi<select value={institution} onChange={(e) => { setInstitution(e.target.value); setPage(1); }}><option>Semua institusi</option>{institutions.map((i) => <option key={i}>{i}</option>)}</select></label>
           <label>Kategori<select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }}><option>Semua kategori</option>{categories.map((c) => <option key={c}>{c}</option>)}</select></label>
-          <label>Status verifikasi<select value={verification} onChange={(e) => { setVerification(e.target.value); setPage(1); }}><option>Semua status</option><option>Terverifikasi</option><option>Dalam tinjauan</option><option>Perlu pembaruan</option></select></label>
+          <label>Status data<select value={verification} onChange={(e) => { setVerification(e.target.value); setPage(1); }}><option>Semua status</option><option>Data tersedia</option><option>Nonaktif</option><option>Belum ada data</option></select></label>
         </div>
 
         {loading && <p className="summary-loading">Memuat daftar sumber dari backend DEKSI…</p>}
@@ -220,10 +250,10 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
             </div>
             <div className="catalog-table-wrap" role="region" aria-label="Tabel sumber data" tabIndex={0}>
               <table className="catalog-table">
-                <thead><tr><th>SUMBER DATA</th><th>INSTITUSI</th><th>CAKUPAN INDIKATOR</th><th>RILIS</th><th>PEMBARUAN</th><th>VERIFIKASI</th><th>AKSES</th></tr></thead>
+                <thead><tr><th>SUMBER DATA</th><th>INSTITUSI</th><th>CAKUPAN INDIKATOR</th><th>RILIS</th><th>PEMBARUAN</th><th>STATUS DATA</th><th>AKSES</th></tr></thead>
                 <tbody>
                   {pageRows.map((s, i) => {
-                    const v = verificationOf(s);
+                    const v = availabilityOf(s);
                     return (
                       <tr key={s.sourceId}>
                         <td><strong>{s.sourceName}</strong><span className="catalog-sub">{toCatalogId(s, i)} · {s.sourceId}</span></td>
@@ -242,8 +272,9 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
             </div>
             <div className="catalog-pager"><span>{PAGE_SIZE} sumber per halaman · Halaman {safePage} dari {totalPages}</span>
               <span>
-                {[1, 2, 3].filter((n) => n <= totalPages).map((n) => <button key={n} type="button" className={n === safePage ? "active" : ""} onClick={() => setPage(n)}>{n}</button>)}
-                <button type="button" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)}>›</button>
+                <button type="button" aria-label="Halaman sebelumnya" disabled={safePage <= 1} onClick={() => setPage(Math.max(1, safePage - 1))}>‹</button>
+                {pagerPages.map((n) => <button key={n} type="button" aria-label={`Halaman ${n}`} aria-current={n === safePage ? "page" : undefined} className={n === safePage ? "active" : ""} onClick={() => setPage(n)}>{n}</button>)}
+                <button type="button" aria-label="Halaman berikutnya" disabled={safePage >= totalPages} onClick={() => setPage(Math.min(totalPages, safePage + 1))}>›</button>
               </span>
             </div>
           </>
@@ -269,6 +300,9 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
             key={s.sourceId}
             type="button"
             onClick={() => {
+              if (s.sourceId === activeSource) return;
+              setDetail(null);
+              setDetailError(null);
               setActiveSource(s.sourceId);
               setActiveIndicator(null);
               setActivePeriod(undefined);
@@ -285,8 +319,8 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
       {activeSource && (
         <div className="source-detail">
           {detailLoading && <p className="summary-loading">Memuat indikator {activeSource}…</p>}
-          {detailError && <p className="summary-error">{detailError}</p>}
-          {detail && !detailLoading && (
+          {detailError && !detailLoading && <p className="summary-error">{detailError}</p>}
+          {detail && !detailLoading && detail.sourceId === activeSource && (
             <>
               <div className="source-detail-head">
                 <div>
@@ -327,8 +361,8 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
         </div>
       )}
 
-      {activeIndicator && (
-        <SourceTracePanel code={activeIndicator} period={activePeriod} />
+      {activeIndicator && detail && detail.sourceId === activeSource && (
+        <SourceTracePanel key={`${activeSource}:${activeIndicator}`} code={activeIndicator} period={activePeriod} />
       )}
     </section>
   );

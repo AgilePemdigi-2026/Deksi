@@ -1,6 +1,6 @@
 # Seed 4 sumber resmi agar docker fresh langsung terisi.
-# created dengan defaults persis seperti kode (hindari CandidateConflictError),
-# lalu lengkapi kolom akuisisi bila masih kosong.
+# Hanya buat yang belum ada; jangan ubah baris lama
+# (update di sini melewati kontrak expectedRevision/SourceRevision).
 from django.db import migrations
 
 
@@ -71,17 +71,12 @@ ACQUISITION = {
 
 
 def seed_sources(apps, schema_editor):
+    # Hanya buat sumber yang belum ada. Jangan ubah baris lama:
+    # update di sini melewati kontrak expectedRevision/SourceRevision.
     Source = apps.get_model("indicators", "Source")
-    for source_id, defaults in CODE_DEFAULTS.items():
-        obj, _ = Source.objects.get_or_create(source_id=source_id, defaults=defaults)
-        patch = {}
-        for key, value in ACQUISITION[source_id].items():
-            if not getattr(obj, key, ""):
-                patch[key] = value
-        if patch:
-            for key, value in patch.items():
-                setattr(obj, key, value)
-            obj.save(update_fields=list(patch))
+    for source_id in CODE_DEFAULTS:
+        defaults = {**CODE_DEFAULTS[source_id], **ACQUISITION[source_id]}
+        Source.objects.get_or_create(source_id=source_id, defaults=defaults)
 
 
 def noop(apps, schema_editor):

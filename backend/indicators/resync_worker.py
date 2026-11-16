@@ -10,6 +10,17 @@ from indicators.resync_model import ResyncJob
 from indicators.sync_history_model import SyncRun
 from indicators.sync_history_service import create_sync_run, finalize_sync_run
 
+# Hanya api_bps yang dapat dijalankan end-to-end.
+# Jangan antrekan/eksekusi metode lain agar tidak menghasilkan riwayat gagal palsu.
+RESYNCABLE_METHODS = frozenset({"api_bps"})
+
+
+def _resync_method(source) -> str:
+    method = (getattr(source, "acquisition_method", "") or "").strip()
+    if not method and getattr(source, "source_id", "") == "BPS":
+        return "api_bps"
+    return method
+
 
 class JobFencedError(Exception):
     pass
@@ -39,14 +50,8 @@ def claim_next_job():
                 job.safe_message = "Sumber tidak aktif; sinkronisasi tidak dimulai."
                 job.save(update_fields=["status", "finished_at", "safe_message"])
                 return job
-            from indicators.source_admin_views import SUPPORTED_METHODS
-            _method = (source.acquisition_method or "").strip()
-            if not _method:
-                _legacy = {"BPS": "api_bps", "KEMENKEU": "pdf_kita", "BI": "file_xlsx", "BKPM": "file_zip_csv"}
-                _method = _legacy.get(source.source_id, "")
-                if _method:
-                    source.acquisition_method = _method
-            if _method not in SUPPORTED_METHODS:
+            _method = _resync_method(source)
+            if _method not in RESYNCABLE_METHODS:
                 job.status = ResyncJob.Status.CANCELLED
                 job.finished_at = timezone.now()
                 job.safe_message = "Sumber belum didukung; sinkronisasi tidak dimulai."
@@ -69,21 +74,12 @@ def process_one():
     try:
         with _job_write_guard(job.pk, job.run_id):
             locked_src = Source.objects.get(pk=job.source_id)
-            method = (locked_src.acquisition_method or "").strip()
-            if not method:
-                _legacy = {"BPS": "api_bps", "KEMENKEU": "pdf_kita", "BI": "file_xlsx", "BKPM": "file_zip_csv"}
-                method = _legacy.get(locked_src.source_id, "")
-            if method == "api_bps":
-                source = bps._get_or_create_source()
-                if source.pk != job.source_id:
-                    raise ValueError("Identitas sumber berubah.")
-            else:
-                source = locked_src
-        if method != "api_bps":
-            # File/PDF manual: catat riwayat agar Riwayat Sinkronisasi terisi,
-            # bukan kosong. Admin lanjut via perintah ingest/fetch Docker.
-            stage_map = {"pdf_kita": "fetch_document", "file_xlsx": "read_file", "file_zip_csv": "read_file"}
-            raise RuntimeError(stage_map.get(method, "process_data"))
+            method = _resync_method(locked_src)
+            if method != "api_bps":
+                raise ValueError("Metode sumber tidak lagi didukung untuk resync.")
+            source = bps._get_or_create_source()
+            if source.pk != job.source_id:
+                raise ValueError("Identitas sumber berubah.")
         result = bps._sync_bps_started(
             source, start_year=2016, end_year=None,
             write_guard=lambda: _job_write_guard(job.pk, job.run_id),
@@ -92,9 +88,23 @@ def process_one():
         stage = "fetch_series" if has_errors else None
     except JobFencedError:
         return ResyncJob.objects.get(pk=job.pk)
-    except RuntimeError as exc:
-        has_errors = True
-        stage = str(exc) or "process_data"
+    except ValueError:
+        # Konfigurasi berubah setelah claim: batalkan tanpa riwayat gagal palsu.
+        with transaction.atomic():
+            locked = ResyncJob.objects.select_for_update().get(pk=job.pk)
+            if locked.status != ResyncJob.Status.RUNNING or locked.run_id != job.run_id:
+                return locked
+            run = SyncRun.objects.select_for_update().get(pk=locked.run_id)
+            if run.status == SyncRun.Status.RUNNING:
+                run.status = SyncRun.Status.UNKNOWN
+                run.finished_at = timezone.now()
+                run.safe_message = "Metode sumber berubah; sinkronisasi dibatalkan."
+                run.save(update_fields=["status", "finished_at", "safe_message"])
+            locked.status = ResyncJob.Status.CANCELLED
+            locked.finished_at = timezone.now()
+            locked.safe_message = "Metode sumber berubah; sinkronisasi dibatalkan."
+            locked.save(update_fields=["status", "finished_at", "safe_message"])
+        return locked
     except Exception:
         has_errors = True
         stage = None

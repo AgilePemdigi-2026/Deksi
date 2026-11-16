@@ -7,6 +7,7 @@ from django.test import Client, TestCase
 
 from indicators.models import Source
 from indicators.resync_model import ResyncJob
+from indicators.sync_history_model import SyncRun
 from indicators.sync_history_service import begin_sync_run, create_sync_run
 
 
@@ -96,9 +97,12 @@ class ResyncRequestTests(TestCase):
         self.source.status = Source.SourceStatus.INACTIVE
         self.source.save(update_fields=["status"])
         self.assertEqual(self.post().status_code, 409)
-        # BI seed resmi (file_xlsx) -> antrean diterima (202).
-        legacy_bi = Source.objects.get(source_id="BI")
-        self.assertEqual(self.post(source=legacy_bi.source_id).status_code, 202)
+        # Non-BPS belum didukung worker end-to-end -> tolak tanpa job.
+        for sid in ("BI", "KEMENKEU", "BKPM"):
+            resp = self.post(source=sid)
+            self.assertEqual(resp.status_code, 400, sid)
+            self.assertFalse(ResyncJob.objects.filter(source__source_id=sid).exists())
+        self.assertFalse(SyncRun.objects.exists())
         unsupported = Source.objects.create(source_id="UNKNOWN_X", source_name="Unknown", institution="Synthetic",
                                             primary_url="https://example.test/")
         self.assertEqual(self.post(source=unsupported.source_id).status_code, 400)

@@ -12,6 +12,19 @@ from indicators.source_admin_views import _parse_json_body, _require_staff
 from indicators.sync_history_model import SyncRun
 from indicators.views import json_error
 
+# Resync eksekusi end-to-end saat ini hanya BPS (api_bps).
+# Metode lain terdaftar di SUPPORTED_METHODS untuk konfigurasi,
+# tetapi belum memiliki worker resync. Jangan antrekan.
+RESYNCABLE_METHODS = frozenset({"api_bps"})
+
+
+def _resync_method(source) -> str:
+    method = (getattr(source, "acquisition_method", "") or "").strip()
+    if not method:
+        legacy = {"BPS": "api_bps"}
+        method = legacy.get(getattr(source, "source_id", ""), "")
+    return method
+
 
 def _job_response(job):
     response = JsonResponse({"id": str(job.pk), "status": job.status}, status=202)
@@ -117,12 +130,8 @@ def request_resync(request, source_id):
                 if previous.requested_by_id != request.user.pk or previous.source_id != source.pk:
                     return json_error("Identitas permintaan sudah digunakan.", status=409)
                 return _job_response(previous)
-            from indicators.source_admin_views import SUPPORTED_METHODS
-            method = (source.acquisition_method or "").strip()
-            if not method:
-                legacy = {"BPS": "api_bps", "KEMENKEU": "pdf_kita", "BI": "file_xlsx", "BKPM": "file_zip_csv"}
-                method = legacy.get(source.source_id, "")
-            if method not in SUPPORTED_METHODS:
+            method = _resync_method(source)
+            if method not in RESYNCABLE_METHODS:
                 return json_error("Sinkronisasi ulang untuk sumber ini belum tersedia.", status=400)
             if source.status != Source.SourceStatus.ACTIVE:
                 return json_error("Sumber tidak aktif.", status=409)
