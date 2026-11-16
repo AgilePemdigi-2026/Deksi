@@ -13,7 +13,7 @@ const CARD_COLORS: Record<string, string> = {
 
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
-export const formatDateID = (iso?: string | null): string => {
+const formatDateID = (iso?: string | null): string => {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;

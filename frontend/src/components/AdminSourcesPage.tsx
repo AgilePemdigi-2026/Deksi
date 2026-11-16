@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ResyncAction from "../features/resync/ResyncAction";
 import CandidateReview from "../features/candidates/CandidateReview";
+import "./admin-source-card.css";
 import {
   adminLogin,
   adminLogout,
@@ -378,24 +379,30 @@ export function AdminSourcesPage() {
           {!loading && error && <p className="summary-error">{error}</p>}
 
           {!loading && !error && (
-            <div className="sources-grid">
+            <div className="sources-grid admin-sources-grid">
               {sources.map((s) => (
-                <article key={s.sourceId} className="source-card">
-                  <p className="source-institution">{s.institution} · {s.status}</p>
-                  <p className="source-name">{s.sourceName}</p>
-                  <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
-                  <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
-                  <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                <article key={s.sourceId} className="source-card admin-source-card">
+                  <div className="admin-source-card__heading">
+                    <p className="source-institution">{s.institution} · {s.status}</p>
+                    <p className="source-name">{s.sourceName}</p>
+                    <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
+                  </div>
+                  <div className="admin-source-card__meta">
+                    <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
+                    <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                  </div>
                   {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
-                  {!showForm && <button type="button" className="source-trace-link" disabled={reviewBusy} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
-                  <button type="button" className="source-trace-link" disabled={toggling || reviewBusy} onClick={() => startEdit(s.sourceId)}>
-                    Edit ↗
-                  </button>
-                  <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
-                    aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
-                    onClick={() => void toggleSource(s)}>
-                    {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-                  </button>
+                  <div className="admin-source-card__actions">
+                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
+                    <button type="button" className="source-trace-link" disabled={toggling || reviewBusy} onClick={() => startEdit(s.sourceId)}>
+                      Edit ↗
+                    </button>
+                    <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
+                      aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
+                      onClick={() => void toggleSource(s)}>
+                      {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

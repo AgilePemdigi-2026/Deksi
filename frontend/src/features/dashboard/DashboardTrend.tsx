@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { availableRanges, chartGeometry, contextHref, formatDecimal, normalizeRange, type RangeKey } from '../indicators/data'
 import type { HistoryPoint } from '../indicators/types'
 import { useHistory, useTraceOptions } from './hooks'
@@ -15,9 +15,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
   const trace=useTraceOptions(code)
   // Opsi rentang mengikuti tahun yang benar-benar ada pada indikator aktif.
   const rangeOptions=useMemo(()=>availableRanges(history.data?.points),[history.data])
-  useEffect(()=>{
-    if(history.data&&!history.error&&!rangeOptions.includes(range as RangeKey))setRange(normalizeRange(range,rangeOptions))
-  },[code,history.data,history.error,range,rangeOptions])
+  if(history.data&&!history.error&&!rangeOptions.includes(range as RangeKey))setRange(normalizeRange(range,rangeOptions))
   const rows=visibleHistory(history.data?.points??[],year,range)
   const key=JSON.stringify([code,granularity,range,year,rows])
   const index=selection?.key===key?Math.min(selection.index,rows.length-1):rows.length-1

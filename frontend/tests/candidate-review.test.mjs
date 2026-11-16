@@ -22,7 +22,8 @@ test('review panel labels source and does not imply publication', async () => {
   const { default: CandidateReview } = await vite.ssrLoadModule('/src/features/candidates/CandidateReview.tsx')
   const html = renderToStaticMarkup(createElement(CandidateReview, { sourceId: 'BPS', onClose() {} }))
   assert.match(html, /Kandidat sumber BPS/)
-  assert.match(html, /Kandidat belum menjadi data publik/)
+  assert.match(html, /Kandidat yang menunggu review belum menjadi data publik/)
+  assert.doesNotMatch(html, /Kandidat belum menjadi data publik/)
   assert.doesNotMatch(html, /Ya, konfirmasi/)
 })
 
@@ -70,5 +71,74 @@ test('review failures preserve safe conflict and session/permission classificati
         error => error.kind === kind && !error.message.includes('untrusted text'))
       assert.equal(calls, 2)
     }
+  } finally { globalThis.fetch = original }
+})
+
+test('a stalled CSRF bootstrap times out and cannot send a late review', async () => {
+  const original = globalThis.fetch
+  let resolveBootstrap, calls = 0, signal
+  globalThis.fetch = async (_url, options) => {
+    calls++; signal = options.signal
+    return new Promise(resolve => { resolveBootstrap = resolve })
+  }
+  try {
+    const request = api.submitCandidateReview('BPS', { id: 7, fingerprint: 'x'.repeat(64) }, 'publish', '', { timeoutMs: 20 })
+    const outcome = await Promise.race([request.then(() => 'success', () => 'timed-out'), new Promise(resolve => setTimeout(() => resolve('hung'), 150))])
+    assert.equal(outcome, 'timed-out')
+    assert.equal(signal?.aborted, true)
+    resolveBootstrap(new Response(JSON.stringify({ csrfToken: 'synthetic-csrf' })))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    assert.equal(calls, 1, 'late bootstrap completion must not send the POST')
+  } finally { globalThis.fetch = original }
+})
+
+test('a late CSRF body cannot dispatch a POST after the deadline', async () => {
+  const original = globalThis.fetch
+  let resolveBody, calls = 0
+  globalThis.fetch = async () => {
+    calls++
+    return { ok: true, json: () => new Promise(resolve => { resolveBody = resolve }) }
+  }
+  try {
+    const request = api.submitCandidateReview('BPS', { id: 7, fingerprint: 'x'.repeat(64) }, 'publish', '', { timeoutMs: 20 })
+    await assert.rejects(request)
+    resolveBody({ csrfToken: 'synthetic-csrf' })
+    await new Promise(resolve => setTimeout(resolve, 20))
+    assert.equal(calls, 1)
+  } finally { globalThis.fetch = original }
+})
+
+test('stalled POST or candidate readback body times out even if transport ignores abort', async () => {
+  const original = globalThis.fetch
+  try {
+    let count = 0, postSignal
+    globalThis.fetch = async (_url, options) => {
+      count++
+      if (count === 1) return new Response(JSON.stringify({ csrfToken: 'synthetic-csrf' }))
+      postSignal = options.signal
+      return new Promise(() => {})
+    }
+    const post = api.submitCandidateReview('BPS', { id: 7, fingerprint: 'x'.repeat(64) }, 'publish', '', { timeoutMs: 20 })
+    assert.equal(await Promise.race([post.then(() => 'success', () => 'timed-out'), new Promise(r => setTimeout(() => r('hung'), 150))]), 'timed-out')
+    assert.equal(postSignal?.aborted, true)
+    assert.equal(count, 2, 'no application retry')
+    let readSignal
+    globalThis.fetch = async (_url, options) => {
+      readSignal = options.signal
+      return { ok: true, json: () => new Promise(() => {}) }
+    }
+    const read = api.fetchReviewCandidate('BPS', 7, { timeoutMs: 20 })
+    assert.equal(await Promise.race([read.then(() => 'success', () => 'timed-out'), new Promise(r => setTimeout(() => r('hung'), 150))]), 'timed-out')
+    assert.equal(readSignal?.aborted, true)
+    count = 0
+    globalThis.fetch = async (_url, options) => {
+      if (++count === 1) return new Response(JSON.stringify({ csrfToken: 'synthetic-csrf' }))
+      postSignal = options.signal
+      return { ok: true, status: 200, json: () => new Promise(() => {}) }
+    }
+    const postBody = api.submitCandidateReview('BPS', { id: 7, fingerprint: 'x'.repeat(64) }, 'publish', '', { timeoutMs: 20 })
+    assert.equal(await Promise.race([postBody.then(() => 'success', () => 'timed-out'), new Promise(r => setTimeout(() => r('hung'), 150))]), 'timed-out')
+    assert.equal(postSignal?.aborted, true)
+    assert.equal(count, 2)
   } finally { globalThis.fetch = original }
 })

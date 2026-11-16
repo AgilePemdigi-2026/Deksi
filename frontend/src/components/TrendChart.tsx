@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   availableRanges,
   normalizeRange,
@@ -20,6 +20,7 @@ import { indicatorTrends } from "../data/indicators";
 import { useTrend, type TrendPoint } from "../api";
 
 const GRANULARITIES = ["Kuartalan", "Tahunan"] as const;
+const EMPTY_GRANULARITIES: string[] = [];
 type Granularity = (typeof GRANULARITIES)[number];
 
 const TIMEFRAMES = ["3 Tahun", "5 Tahun", "10 Tahun", "Semua"] as const;
@@ -115,16 +116,14 @@ export function TrendChart() {
     () => TIMEFRAMES.filter((tf) => (rangeOptions as readonly string[]).includes(TIMEFRAME_KEY[tf])),
     [rangeOptions],
   );
-  useEffect(() => {
-    if (trend && !error && !visibleTimeframes.includes(timeframe)) {
-      setTimeframe(KEY_TIMEFRAME[normalizeRange(TIMEFRAME_KEY[timeframe], rangeOptions)]);
-    }
-  }, [activeId, trend, error, timeframe, visibleTimeframes, rangeOptions]);
+  if (trend && !error && !visibleTimeframes.includes(timeframe)) {
+    setTimeframe(KEY_TIMEFRAME[normalizeRange(TIMEFRAME_KEY[timeframe], rangeOptions)]);
+  }
 
   const unit = trend?.unit ?? trendMeta.unitSuffix;
   const supported = trend?.granularities?.length
     ? trend.granularities
-    : ([] as string[]);
+    : EMPTY_GRANULARITIES;
 
   const chartData = useMemo<ChartPoint[]>(() => {
     const points = trend?.points ?? [];

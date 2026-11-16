@@ -8,14 +8,22 @@ import react from '@vitejs/plugin-react'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const profile = await mkdtemp(path.join(process.env.HERMES_TEST_SCRATCH, 'deksi-review-e2e-'))
-const trace = [], errors = [], browserRequests = [], proxyIncoming = [], proxyOutgoing = []
+const trace = [], errors = [], browserRequests = [], browserNetworkEvents = [], proxyIncoming = [], proxyOutgoing = []
+const requestIds = new WeakMap()
+let requestSequence = 0
+const requestIdentity = request => {
+  if (!requestIds.has(request)) requestIds.set(request, ++requestSequence)
+  return { path: request.url.split('?')[0], request: requestIds.get(request), socketPort: request.socket.remotePort }
+}
 let dropNextReviewResponse = false
+let lostPath = ''
 const app = await createServer({ root, configFile: false, plugins: [react(), { name: 'observe-review-ingress', configureServer(server) {
-  server.middlewares.use((req, _res, next) => { if (req.method === 'POST' && req.url.endsWith('/review/')) proxyIncoming.push(req.url); next() })
+  if (process.env.DEKSI_DIAG_CLOSE === '1') server.middlewares.use((_req, res, next) => { res.setHeader('Connection', 'close'); next() })
+  server.middlewares.use((req, _res, next) => { if (req.method === 'POST' && req.url.endsWith('/review/')) proxyIncoming.push(requestIdentity(req)); next() })
 } }], cacheDir: path.join(profile, 'vite'),
   server: { host: '127.0.0.1', port: 0, strictPort: true, hmr: false, ws: false, proxy: {
     '/api': { target: process.env.DEKSI_TEST_BACKEND, changeOrigin: false, configure(proxy) {
-      proxy.on('proxyReq', (_proxyRequest, request) => { if (request.method === 'POST' && request.url.endsWith('/review/')) proxyOutgoing.push(request.url) })
+      proxy.on('proxyReq', (_proxyRequest, request) => { if (request.method === 'POST' && request.url.endsWith('/review/')) proxyOutgoing.push(requestIdentity(request)) })
       proxy.on('proxyRes', (response, request, downstream) => {
         trace.push({ method: request.method, path: request.url.split('?')[0], status: response.statusCode })
         if (dropNextReviewResponse && request.method === 'POST' && request.url.endsWith('/review/')) {
@@ -27,8 +35,10 @@ const app = await createServer({ root, configFile: false, plugins: [react(), { n
     } },
   } } })
 await app.listen()
+const netlogPath = path.join(profile, 'netlog.json')
 const chrome = spawn('C:/Program Files/Google/Chrome/Application/chrome.exe', ['--headless=new', '--disable-gpu',
-  '--no-first-run', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' })
+  '--no-first-run', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
+  ...(process.env.DEKSI_DIAG_NETLOG === '1' ? [`--log-net-log=${netlogPath}`] : []), 'about:blank'], { stdio: 'ignore' })
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 let ws, send
 try {
@@ -46,6 +56,9 @@ try {
   ws.addEventListener('message', event => {
     const r = JSON.parse(event.data)
     if (r.method === 'Runtime.exceptionThrown') errors.push('uncaught JavaScript exception')
+    if (['Network.requestWillBeSentExtraInfo', 'Network.responseReceivedExtraInfo', 'Network.loadingFailed', 'Network.loadingFinished'].includes(r.method)) {
+      browserNetworkEvents.push({ event: r.method, id: r.params.requestId, status: r.params.statusCode, error: r.params.errorText })
+    }
     if (r.method === 'Network.requestWillBeSent' && r.params.request.method === 'POST' && r.params.request.url.endsWith('/review/')) {
       browserRequests.push({ id: r.params.requestId, path: new URL(r.params.request.url).pathname })
     }
@@ -106,6 +119,7 @@ try {
   assert.equal(afterReject, '3.25')
   await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('SYNTHETIC 3'))")
   const third = await api("const p='/api/admin/sources/BROWSER_TEST/candidates/'; const items=(await (await fetch(p)).json()).items; return items.find(x=>x.period==='SYNTHETIC 3')")
+  lostPath = `/api/admin/sources/BROWSER_TEST/candidates/${third.id}/review/`
   await evaluate("(()=>{const real=window.fetch;window.__reviewCalls=0;window.fetch=(input,init)=>{if(String(input).endsWith('/review/')&&init?.method==='POST')window.__reviewCalls++;return real(input,init)}})()")
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('SYNTHETIC 3')).click()")
   await click('Setujui untuk publikasi')
@@ -123,8 +137,10 @@ try {
   assert(lostRequests.slice(1).every(x => x.status === 409), 'any transport replay must be refused')
   assert.equal(await evaluate('window.__reviewCalls'), 1, 'application must invoke fetch exactly once for the lost response')
   const networkCount = browserRequests.filter(x => x.path.endsWith(`/${third.id}/review/`)).length
-  const inboundCount = proxyIncoming.filter(x => x.endsWith(`/${third.id}/review/`)).length
-  const outboundCount = proxyOutgoing.filter(x => x.endsWith(`/${third.id}/review/`)).length
+  const inbound = proxyIncoming.filter(x => x.path.endsWith(`/${third.id}/review/`))
+  const outbound = proxyOutgoing.filter(x => x.path.endsWith(`/${third.id}/review/`))
+  const inboundCount = inbound.length
+  const outboundCount = outbound.length
   assert.equal(reviewRequests.filter(x => x.status === 409).length, 1 + lostRequests.length - 1)
   assert.equal(trace.filter(x => x.status >= 500).length, 0, 'unexpected backend 5xx')
   assert.deepEqual(errors, [], 'unexpected JS runtime exception')
@@ -133,10 +149,21 @@ try {
   await wait("document.body.innerText.includes('Kandidat tidak dapat dimuat')")
   assert(trace.some(x => x.path.endsWith('/candidates/') && x.status === 401))
   console.log(`PASS: real browser candidate review; lost response: 1 fetch, ${networkCount} browser events, ${inboundCount} proxy ingress, ${outboundCount} proxy outbound, backend statuses ${lostRequests.map(x => x.status).join(',')}`)
+  console.log('Review transport identities:', JSON.stringify({ inbound, outbound }))
+  console.log('Browser request events:', JSON.stringify(browserNetworkEvents.filter(x => browserRequests.some(r => r.path.endsWith(`/${third.id}/review/`) && r.id === x.id))))
 } catch (error) {
   console.error(error); console.error('Sanitized API trace:', JSON.stringify(trace)); process.exitCode = 1
 } finally {
+  const chromeExited = new Promise(resolve => chrome.once('exit', resolve))
   if (send) await send('Browser.close').catch(() => {})
-  ws?.close(); chrome.kill(); await app.close(); await delay(500)
+  ws?.close(); await Promise.race([chromeExited, delay(3000)]); chrome.kill(); await app.close(); await delay(500)
+  if (process.env.DEKSI_DIAG_NETLOG === '1') try {
+    const log = JSON.parse(await readFile(netlogPath, 'utf8'))
+    const restart = log.constants.logEventTypes.HTTP_TRANSACTION_RESTART_AFTER_ERROR
+    const matches = log.events.filter(e => e.type === restart)
+    const urlSources = [...new Set(log.events.filter(e => typeof e.params?.url === 'string' && e.params.url.endsWith(lostPath)).map(e => e.source.id))]
+    console.log('Browser network transaction restarts:', JSON.stringify(matches.map(e => ({ source: e.source.id, error: e.params?.net_error }))))
+    console.log('Browser lost request correlation:', JSON.stringify({ urlSources, matchingRestarts: matches.filter(e => urlSources.includes(e.source.id)).length }))
+  } catch { console.log('Browser network transaction restart evidence unavailable') }
   await rm(profile, { recursive: true, force: true, maxRetries: 6, retryDelay: 300 })
 }

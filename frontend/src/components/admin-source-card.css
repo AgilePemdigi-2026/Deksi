@@ -1,0 +1,101 @@
+.sources-grid.admin-sources-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  align-items: stretch;
+}
+
+.source-card.admin-source-card {
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  padding: 22px;
+  background: #e3e3e3;
+  cursor: default;
+}
+
+.admin-source-card__heading p,
+.admin-source-card__meta p { margin: 0; }
+
+.admin-source-card__heading .source-institution {
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.admin-source-card__heading .source-name {
+  margin-top: 8px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.admin-source-card__heading .source-desc {
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
+.admin-source-card__meta {
+  display: grid;
+  gap: 5px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #bbb;
+}
+
+.admin-source-card__meta .source-meta {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.admin-source-card .resync-action {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #bbb;
+  border-radius: 5px;
+  background: #ededed;
+}
+
+.admin-source-card .resync-action__message { font-size: 13px; line-height: 1.5; }
+.admin-source-card label.resync-action__message { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.admin-source-card label.resync-action__message input { flex: 0 0 auto; width: 16px; height: 16px; margin: 2px 0 0; accent-color: #111; }
+.admin-source-card .resync-action__button { width: 100%; font-size: 14px; font-weight: 600; line-height: 1.4; }
+.admin-source-card .resync-action__button:disabled { background: #666; border-color: #666; color: #fff; opacity: 1; }
+
+.admin-source-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 18px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.admin-source-card__actions .source-trace-link {
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.admin-source-card__actions .admin-source-card__review {
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid #888;
+  border-radius: 5px;
+  background: #f0f0f0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-source-card__actions button:disabled { opacity: .55; cursor: not-allowed; }
+.admin-source-card__actions button:not(:disabled):hover { color: #333; }
+.admin-source-card__actions .admin-source-card__review:not(:disabled):hover { border-color: #111; background: #f7f7f7; }
+.admin-source-card button:focus-visible,
+.admin-source-card input:focus-visible { outline: 2px solid #111; outline-offset: 3px; }
+
+@media (max-width: 420px) {
+  .source-card.admin-source-card { padding: 18px; }
+  .admin-source-card .resync-action { padding: 14px; }
+  .admin-source-card__actions { gap: 4px 14px; }
+}

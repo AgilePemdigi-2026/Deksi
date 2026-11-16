@@ -33,7 +33,7 @@ try {
   if(d.method==='Network.requestWillBeSent')requests.push({url:d.params.request.url,method:d.params.request.method})
   if(d.method==='Network.responseReceived'&&d.params.response.url.includes('/api/'))responses.push({url:d.params.response.url,status:d.params.response.status})
   if(!d.id)return
-  const p=pending.get(d.id);if(!p)return;pending.delete(d.id);clearTimeout(p.timer);d.error?p.reject(new Error(JSON.stringify(d.error))):p.resolve(d.result)
+  const p=pending.get(d.id);if(!p)return;pending.delete(d.id);clearTimeout(p.timer);if(d.error)p.reject(new Error(JSON.stringify(d.error)));else p.resolve(d.result)
  })
  const js=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(JSON.stringify(r.exceptionDetails));return r.result.value}
  const wait=async expression=>{for(let i=0;i<160;i++){if(await js(`Boolean(${expression})`))return;await pause(70)}throw new Error('Condition timed out: '+expression)}

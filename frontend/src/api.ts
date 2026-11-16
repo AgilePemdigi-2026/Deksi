@@ -103,10 +103,14 @@ export function useTrend(code: string) {
   const [trend, setTrend] = useState<TrendResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previousCode, setPreviousCode] = useState(code);
+  if (previousCode !== code) {
+    setPreviousCode(code);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     const load = async () => {
       try {
         const res = await fetch(`${API_BASE}/indicators/${code}/trend/`);
@@ -153,10 +157,15 @@ export function useDashboardFilter(filters: DashboardFilters) {
   const [summary, setSummary] = useState<FilteredSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const filterKey = JSON.stringify([filters.category, filters.year]);
+  const [previousFilter, setPreviousFilter] = useState(filterKey);
+  if (previousFilter !== filterKey) {
+    setPreviousFilter(filterKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     const params = new URLSearchParams();
     if (filters.category) params.set("category", filters.category);
@@ -390,12 +399,13 @@ async function adminFetch(path: string, init?: RequestInit) {
   const method = (init?.method ?? "GET").toUpperCase();
   const headers = new Headers(init?.headers);
   if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
-    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: "include" });
+    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: "include", signal: init?.signal });
     if (!bootstrap.ok) throw new Error("Token keamanan tidak tersedia.");
     const body = await bootstrap.json();
     if (typeof body?.csrfToken !== "string" || !body.csrfToken) throw new Error("Token keamanan tidak tersedia.");
     headers.set("X-CSRFToken", body.csrfToken);
   }
+  if (init?.signal?.aborted) throw new DOMException("The operation was aborted", "AbortError");
   const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init, headers });
   return res;
 }
@@ -421,38 +431,61 @@ export class CandidateReviewError extends Error {
   }
 }
 
-export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'rejected' = 'pending'): Promise<CandidatePage> {
-  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`);
-  if (!res.ok) {
-    if (res.status === 401 || res.status === 403) throw new Error('Sesi atau izin review Admin diperlukan.');
-    throw new Error('Daftar kandidat tidak dapat dimuat.');
-  }
-  const body = await res.json() as CandidatePage;
-  if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons kandidat tidak valid.');
-  return body;
-}
-
-export async function submitCandidateReview(sourceId: string, candidate: ReviewCandidate, decision: 'publish' | 'reject', notes: string): Promise<void> {
-  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${candidate.id}/review/`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+async function withCandidateDeadline<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs = 15_000): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  const timedOut = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('Waktu tunggu kandidat habis.'));
+    }, timeoutMs);
   });
-  if (res.status === 409) throw new CandidateReviewError('conflict', 'Kandidat berubah atau sudah direview. Periksa status terbaru.');
-  if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
-  if (res.status === 403) throw new CandidateReviewError('forbidden', 'Review ditolak: periksa izin Admin dan token keamanan.');
-  if (!res.ok) throw new Error('Review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
-  const result = await res.json() as { id?: number; status?: string };
-  if (result.id !== candidate.id || result.status !== (decision === 'publish' ? 'published' : 'rejected')) {
-    throw new Error('Hasil review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+  try {
+    return await Promise.race([run(controller.signal), timedOut]);
+  } finally {
+    clearTimeout(timer!);
   }
 }
 
-export async function fetchReviewCandidate(sourceId: string, id: number): Promise<ReviewCandidate> {
-  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${id}/`);
-  if (!res.ok) throw new Error('Status kandidat tidak dapat dipastikan.');
-  const body = await res.json() as { candidate?: ReviewCandidate };
-  if (!body.candidate || body.candidate.id !== id || body.candidate.sourceId !== sourceId) throw new Error('Status kandidat tidak valid.');
-  return body.candidate;
+export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'rejected' = 'pending', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`, { signal });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error('Sesi atau izin review Admin diperlukan.');
+      throw new Error('Daftar kandidat tidak dapat dimuat.');
+    }
+    const body = await res.json() as CandidatePage;
+    if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons kandidat tidak valid.');
+    return body;
+  }, options?.timeoutMs);
+}
+
+export async function submitCandidateReview(sourceId: string, candidate: ReviewCandidate, decision: 'publish' | 'reject', notes: string, options?: { timeoutMs?: number }): Promise<void> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${candidate.id}/review/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+      signal,
+    });
+    if (res.status === 409) throw new CandidateReviewError('conflict', 'Kandidat berubah atau sudah direview. Periksa status terbaru.');
+    if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+    if (res.status === 403) throw new CandidateReviewError('forbidden', 'Review ditolak: periksa izin Admin dan token keamanan.');
+    if (!res.ok) throw new Error('Review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+    const result = await res.json() as { id?: number; status?: string };
+    if (result.id !== candidate.id || result.status !== (decision === 'publish' ? 'published' : 'rejected')) {
+      throw new Error('Hasil review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+    }
+  }, options?.timeoutMs);
+}
+
+export async function fetchReviewCandidate(sourceId: string, id: number, options?: { timeoutMs?: number }): Promise<ReviewCandidate> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${id}/`, { signal });
+    if (!res.ok) throw new Error('Status kandidat tidak dapat dipastikan.');
+    const body = await res.json() as { candidate?: ReviewCandidate };
+    if (!body.candidate || body.candidate.id !== id || body.candidate.sourceId !== sourceId) throw new Error('Status kandidat tidak valid.');
+    return body.candidate;
+  }, options?.timeoutMs);
 }
 
 export async function fetchAdminSession(): Promise<AdminSession> {

@@ -124,6 +124,12 @@ try {
   await wait("document.body.innerText.includes('Status kandidat #1 saat diperiksa: published')")
   assert.equal(calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length, 1)
   assert(calls.some(c => c.path === '/api/admin/sources/BPS/candidates/1/' && c.method === 'GET'))
+  for (const filter of ['published', 'rejected', 'pending']) {
+    await evaluate(`{ const select = Array.from(document.querySelectorAll('select')).find(s => Array.from(s.options).some(o => o.value === 'published')); select.value = ${JSON.stringify(filter)}; select.dispatchEvent(new Event('change', { bubbles: true })); }`)
+    await wait(`document.querySelector('section[aria-label="Kandidat BPS"] select').value === ${JSON.stringify(filter)}`)
+    assert(await evaluate("document.body.innerText.includes('Kandidat yang menunggu review belum menjadi data publik.')"))
+    assert.equal(await evaluate("document.body.innerText.includes('Kandidat belum menjadi data publik.')"), false)
+  }
   for (const [code, expected, failDetail] of [
     [409, 'Kandidat berubah atau sudah direview', false],
     [401, 'Sesi Admin tidak tersedia', false],
@@ -131,6 +137,10 @@ try {
     [503, 'Hasil dan status review belum dapat dipastikan', true],
     [401, 'Sesi Admin tidak tersedia', true],
   ]) {
+    // Isolate independent mocked response cases; an uncertain case intentionally retains a marker.
+    await click('Tutup kandidat')
+    await evaluate('sessionStorage.clear()')
+    await click('Lihat Kandidat')
     status = 'pending'; forcedReviewStatus = code; detailFailure = failDetail
     await click('Muat ulang')
     await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
@@ -142,6 +152,81 @@ try {
     if (code === 401 && failDetail) assert(await evaluate("document.body.innerText.includes('Status kandidat belum dapat dimuat ulang')"))
     assert.equal(await evaluate("document.body.innerText.includes('untrusted text')"), false)
   }
+  await click('Tutup kandidat')
+  await evaluate('sessionStorage.clear()')
+  await click('Lihat Kandidat')
+  status = 'pending'; forcedReviewStatus = 0; detailFailure = false; releaseReview = undefined
+  await click('Muat ulang')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  await click('Setujui untuk publikasi')
+  await evaluate("window.__originalTimeout = window.setTimeout; window.setTimeout = (fn, ms, ...args) => window.__originalTimeout(fn, ms === 15000 ? 100 : ms, ...args)")
+  const beforePost = calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length
+  await click('Ya, konfirmasi')
+  await wait("document.body.innerText.includes('Status kandidat #1 saat diperiksa: pending')")
+  await wait("document.body.innerText.includes('Status menunggu tidak menjamin proses server sudah selesai')")
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Muat ulang'&&!b.disabled)")
+  assert.equal(calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length, beforePost + 1, 'timeout must not retry POST')
+  await evaluate('window.setTimeout = window.__originalTimeout')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Setujui untuk publikasi')"), false, 'pending readback must not immediately permit another decision')
+  assert(await evaluate("document.body.innerText.includes('Keputusan sebelumnya belum pasti')"))
+  await click('Tutup kandidat')
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  assert(await evaluate("document.body.innerText.includes('Keputusan sebelumnya belum pasti')"), 'warning must survive closing and reopening panel')
+  await click('Periksa status kandidat')
+  await wait("document.body.innerText.includes('Status saat ini: pending')")
+  assert.equal(await evaluate("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Setujui untuk publikasi')"), false, 'pending remains ambiguous after another GET')
+  assert.deepEqual(await evaluate("JSON.parse(sessionStorage.getItem('deksi-review-uncertain:BPS'))"), [1], 'only candidate identifier is stored')
+  await send('Page.reload')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.getAttribute('aria-label')==='Lihat kandidat BPS UJI'&&!b.disabled)")
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  assert(await evaluate("document.body.innerText.includes('Keputusan sebelumnya belum pasti')"), 'warning must survive same-tab page reload')
+  assert(await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Izinkan keputusan ulang').disabled"))
+  detailFailure = true
+  await click('Periksa status kandidat')
+  await wait("document.body.innerText.includes('Pemeriksaan tidak membuka keputusan ulang')")
+  assert(await evaluate("document.body.innerText.includes('Keputusan sebelumnya belum pasti')"))
+  detailFailure = false
+  await evaluate("document.querySelector('article[aria-label=\"Detail kandidat 1\"] input[type=checkbox]').focus()")
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32, text: ' ' })
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 })
+  assert(await evaluate("document.querySelector('article[aria-label=\"Detail kandidat 1\"] input[type=checkbox]').checked"), 'acknowledgement must work with keyboard')
+  await click('Izinkan keputusan ulang')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Setujui untuk publikasi')")
+  assert.equal(calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length, beforePost + 1, 'recovery check must not send another POST')
+  await click('Tutup kandidat')
+  await evaluate("sessionStorage.setItem('deksi-review-uncertain:BPS', JSON.stringify([1]))")
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  status = 'published'
+  await click('Periksa status kandidat')
+  await wait("document.body.innerText.includes('Status terminal berhasil dibaca')")
+  assert.equal(await evaluate("sessionStorage.getItem('deksi-review-uncertain:BPS')"), null, 'terminal read clears marker')
+  await click('Tutup kandidat')
+  status = 'pending'; releaseReview = undefined
+  await evaluate("window.__originalSetItem = Storage.prototype.setItem; Storage.prototype.setItem = function(k, v) { if (k.startsWith('deksi-review-uncertain:')) throw new Error('synthetic quota'); return window.__originalSetItem.call(this, k, v) }")
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  await click('Setujui untuk publikasi')
+  await evaluate("window.__originalTimeout = window.setTimeout; window.setTimeout = (fn, ms, ...args) => window.__originalTimeout(fn, ms === 15000 ? 100 : ms, ...args)")
+  await click('Ya, konfirmasi')
+  await wait("document.body.innerText.includes('Status kandidat #1 saat diperiksa: pending')")
+  await evaluate('window.setTimeout = window.__originalTimeout')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Muat ulang'&&!b.disabled)")
+  await click('Tutup kandidat')
+  await click('Lihat Kandidat')
+  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
+  assert(await evaluate("document.body.innerText.includes('Peringatan hanya tersimpan di halaman ini')"), 'failed session write must keep the in-memory warning on remount')
+  await evaluate('Storage.prototype.setItem = window.__originalSetItem')
   console.log('PASS: synthetic browser flow, explicit confirmation, one POST and exact readback')
 } catch (error) {
   console.error(error); console.error('Sanitized synthetic calls:', JSON.stringify(calls))

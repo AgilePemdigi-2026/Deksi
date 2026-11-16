@@ -26,9 +26,9 @@ class CandidateReviewPostgresConcurrencyTests(TransactionTestCase):
         with connection.cursor() as cursor:
             for statement in connection.ops.sequence_reset_sql(no_style(), [DataUpdateLog]):
                 cursor.execute(statement)
-        User = get_user_model()
+        user_model = get_user_model()
         self.reviewers = [
-            User.objects.create_user(username=f"pg-reviewer-{i}", password="synthetic-not-a-real-secret",
+            user_model.objects.create_user(username=f"pg-reviewer-{i}", password="synthetic-not-a-real-secret",
                                      is_staff=True, is_superuser=True)
             for i in (1, 2)
         ]
@@ -103,6 +103,178 @@ class CandidateReviewPostgresConcurrencyTests(TransactionTestCase):
         self.assertEqual(audit.observation_count, 1)
         self.assertEqual(audit.status, DataUpdateLog.Status.SUCCESS)
         self.assertEqual(ObservationCandidate.objects.filter(status="published").count(), 1)
+
+    def test_bps_stage_and_candidate_review_do_not_deadlock_on_master_row_locks(self):
+        """Exercise the real staging and HTTP review paths with an inverted lock order."""
+        body = {"decision": "publish", "fingerprint": self.candidate.fingerprint, "notes": ""}
+        stage_has_indicator = threading.Event()
+        review_candidate_query_done = threading.Event()
+        stage_result = [None]
+        review_result = [None]
+        stage_sql = []
+        review_sql = []
+        deadlock_states = []
+
+        def sqlstate(exc):
+            current = exc
+            while current is not None:
+                state = getattr(current, "sqlstate", None) or getattr(current, "pgcode", None)
+                if state:
+                    return state
+                current = current.__cause__
+            return None
+
+        def stage_worker():
+            close_old_connections()
+            try:
+                conn = connections["default"]
+
+                def pause_after_indicator(execute, sql, params, many, context):
+                    if 'FROM "indicators_indicator"' in sql and "FOR UPDATE" in sql.upper():
+                        stage_sql.append(sql)
+                        result = execute(sql, params, many, context)
+                        stage_has_indicator.set()
+                        if not review_candidate_query_done.wait(timeout=15):
+                            raise TimeoutError("review did not lock/read its candidate row")
+                        return result
+                    if "FOR UPDATE" in sql.upper():
+                        stage_sql.append(sql)
+                    return execute(sql, params, many, context)
+
+                with conn.execute_wrapper(pause_after_indicator):
+                    stage_result[0] = stage_observation(
+                        indicator_id=self.indicator.pk, source_id=self.source.pk,
+                        observation_date=date(2024, 2, 29), period_label="Februari 2024",
+                        frequency="monthly", data_type="yoy", value=Decimal("3.500000"), unit="%",
+                    )
+            except BaseException as exc:
+                stage_result[0] = exc
+                if sqlstate(exc):
+                    deadlock_states.append(sqlstate(exc))
+            finally:
+                connections.close_all()
+
+        def review_worker():
+            close_old_connections()
+            try:
+                client = Client()
+                client.force_login(self.reviewers[1])
+                conn = connections["default"]
+
+                def observe_candidate_lock(execute, sql, params, many, context):
+                    result = execute(sql, params, many, context)
+                    if ('FROM "indicators_observationcandidate"' in sql
+                            and "FOR UPDATE" in sql.upper()):
+                        review_sql.append(sql)
+                        review_candidate_query_done.set()
+                    return result
+
+                with conn.execute_wrapper(observe_candidate_lock):
+                    response = client.post(self.url, json.dumps(body), content_type="application/json")
+                review_result[0] = (response.status_code, response.json())
+            except BaseException as exc:
+                review_result[0] = exc
+                if sqlstate(exc):
+                    deadlock_states.append(sqlstate(exc))
+            finally:
+                connections.close_all()
+
+        stage = threading.Thread(target=stage_worker)
+        review = threading.Thread(target=review_worker)
+        stage.start()
+        self.assertTrue(stage_has_indicator.wait(timeout=10), "stage did not acquire the indicator row lock")
+        review.start()
+        stage.join(timeout=25)
+        review.join(timeout=25)
+
+        self.assertFalse(stage.is_alive(), "staging thread did not finish")
+        self.assertFalse(review.is_alive(), "review thread did not finish")
+        self.assertTrue(review_candidate_query_done.is_set(), "review never executed its candidate lock query")
+        self.assertNotIn("40P01", deadlock_states,
+                         f"PostgreSQL detected a deadlock; stage lock SQL={stage_sql!r}; "
+                         f"review lock SQL={review_sql!r}; stage={stage_result[0]!r}; "
+                         f"review={review_result[0]!r}")
+        self.assertIsInstance(review_result[0], tuple, repr(review_result[0]))
+        self.assertEqual(review_result[0][0], 200, review_result[0])
+        self.assertTrue(any('FOR UPDATE OF "indicators_observationcandidate"' in sql
+                            for sql in review_sql), review_sql)
+        self.candidate.refresh_from_db()
+        self.assertEqual(self.candidate.status, ObservationCandidate.Status.PUBLISHED)
+        self.assertIsNotNone(stage_result[0], repr(stage_result[0]))
+        self.assertFalse(isinstance(stage_result[0], BaseException), repr(stage_result[0]))
+        self.assertEqual(DataUpdateLog.objects.filter(event_kind=DataUpdateLog.EventKind.PUBLICATION).count(), 1)
+        self.assertEqual(Observation.objects.get(pk=self.observation.pk).value, Decimal("3.250000"))
+        self.assertEqual(ObservationCandidate.objects.filter(status="pending").count(), 1)
+
+    def test_review_rechecks_source_binding_after_candidate_lock(self):
+        candidate_query_done = threading.Event()
+        allow_review = threading.Event()
+        source_update_done = threading.Event()
+        results = [None]
+        update_errors = []
+        body = {"decision": "publish", "fingerprint": self.candidate.fingerprint, "notes": ""}
+
+        def review_worker():
+            close_old_connections()
+            try:
+                client = Client()
+                client.force_login(self.reviewers[1])
+                conn = connections["default"]
+
+                def pause_after_candidate(execute, sql, params, many, context):
+                    result = execute(sql, params, many, context)
+                    if ('FROM "indicators_observationcandidate"' in sql
+                            and "FOR UPDATE" in sql.upper()):
+                        candidate_query_done.set()
+                        if not allow_review.wait(timeout=15):
+                            raise TimeoutError("test did not release candidate review")
+                    return result
+
+                with conn.execute_wrapper(pause_after_candidate):
+                    response = client.post(self.url, json.dumps(body), content_type="application/json")
+                results[0] = (response.status_code, response.json())
+            except BaseException as exc:
+                results[0] = exc
+            finally:
+                connections.close_all()
+
+        def change_source_id():
+            close_old_connections()
+            try:
+                if not candidate_query_done.wait(timeout=10):
+                    raise TimeoutError("review did not execute its candidate query")
+                changed = Source.objects.filter(pk=self.source.pk).update(source_id="PG_TEST_RENAMED")
+                if changed != 1:
+                    raise AssertionError(f"expected to rename one source, changed={changed}")
+            except BaseException as exc:
+                update_errors.append(exc)
+            finally:
+                source_update_done.set()
+                connections.close_all()
+
+        reviewer = threading.Thread(target=review_worker)
+        updater = threading.Thread(target=change_source_id)
+        reviewer.start()
+        updater.start()
+        try:
+            self.assertTrue(candidate_query_done.wait(timeout=10), "review candidate query did not run")
+            # With only the candidate locked, this source rename commits before the
+            # route-binding recheck; a joined-row lock would hold the rename until review ends.
+            self.assertTrue(source_update_done.wait(timeout=5), "source rename stayed blocked by the joined read")
+        finally:
+            allow_review.set()
+            reviewer.join(timeout=20)
+            updater.join(timeout=10)
+
+        self.assertFalse(reviewer.is_alive(), "review request did not finish")
+        self.assertFalse(updater.is_alive(), "source rename did not finish")
+        self.assertFalse(update_errors, repr(update_errors))
+        self.assertEqual(results[0][0], 404, results[0])
+        self.candidate.refresh_from_db()
+        self.source.refresh_from_db()
+        self.assertEqual(self.source.source_id, "PG_TEST_RENAMED")
+        self.assertEqual(self.candidate.status, ObservationCandidate.Status.PENDING)
+        self.assertEqual(DataUpdateLog.objects.filter(event_kind=DataUpdateLog.EventKind.PUBLICATION).count(), 0)
 
     def test_review_waits_on_candidate_row_lock_and_pg_reports_blocker(self):
         body = {"decision": "publish", "fingerprint": self.candidate.fingerprint, "notes": ""}

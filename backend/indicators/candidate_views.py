@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
 from indicators.lifecycle import require_reviewer, review_candidate
-from indicators.models import ObservationCandidate, Source
+from indicators.models import Indicator, ObservationCandidate, Source
 from indicators.source_admin_views import _parse_json_body, _require_staff
 from indicators.views import json_error
 
@@ -87,12 +87,18 @@ def candidate_review(request, source_id, candidate_id):
         return json_error('Keputusan, identitas, atau alasan tidak valid.', status=400)
     try:
         with transaction.atomic():
-            candidate = ObservationCandidate.objects.select_for_update().select_related('source').filter(
+            candidate = ObservationCandidate.objects.select_for_update(of=("self",)).select_related('source').filter(
                 pk=candidate_id, source__source_id=source_id).first()
             if candidate is None:
                 return json_error('Kandidat tidak ditemukan.', status=404)
             if candidate.status != 'pending' or not hmac.compare_digest(candidate.fingerprint, fingerprint):
                 return json_error('Kandidat berubah atau telah direview. Muat ulang.', status=409)
+            # Match staging's indicator -> source lock order; recheck the route binding
+            # while source_id is locked so the initial joined filter cannot go stale.
+            Indicator.objects.select_for_update().get(pk=candidate.indicator_id)
+            if not Source.objects.select_for_update().filter(
+                    pk=candidate.source_id, source_id=source_id).exists():
+                return json_error('Kandidat tidak ditemukan.', status=404)
             review_candidate(candidate.pk, request.user, publish=decision == 'publish', notes=notes.strip())
     except PermissionDenied:
         return json_error('Izin review kandidat diperlukan.', status=403)
