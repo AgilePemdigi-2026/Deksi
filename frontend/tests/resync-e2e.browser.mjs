@@ -24,7 +24,7 @@ try {
   ws = new WebSocket(pages.find(page => page.type === 'page').webSocketDebuggerUrl)
   await new Promise((resolve, reject) => { ws.addEventListener('open', resolve, { once: true }); ws.addEventListener('error', reject, { once: true }) })
   let sequence = 0; const pending = new Map()
-  ws.addEventListener('message', event => { const r = JSON.parse(event.data); if (!r.id) return; const p = pending.get(r.id); if (!p) return; pending.delete(r.id); clearTimeout(p.timer); r.error ? p.reject(new Error(JSON.stringify(r.error))) : p.resolve(r.result) })
+  ws.addEventListener('message', event => { const r = JSON.parse(event.data); if (!r.id) return; const p = pending.get(r.id); if (!p) return; pending.delete(r.id); clearTimeout(p.timer); if (r.error) p.reject(new Error(JSON.stringify(r.error))); else p.resolve(r.result) })
   send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++sequence; const timer = setTimeout(() => reject(new Error('CDP timeout ' + method)), 30000); pending.set(id, { resolve, reject, timer }); ws.send(JSON.stringify({ id, method, params })) })
   const evaluate = async expression => { const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails)); return r.result.value }
   const wait = async expression => { for (let i = 0; i < 300; i++) { if (await evaluate(`Boolean(${expression})`)) return; await delay(100) } throw new Error('Timeout: ' + expression + '; page=' + await evaluate('document.body.innerText')) }

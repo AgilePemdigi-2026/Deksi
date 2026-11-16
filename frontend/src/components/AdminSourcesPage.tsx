@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ResyncAction from "../features/resync/ResyncAction";
+import CandidateReview from "../features/candidates/CandidateReview";
+import "./admin-source-card.css";
 import {
   adminLogin,
   adminLogout,
@@ -40,10 +42,13 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 export function AdminSourcesPage() {
+  const [reviewSource, setReviewSource] = useState<string | null>(null);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const editRequest = useRef(0);
   const toggleBusy = useRef(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [canReviewCandidates, setCanReviewCandidates] = useState<boolean | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -92,6 +97,7 @@ export function AdminSourcesPage() {
     fetchAdminSession()
       .then((s) => {
         setAuthenticated(s.authenticated);
+        setCanReviewCandidates(typeof s.canReviewCandidates === "boolean" ? s.canReviewCandidates : null);
         if (s.authenticated) void reload();
         else setLoading(false);
       })
@@ -107,6 +113,12 @@ export function AdminSourcesPage() {
       await adminLogin(username.trim(), password);
       setAuthenticated(true);
       setPassword("");
+      try {
+        const session = await fetchAdminSession();
+        setCanReviewCandidates(session.authenticated && typeof session.canReviewCandidates === "boolean" ? session.canReviewCandidates : null);
+      } catch {
+        setCanReviewCandidates(null);
+      }
       await reload();
     } catch (e) {
       setLoginError(e instanceof Error ? e.message : "Login gagal.");
@@ -122,6 +134,8 @@ export function AdminSourcesPage() {
       await adminLogout();
       editRequest.current += 1;
       setAuthenticated(false);
+      setCanReviewCandidates(null);
+      setReviewSource(null);
       setSources([]);
       window.location.replace("/admin/login");
     } catch {
@@ -362,8 +376,8 @@ export function AdminSourcesPage() {
           <div className="source-detail-head">
             <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
             <span>
-              <button type="button" className="tab" disabled={toggling} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
-              <button type="button" className="tab" disabled={toggling || saving || logoutLoading} onClick={doLogout}>Keluar</button>
+              <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
+              <button type="button" className="tab" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>Keluar</button>
             </span>
           </div>
 
@@ -372,29 +386,41 @@ export function AdminSourcesPage() {
           {toggleError && <p className="summary-error" role="alert">{toggleError}</p>}
           {loading && <p className="summary-loading">Memuat registry sumber…</p>}
           {!loading && error && <p className="summary-error">{error}</p>}
+          {canReviewCandidates !== true && <p className="admin-source-card__permission" role="status" id="candidate-review-permission">
+            {canReviewCandidates === false ? "Akun ini tidak memiliki izin review kandidat. Hubungi pengelola untuk meminta izin." : "Izin review kandidat belum dapat dipastikan. Muat ulang halaman atau hubungi pengelola."}
+          </p>}
 
           {!loading && !error && (
-            <div className="sources-grid">
+            <div className="sources-grid admin-sources-grid">
               {sources.map((s) => (
-                <article key={s.sourceId} className="source-card">
-                  <p className="source-institution">{s.institution} · {s.status}</p>
-                  <p className="source-name">{s.sourceName}</p>
-                  <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
-                  <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
-                  <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                <article key={s.sourceId} className="source-card admin-source-card">
+                  <div className="admin-source-card__heading">
+                    <p className="source-institution">{s.institution} · {s.status}</p>
+                    <p className="source-name">{s.sourceName}</p>
+                    <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
+                  </div>
+                  <div className="admin-source-card__meta">
+                    <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
+                    <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                  </div>
                   {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
-                  <button type="button" className="source-trace-link" disabled={toggling} onClick={() => startEdit(s.sourceId)}>
-                    Edit ↗
-                  </button>
-                  <button type="button" className="source-trace-link" disabled={toggling || showForm || !["active", "inactive"].includes(s.status)}
-                    aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
-                    onClick={() => void toggleSource(s)}>
-                    {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-                  </button>
+                  <div className="admin-source-card__actions">
+                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
+                    <button type="button" className="source-trace-link" disabled={toggling || reviewBusy} onClick={() => startEdit(s.sourceId)}>
+                      Edit ↗
+                    </button>
+                    <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
+                      aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
+                      onClick={() => void toggleSource(s)}>
+                      {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
           )}
+
+          {reviewSource && <CandidateReview key={reviewSource} sourceId={reviewSource} onClose={() => setReviewSource(null)} onBusyChange={setReviewBusy} />}
 
           {showForm && (
             <article className="trace-panel" aria-label={mode === "edit" ? "Form edit sumber" : "Form tambah sumber"}>
