@@ -413,7 +413,7 @@ async function adminFetch(path: string, init?: RequestInit) {
 
 export interface ReviewCandidate {
   id: number; fingerprint: string; indicator: string; indicatorName: string;
-  sourceId: string; sourceName: string; sourceUrl: string; period: string | null;
+  sourceId: string; sourceName: string | null; sourceUrl: string | null; period: string | null;
   observationDate: string | null; publicationDate: string | null; frequency: string | null;
   dataType: string | null; value: string | null; unit: string | null; rawFileId: number | null;
   previousValue: string | null; previousUnit: string | null; previousPeriod: string | null;

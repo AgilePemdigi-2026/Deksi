@@ -27,6 +27,8 @@ def _authorize(request):
 def _serialize(candidate):
     payload = candidate.payload
     previous = candidate.base_snapshot.get('observation') or {}
+    source = candidate.base_snapshot.get('source')
+    source = source if isinstance(source, dict) else {}
     raw = candidate.base_snapshot.get('candidate_raw')
     evidence = None if not isinstance(raw, dict) else {
         'documentName': raw.get('document_name'), 'periodLabel': raw.get('period_label'),
@@ -35,8 +37,8 @@ def _serialize(candidate):
     return {
         'id': candidate.pk, 'fingerprint': candidate.fingerprint,
         'indicator': candidate.indicator.code, 'indicatorName': candidate.indicator.name,
-        'sourceId': candidate.source.source_id, 'sourceName': candidate.source.source_name,
-        'sourceUrl': candidate.source.primary_url,
+        'sourceId': candidate.source.source_id, 'sourceName': source.get('source_name'),
+        'sourceUrl': source.get('primary_url'),
         'period': payload.get('period_label'), 'observationDate': payload.get('observation_date'),
         'publicationDate': payload.get('publication_date'), 'frequency': payload.get('frequency'),
         'dataType': payload.get('data_type'), 'value': payload.get('value'), 'unit': payload.get('unit'),

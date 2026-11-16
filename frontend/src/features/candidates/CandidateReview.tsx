@@ -7,15 +7,14 @@ type Decision = 'publish' | 'reject'
 
 // Only candidate IDs are retained; the marker is not an authorization or a server lock.
 const transientUncertain = new Map<string, number[]>()
-const volatileSources = new Set<string>()
+
 const uncertainKey = (sourceId: string) => `deksi-review-uncertain:${encodeURIComponent(sourceId)}`
 function readUncertain(sourceId: string): { ids: number[]; stored: boolean } {
   if (typeof window === 'undefined') return { ids: [], stored: false }
   try {
     const parsed: unknown = JSON.parse(window.sessionStorage.getItem(uncertainKey(sourceId)) || '[]')
-    const ids = Array.isArray(parsed) ? parsed.filter((id): id is number => Number.isSafeInteger(id) && id > 0) : []
-    if (volatileSources.has(sourceId)) return { ids: [...new Set([...ids, ...(transientUncertain.get(sourceId) || [])])], stored: false }
-    return { ids, stored: true }
+    if (!Array.isArray(parsed) || !parsed.every(id => Number.isSafeInteger(id) && id > 0)) throw new Error('invalid session marker')
+    return { ids: [...new Set([...parsed, ...(transientUncertain.get(sourceId) || [])])], stored: true }
   } catch {
     return { ids: transientUncertain.get(sourceId) || [], stored: false }
   }
@@ -28,10 +27,9 @@ function writeUncertain(sourceId: string, ids: number[]): boolean {
       window.sessionStorage.setItem(uncertainKey(sourceId), serialized)
       if (window.sessionStorage.getItem(uncertainKey(sourceId)) !== serialized) throw new Error('session readback failed')
     } else window.sessionStorage.removeItem(uncertainKey(sourceId))
-    volatileSources.delete(sourceId)
     transientUncertain.delete(sourceId)
     return true
-  } catch { volatileSources.add(sourceId); return false }
+  } catch { return false }
 }
 
 export default function CandidateReview({ sourceId, onClose, onBusyChange }: { sourceId: string; onClose: () => void; onBusyChange: (busy: boolean) => void }) {
@@ -48,6 +46,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   const [message, setMessage] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
   const [initialUncertain] = useState(() => readUncertain(sourceId))
+  const [initialReadOk] = useState(initialUncertain.stored)
   const [uncertain, setUncertain] = useState(initialUncertain.ids)
   const [stored, setStored] = useState(initialUncertain.stored)
   const [acknowledged, setAcknowledged] = useState(false)
@@ -90,8 +89,20 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     return persisted
   }
   const submit = async () => {
-    if (!selected || !decision || submission.current || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
+    if (!selected || !decision || !initialReadOk || submission.current || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
     const id = selected.id
+    const currentMarkers = readUncertain(sourceId)
+    if (!currentMarkers.stored) {
+      setActionError('Penyimpanan sesi tidak tersedia. Keputusan tidak dikirim. Aktifkan penyimpanan browser dan coba lagi setelah memeriksa riwayat.')
+      return
+    }
+    uncertainRef.current = [...new Set([...uncertainRef.current, ...currentMarkers.ids])]
+    setUncertain(uncertainRef.current)
+    if (uncertainRef.current.includes(id)) {
+      setDecision(null)
+      setActionError('Keputusan sebelumnya belum pasti. Periksa riwayat sebelum melanjutkan.')
+      return
+    }
     // Do not dispatch if a same-tab reload could erase the in-flight warning.
     if (!markUncertain(id, true)) {
       setActionError('Penyimpanan sesi tidak tersedia. Keputusan tidak dikirim. Aktifkan penyimpanan browser dan coba lagi setelah memeriksa riwayat.')
@@ -125,7 +136,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     }
   }
   const recheckUncertain = async (allowRetry: boolean) => {
-    if (!selected || submission.current || (allowRetry && !acknowledged)) return
+    if (!selected || !initialReadOk || submission.current || (allowRetry && !acknowledged)) return
     submission.current = true
     onBusyChange(true); setBusy(true); setActionError(null)
     try {
@@ -166,6 +177,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     {message && <p role="status">{message}</p>}
     {error && <p role="alert">{error}</p>}
     {actionError && <p role="alert">{actionError}</p>}
+    {!initialReadOk && <p role="alert">Penanda keputusan sebelumnya tidak dapat dibaca. Keputusan diblokir; periksa penyimpanan browser dan riwayat, lalu tutup dan buka kembali panel ini.</p>}
     {result && <>
       {result.items.length === 0 ? <p className="candidate-review__empty">Tidak ada kandidat pada halaman ini.</p> : <ul className="candidate-review__list">
         {result.items.map(item => <li key={item.id}>
@@ -186,8 +198,8 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       <dl>
         <dt>Nilai dan satuan</dt><dd>{unavailable(selected.value)} {unavailable(selected.unit)}</dd>
         <dt>Observasi sebelumnya pada basis kandidat</dt><dd>{selected.previousValue == null ? 'Tidak tersedia' : `${selected.previousValue} ${unavailable(selected.previousUnit)} · ${unavailable(selected.previousPeriod)}`}</dd>
-        <dt>Sumber</dt><dd>{selected.sourceName}</dd>
-        <dt>Portal sumber</dt><dd>{safeExternalUrl(selected.sourceUrl) ? <a href={safeExternalUrl(selected.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">Buka portal sumber</a> : 'Tidak tersedia'}</dd>
+        <dt>Sumber saat kandidat dibuat</dt><dd>{unavailable(selected.sourceName)}</dd>
+        <dt>Portal saat kandidat dibuat</dt><dd>{safeExternalUrl(selected.sourceUrl) ? <a href={safeExternalUrl(selected.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">Buka portal sumber</a> : 'Tidak tersedia'}</dd>
         <dt>Periode observasi</dt><dd>{unavailable(selected.period)}</dd>
         <dt>Tanggal observasi</dt><dd>{unavailable(selected.observationDate)}</dd>
         <dt>Tanggal rilis</dt><dd>{unavailable(selected.publicationDate)}</dd>
@@ -204,7 +216,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       </dl>
       <p>Pastikan angka dan konteksnya sesuai sumber resmi. Tanggal observasi bukan tanggal rilis.</p>
       <p>Metadata dokumen di atas adalah snapshot saat kandidat dibuat, bukan bukti bahwa angka telah diverifikasi. Jika tidak tersedia, periksa sumber resmi secara terpisah.</p>
-      {selected.status === 'pending' && uncertain.includes(selected.id) && <div className="candidate-review__warning" role="alert">
+      {initialReadOk && selected.status === 'pending' && uncertain.includes(selected.id) && <div className="candidate-review__warning" role="alert">
         <p>Keputusan sebelumnya belum pasti. Status pending tidak membuktikan proses server selesai. Periksa status dan riwayat bersama pengelola sebelum keputusan ulang.</p>
         <p>Peringatan ini bukan kunci server dan tidak menjamin perlindungan pada tab atau perangkat lain.</p>
         {!stored && <p>Peringatan hanya tersimpan di halaman ini; penyimpanan sesi tidak tersedia. Setelah memuat ulang, periksa kandidat secara manual.</p>}
@@ -212,7 +224,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <label><input type="checkbox" checked={acknowledged} disabled={busy} onChange={event => setAcknowledged(event.target.checked)} /> Saya telah memeriksa riwayat dan memahami bahwa proses sebelumnya mungkin masih berjalan.</label>
         <button type="button" className="tab" disabled={busy || !acknowledged} onClick={() => void recheckUncertain(true)}>Izinkan keputusan ulang</button>
       </div>}
-      {selected.status === 'pending' && !uncertain.includes(selected.id) && !decision && <div className="candidate-review__decision-actions">
+      {initialReadOk && selected.status === 'pending' && !uncertain.includes(selected.id) && !decision && <div className="candidate-review__decision-actions">
         <button type="button" className="tab" disabled={busy} onClick={() => setDecision('publish')}>Setujui untuk publikasi</button>{' '}
         <button type="button" className="tab" disabled={busy} onClick={() => setDecision('reject')}>Tolak kandidat</button>
       </div>}

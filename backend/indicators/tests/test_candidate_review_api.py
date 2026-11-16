@@ -59,6 +59,33 @@ class CandidateReviewApiTests(IndicatorCase):
         self.assertNotIn('SYNTHETIC-PRIVATE', response.content.decode())
         self.assertIsNone(self.client.get(f'{self.url}{self.candidate.pk}/').json()['candidate']['rawEvidence'])
 
+    def test_source_identity_comes_from_staging_snapshot_after_source_edit(self):
+        original_name = self.source.source_name
+        original_url = self.source.primary_url
+        self.source.source_name = 'Nama sumber berubah'
+        self.source.primary_url = 'https://changed.example.test/'
+        self.source.save(update_fields=['source_name', 'primary_url'])
+        self.client.force_login(self.reviewer)
+        for url in (self.url, f'{self.url}{self.candidate.pk}/'):
+            data = self.client.get(url).json()
+            item = data['items'][0] if 'items' in data else data['candidate']
+            self.assertEqual(item['sourceName'], original_name)
+            self.assertEqual(item['sourceUrl'], original_url)
+        body = {'decision': 'publish', 'fingerprint': self.candidate.fingerprint, 'notes': ''}
+        response = self.client.post(self.review_url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(Observation.objects.count(), 0)
+        body.update(decision='reject', notes='Bukti tidak sesuai')
+        response = self.client.post(self.review_url, json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        detail = self.client.get(f'{self.url}{self.candidate.pk}/').json()['candidate']
+        self.assertEqual(detail['sourceName'], original_name)
+        ObservationCandidate.objects.filter(pk=self.candidate.pk).update(
+            base_snapshot={**self.candidate.base_snapshot, 'source': None})
+        missing = self.client.get(f'{self.url}{self.candidate.pk}/').json()['candidate']
+        self.assertIsNone(missing['sourceName'])
+        self.assertIsNone(missing['sourceUrl'])
+
     def test_publish_requires_permission_csrf_and_matching_fingerprint(self):
         self.client.force_login(self.reviewer)
         body = {'decision': 'publish', 'fingerprint': self.candidate.fingerprint, 'notes': ''}
