@@ -33,6 +33,8 @@ function decimal(value: unknown) {
   if (result !== null && (result.length > 80 || !decimalPattern.test(result))) throw new Error('Format angka API tidak sesuai.')
   return result
 }
+export class MissingHistoryIndicatorError extends Error {}
+
 export async function requestJson(path: string, options: RequestInit = {}, signal?: AbortSignal, fetcher: typeof fetch = fetch, timeoutMs=10000): Promise<unknown> {
   if (!path.startsWith('/api/') || path.startsWith('//')) throw new Error('Jalur API tidak diizinkan.')
   const controller=new AbortController()
@@ -46,7 +48,14 @@ export async function requestJson(path: string, options: RequestInit = {}, signa
     if (controller.signal.aborted) throw controller.signal.reason
     return await Promise.race([cancelled,(async()=>{
       const response=await fetcher(path,{...options,credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal})
-      if (!response.ok) throw new Error(response.status===403?'Pemeriksaan keamanan ditolak (HTTP 403). Muat ulang kategori dan coba lagi.':`Request gagal (HTTP ${response.status}).`)
+      if (!response.ok) {
+        const match=path.match(/^\/api\/indicators\/([a-z][a-z0-9_-]{0,31})\/trend\/(?:\?.*)?$/)
+        if(response.status===404 && match && response.headers.get('content-type')?.includes('application/json')) {
+          const body=await response.clone().json().catch(()=>null)
+          if(body && body.error===`Indikator '${match[1]}' tidak ditemukan`) throw new MissingHistoryIndicatorError('Indikator belum tersedia.')
+        }
+        throw new Error(response.status===403?'Pemeriksaan keamanan ditolak (HTTP 403). Muat ulang kategori dan coba lagi.':`Request gagal (HTTP ${response.status}).`)
+      }
       return response.json()
     })()])
   } finally {clearTimeout(timer);signal?.removeEventListener('abort',abort);controller.signal.removeEventListener('abort',rejectAbort)}

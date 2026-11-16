@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { parseCategories, parseDashboard, parseHistory, requestJson } from './client'
+import { MissingHistoryIndicatorError, parseCategories, parseDashboard, parseHistory, requestJson } from './client'
 import type { DashboardFilters } from './client'
 import { fetchDetail } from '../indicators/api'
 import { errorMessage } from './model'
@@ -28,6 +28,12 @@ export function useDashboard(filters: DashboardFilters) {
 export function useCategories() {return useResource('categories',async signal=>parseCategories(await requestJson('/api/indicators/categories/',{},signal)))}
 export function useHistory(code: string, granularity: string) {
   const path=`/api/indicators/${encodeURIComponent(code)}/trend/`+(granularity==='native'?'':'?'+new URLSearchParams({granularity}))
-  return useResource(path,async signal=>parseHistory(await requestJson(path,{},signal),code))
+  return useResource(path,async signal=>{
+    try { return {...parseHistory(await requestJson(path,{},signal),code),missingIndicator:false} }
+    catch(error) {
+      if(error instanceof MissingHistoryIndicatorError)return {points:[],granularities:[],note:null,missingIndicator:true}
+      throw error
+    }
+  })
 }
 export function useTraceOptions(code: string) {return useResource('trace:'+code,signal=>fetchDetail(code,null,signal))}

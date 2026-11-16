@@ -38,7 +38,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
   }
   const frequencies=[['native','Periode asli'],['Kuartalan','Kuartalan'],['Bulanan','Bulanan'],['Tahunan','Tahunan']]
   const supported=history.data?.granularities??[]
-  const status=history.loading?'Memuat histori…':history.error?history.error:rows.length===0?'Belum ada histori untuk pilihan ini.':chart===null?'Seri tidak sebanding. Garis tidak digabungkan; nilai asli tetap ada di tabel.':!chart.points.length?'Nilai histori belum tersedia. Data kosong bukan nol.':null
+  const status=history.loading?'Memuat histori…':history.error?history.error:history.data?.missingIndicator?'Indikator belum tersedia.':rows.length===0?'Belum ada histori untuk pilihan ini.':chart===null?'Seri tidak sebanding. Garis tidak digabungkan; nilai asli tetap ada di tabel.':!chart.points.length?'Nilai histori belum tersedia. Data kosong bukan nol.':null
   function rowGeometry(row:HistoryPoint,i:number) {
     if(!chart)return null
     return chart.points.find(p=>p.period===row.period&&p.value===row.value&&Math.abs(p.x-(rows.length===1?418:120+i*596/(rows.length-1)))<0.01)

@@ -130,8 +130,8 @@ try {
    await go('/',width);await dashboardReady()
    assert.equal(await js('document.documentElement.scrollWidth>innerWidth+1'),false,'overflow '+width)
    assert.equal(await js('document.querySelectorAll("img").length'),12)
-   await js('document.querySelector(".plate-menu").focus();document.querySelector(".plate-menu").click()');await wait('document.querySelector(".p2-info").open')
-   await key('Escape',27);assert.equal(await js('document.activeElement===document.querySelector(".plate-menu")'),true)
+   await js('document.querySelector(".dash-summary-grid button").focus();document.querySelector(".dash-summary-grid button").click()');await wait('document.querySelector(".p2-info").open')
+   await key('Escape',27);assert.equal(await js('document.activeElement===document.querySelector(".dash-summary-grid button")'),true)
    await shot(`dashboard-${width}-synthetic.png`,width===390)
   }
   await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});await go('/',390);await dashboardReady();await js('scrollTo(0,500)');await pause(150)
