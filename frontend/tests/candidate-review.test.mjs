@@ -18,6 +18,15 @@ test('candidate review API provides explicit source-bound operations', () => {
   assert.equal(typeof api.submitCandidateReview, 'function')
 })
 
+test('candidate list exposes a safe permission-specific message for revoked review access', async () => {
+  const original = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: 'untrusted detail' }), { status: 403 })
+  try {
+    await assert.rejects(api.fetchReviewCandidates('BPS', 1), error =>
+      error.kind === 'forbidden' && error.message.includes('izin review') && !error.message.includes('untrusted detail'))
+  } finally { globalThis.fetch = original }
+})
+
 test('review panel labels source and does not imply publication', async () => {
   const { default: CandidateReview } = await vite.ssrLoadModule('/src/features/candidates/CandidateReview.tsx')
   const html = renderToStaticMarkup(createElement(CandidateReview, { sourceId: 'BPS', onClose() {} }))

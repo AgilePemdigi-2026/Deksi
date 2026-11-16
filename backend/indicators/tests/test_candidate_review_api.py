@@ -2,12 +2,13 @@ import json
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.contrib.auth.models import Permission
 from django.contrib.sessions.models import Session
 from django.test import Client
 from django.utils import timezone
 
 from indicators.lifecycle import stage_observation
-from indicators.models import Observation, ObservationCandidate
+from indicators.models import Observation, ObservationCandidate, RawFile
 from indicators.tests.support import IndicatorCase
 
 
@@ -38,6 +39,25 @@ class CandidateReviewApiTests(IndicatorCase):
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(detail.json()['candidate']['id'], self.candidate.pk)
         self.assertEqual(self.client.get(f'/api/admin/sources/OTHER/candidates/{self.candidate.pk}/').status_code, 404)
+
+    def test_evidence_uses_candidate_snapshot_and_does_not_expose_source_url(self):
+        raw = RawFile.objects.create(source=self.source, document_name='Bukti sintetis',
+            source_url='https://example.test/key/SYNTHETIC-PRIVATE', period_label='UJI',
+            checksum_sha256='a' * 64, file_size_bytes=12)
+        candidate = stage_observation(indicator_id=self.indicator.pk, source_id=self.source.pk,
+            observation_date=date(2024, 3, 31), period_label='UJI RAW', frequency='monthly',
+            data_type='yoy', value=Decimal('1.25'), unit='%', raw_file_id=raw.pk)
+        assert candidate is not None
+        raw.document_name = 'Diubah kemudian'
+        raw.save(update_fields=['document_name'])
+        self.client.force_login(self.reviewer)
+        response = self.client.get(f'{self.url}{candidate.pk}/')
+        self.assertEqual(response.status_code, 200)
+        evidence = response.json()['candidate']['rawEvidence']
+        self.assertEqual(evidence['documentName'], 'Bukti sintetis')
+        self.assertEqual(evidence['checksumSha256'], 'a' * 64)
+        self.assertNotIn('SYNTHETIC-PRIVATE', response.content.decode())
+        self.assertIsNone(self.client.get(f'{self.url}{self.candidate.pk}/').json()['candidate']['rawEvidence'])
 
     def test_publish_requires_permission_csrf_and_matching_fingerprint(self):
         self.client.force_login(self.reviewer)
@@ -81,6 +101,19 @@ class CandidateReviewApiTests(IndicatorCase):
         response = self.client.post(self.review_url, json.dumps(body), content_type='application/json')
         self.assertEqual(response.status_code, 403)
         self.assertEqual(Observation.objects.count(), 0)
+
+    def test_session_reports_review_capability_without_granting_access(self):
+        self.assertFalse(self.client.get('/api/admin/session/').json()['canReviewCandidates'])
+        self.reviewer.is_superuser = False
+        self.reviewer.save(update_fields=['is_superuser'])
+        self.client.force_login(self.reviewer)
+        self.assertFalse(self.client.get('/api/admin/session/').json()['canReviewCandidates'])
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        permission = Permission.objects.get(
+            content_type__app_label='indicators', codename='change_observationcandidate')
+        self.reviewer.user_permissions.add(permission)
+        self.assertTrue(self.client.get('/api/admin/session/').json()['canReviewCandidates'])
+        self.assertEqual(self.client.get(self.url).status_code, 200)
 
     def test_expired_session_cannot_read_or_review(self):
         self.client.force_login(self.reviewer)

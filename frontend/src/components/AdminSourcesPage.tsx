@@ -48,6 +48,7 @@ export function AdminSourcesPage() {
   const toggleBusy = useRef(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [canReviewCandidates, setCanReviewCandidates] = useState<boolean | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -96,6 +97,7 @@ export function AdminSourcesPage() {
     fetchAdminSession()
       .then((s) => {
         setAuthenticated(s.authenticated);
+        setCanReviewCandidates(typeof s.canReviewCandidates === "boolean" ? s.canReviewCandidates : null);
         if (s.authenticated) void reload();
         else setLoading(false);
       })
@@ -111,6 +113,12 @@ export function AdminSourcesPage() {
       await adminLogin(username.trim(), password);
       setAuthenticated(true);
       setPassword("");
+      try {
+        const session = await fetchAdminSession();
+        setCanReviewCandidates(session.authenticated && typeof session.canReviewCandidates === "boolean" ? session.canReviewCandidates : null);
+      } catch {
+        setCanReviewCandidates(null);
+      }
       await reload();
     } catch (e) {
       setLoginError(e instanceof Error ? e.message : "Login gagal.");
@@ -126,6 +134,7 @@ export function AdminSourcesPage() {
       await adminLogout();
       editRequest.current += 1;
       setAuthenticated(false);
+      setCanReviewCandidates(null);
       setReviewSource(null);
       setSources([]);
       window.location.replace("/admin/login");
@@ -377,6 +386,9 @@ export function AdminSourcesPage() {
           {toggleError && <p className="summary-error" role="alert">{toggleError}</p>}
           {loading && <p className="summary-loading">Memuat registry sumber…</p>}
           {!loading && error && <p className="summary-error">{error}</p>}
+          {canReviewCandidates !== true && <p className="admin-source-card__permission" role="status" id="candidate-review-permission">
+            {canReviewCandidates === false ? "Akun ini tidak memiliki izin review kandidat. Hubungi pengelola untuk meminta izin." : "Izin review kandidat belum dapat dipastikan. Muat ulang halaman atau hubungi pengelola."}
+          </p>}
 
           {!loading && !error && (
             <div className="sources-grid admin-sources-grid">
@@ -393,7 +405,7 @@ export function AdminSourcesPage() {
                   </div>
                   {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
                   <div className="admin-source-card__actions">
-                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
+                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
                     <button type="button" className="source-trace-link" disabled={toggling || reviewBusy} onClick={() => startEdit(s.sourceId)}>
                       Edit ↗
                     </button>

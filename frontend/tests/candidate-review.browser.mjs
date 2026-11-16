@@ -13,10 +13,13 @@ let status = 'pending'
 let releaseReview
 let forcedReviewStatus = 0
 let detailFailure = false
+let includeEvidence = false
 const candidate = () => ({ id: 1, fingerprint: 'a'.repeat(64), indicator: 'inflasi', indicatorName: 'Inflasi UJI',
   sourceId: 'BPS', sourceName: 'BPS UJI', sourceUrl: 'https://example.test/', period: 'UJI 2024',
   observationDate: '2024-01-31', publicationDate: null, frequency: 'monthly', dataType: 'yoy',
-  value: '3.250000', unit: '%', rawFileId: null, status, createdAt: '2024-02-01T00:00:00Z',
+  value: '3.250000', unit: '%', rawFileId: includeEvidence ? 9 : null,
+  rawEvidence: includeEvidence ? { documentName: 'Dokumen sintetis', periodLabel: 'Periode sintetis', retrievedAt: null, checksumSha256: 'c'.repeat(64) } : null,
+  status, createdAt: '2024-02-01T00:00:00Z',
   reviewedAt: status === 'published' ? '2024-02-02T00:00:00Z' : null, reviewedBy: status === 'published' ? 'UJI' : null, reviewNotes: '' })
 const mockApi = (req, res, next) => {
   if (!req.url.startsWith('/api/')) return next()
@@ -24,7 +27,7 @@ const mockApi = (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
   const route = req.url.split('?')[0]
   const send = body => res.end(JSON.stringify(body))
-  if (route === '/api/admin/session/') return send({ authenticated: true, username: 'UJI' })
+  if (route === '/api/admin/session/') return send({ authenticated: true, username: 'UJI', isStaff: true, canReviewCandidates: true })
   if (route === '/api/admin/sources/acquisition-methods/') return send({ methods: [], frequencies: [] })
   if (route === '/api/admin/sources/') return send({ sources: [{ sourceId: 'BPS', sourceName: 'BPS UJI',
     institution: 'Sumber UJI', status: 'active', acquisitionMethod: 'api_bps', dataFormat: 'json',
@@ -110,11 +113,14 @@ try {
   assert(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'narrow viewport must not overflow')
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
   await wait("document.body.innerText.includes('Tanggal rilis') && document.body.innerText.includes('Tidak tersedia')")
+  assert(await evaluate("document.body.innerText.includes('bukan bukti bahwa angka telah diverifikasi')"), 'missing evidence must not be portrayed as verified')
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false })
   assert(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'desktop viewport must not overflow')
   assert.equal(calls.filter(c => c.method === 'POST').length, 0)
   await click('Setujui untuk publikasi')
   await wait("document.body.innerText.includes('Konfirmasi publikasi kandidat #1')")
+  assert(await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Ya, konfirmasi').disabled"), 'publication requires explicit source verification acknowledgement')
+  await evaluate("document.querySelector('.candidate-review__confirmation input[type=checkbox]').click()")
   assert.equal(calls.filter(c => c.method === 'POST').length, 0)
   await click('Ya, konfirmasi')
   for (let i = 0; i < 100 && !releaseReview; i++) await delay(30)
@@ -146,6 +152,7 @@ try {
     await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
     await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
     await click('Setujui untuk publikasi')
+    await evaluate("document.querySelector('.candidate-review__source-check input').click()")
     await click('Ya, konfirmasi')
     await wait(`document.body.innerText.includes(${JSON.stringify(expected)})`)
     await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Muat ulang'&&!b.disabled)")
@@ -160,6 +167,7 @@ try {
   await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
   await click('Setujui untuk publikasi')
+  await evaluate("document.querySelector('.candidate-review__source-check input').click()")
   await evaluate("window.__originalTimeout = window.setTimeout; window.setTimeout = (fn, ms, ...args) => window.__originalTimeout(fn, ms === 15000 ? 100 : ms, ...args)")
   const beforePost = calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length
   await click('Ya, konfirmasi')
@@ -216,17 +224,26 @@ try {
   await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
   await click('Setujui untuk publikasi')
-  await evaluate("window.__originalTimeout = window.setTimeout; window.setTimeout = (fn, ms, ...args) => window.__originalTimeout(fn, ms === 15000 ? 100 : ms, ...args)")
+  await evaluate("document.querySelector('.candidate-review__source-check input').click()")
+  const beforeBlockedPost = calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length
+  const beforeBlockedCalls = calls.length
   await click('Ya, konfirmasi')
-  await wait("document.body.innerText.includes('Status kandidat #1 saat diperiksa: pending')")
-  await evaluate('window.setTimeout = window.__originalTimeout')
-  await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()==='Muat ulang'&&!b.disabled)")
+  await delay(200)
+  assert.equal(calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length, beforeBlockedPost, 'failed session write must prevent review POST')
+  assert.equal(calls.length, beforeBlockedCalls, 'failed session write must also prevent CSRF and readback requests')
+  assert(await evaluate("document.body.innerText.includes('Penyimpanan sesi tidak tersedia')"), 'blocked submission must explain how to recover')
+  await evaluate('Storage.prototype.setItem = window.__originalSetItem')
+  await evaluate("window.__originalGetItem = Storage.prototype.getItem; Storage.prototype.getItem = function(k) { if (k.startsWith('deksi-review-uncertain:')) return null; return window.__originalGetItem.call(this, k) }")
+  await click('Ya, konfirmasi')
+  await delay(200)
+  assert.equal(calls.length, beforeBlockedCalls, 'a failed storage readback must also prevent network requests')
+  await evaluate("Storage.prototype.getItem = window.__originalGetItem; sessionStorage.removeItem('deksi-review-uncertain:BPS')")
   await click('Tutup kandidat')
+  includeEvidence = true
   await click('Lihat Kandidat')
   await wait("Array.from(document.querySelectorAll('button')).some(b=>b.textContent.includes('Inflasi UJI'))")
   await evaluate("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Inflasi UJI')).click()")
-  assert(await evaluate("document.body.innerText.includes('Peringatan hanya tersimpan di halaman ini')"), 'failed session write must keep the in-memory warning on remount')
-  await evaluate('Storage.prototype.setItem = window.__originalSetItem')
+  assert(await evaluate("document.body.innerText.includes('Dokumen sintetis') && document.body.innerText.includes('Periode sintetis')"), 'available snapshot evidence should be visible')
   console.log('PASS: synthetic browser flow, explicit confirmation, one POST and exact readback')
 } catch (error) {
   console.error(error); console.error('Sanitized synthetic calls:', JSON.stringify(calls))

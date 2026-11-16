@@ -23,8 +23,11 @@ function readUncertain(sourceId: string): { ids: number[]; stored: boolean } {
 function writeUncertain(sourceId: string, ids: number[]): boolean {
   transientUncertain.set(sourceId, ids)
   try {
-    if (ids.length) window.sessionStorage.setItem(uncertainKey(sourceId), JSON.stringify(ids))
-    else window.sessionStorage.removeItem(uncertainKey(sourceId))
+    if (ids.length) {
+      const serialized = JSON.stringify(ids)
+      window.sessionStorage.setItem(uncertainKey(sourceId), serialized)
+      if (window.sessionStorage.getItem(uncertainKey(sourceId)) !== serialized) throw new Error('session readback failed')
+    } else window.sessionStorage.removeItem(uncertainKey(sourceId))
     volatileSources.delete(sourceId)
     transientUncertain.delete(sourceId)
     return true
@@ -48,6 +51,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   const [uncertain, setUncertain] = useState(initialUncertain.ids)
   const [stored, setStored] = useState(initialUncertain.stored)
   const [acknowledged, setAcknowledged] = useState(false)
+  const [sourceChecked, setSourceChecked] = useState(false)
   const uncertainRef = useRef(initialUncertain.ids)
 
   const submission = useRef(false)
@@ -62,8 +66,8 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     let active = true
     fetchReviewCandidates(sourceId, page, status).then(data => {
       if (active) setResult(data)
-    }).catch(() => {
-      if (active) setError('Kandidat tidak dapat dimuat. Periksa sesi, izin, atau koneksi.')
+    }).catch((error: unknown) => {
+      if (active) setError(error instanceof CandidateReviewError ? error.message : 'Kandidat tidak dapat dimuat. Periksa sesi, izin, atau koneksi.')
     }).finally(() => {
       if (active) setLoading(false)
     })
@@ -74,20 +78,30 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   const markUncertain = (id: number, value: boolean) => {
     const ids = uncertainRef.current.filter(item => item !== id)
     if (value) ids.push(id)
+    const persisted = writeUncertain(sourceId, ids)
+    if (value && !persisted) {
+      transientUncertain.set(sourceId, uncertainRef.current)
+      setStored(false)
+      return false
+    }
     uncertainRef.current = ids
     setUncertain(ids)
-    setStored(writeUncertain(sourceId, ids))
+    setStored(persisted)
+    return persisted
   }
   const submit = async () => {
-    if (!selected || !decision || submission.current || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim())) return
+    if (!selected || !decision || submission.current || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
+    const id = selected.id
+    // Do not dispatch if a same-tab reload could erase the in-flight warning.
+    if (!markUncertain(id, true)) {
+      setActionError('Penyimpanan sesi tidak tersedia. Keputusan tidak dikirim. Aktifkan penyimpanan browser dan coba lagi setelah memeriksa riwayat.')
+      return
+    }
     submission.current = true
     onBusyChange(true)
     setBusy(true); setError(null); setActionError(null); setMessage(null)
-    const id = selected.id
     let accepted = false
     let definiteFailure: string | null = null
-    // Persist before dispatch so a reload cannot erase an in-flight warning.
-    markUncertain(id, true)
     try {
       await submitCandidateReview(sourceId, selected, decision, notes.trim())
       accepted = true
@@ -105,7 +119,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     } finally {
       submission.current = false
       onBusyChange(false)
-      setBusy(false); setSelected(null); setDecision(null); setNotes('')
+      setBusy(false); setSelected(null); setDecision(null); setNotes(''); setSourceChecked(false)
       // Reload is a read, never a repeated mutation.
       setReload(n => n + 1)
     }
@@ -155,7 +169,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     {result && <>
       {result.items.length === 0 ? <p className="candidate-review__empty">Tidak ada kandidat pada halaman ini.</p> : <ul className="candidate-review__list">
         {result.items.map(item => <li key={item.id}>
-          <button type="button" className="candidate-review__item" aria-pressed={selected?.id === item.id} disabled={busy} onClick={() => { setSelected(item); setDecision(null); setNotes(''); setAcknowledged(false) }}>
+          <button type="button" className="candidate-review__item" aria-pressed={selected?.id === item.id} disabled={busy} onClick={() => { setSelected(item); setDecision(null); setNotes(''); setAcknowledged(false); setSourceChecked(false) }}>
             <span className="candidate-review__item-name">{item.indicatorName}</span>{' '}
             <span className="candidate-review__item-meta">{unavailable(item.period)} · #{item.id}</span>{' '}
             <span className="candidate-review__item-value">{unavailable(item.value)} {unavailable(item.unit)}</span>
@@ -179,12 +193,17 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <dt>Tanggal rilis</dt><dd>{unavailable(selected.publicationDate)}</dd>
         <dt>Frekuensi / jenis data</dt><dd>{unavailable(selected.frequency)} / {unavailable(selected.dataType)}</dd>
         <dt>Dokumen RAW</dt><dd>{selected.rawFileId == null ? 'Tidak tersedia' : `ID ${selected.rawFileId}`}</dd>
+        <dt>Nama dokumen tersimpan</dt><dd>{unavailable(selected.rawEvidence?.documentName)}</dd>
+        <dt>Periode dokumen</dt><dd>{unavailable(selected.rawEvidence?.periodLabel)}</dd>
+        <dt>Waktu pengambilan dokumen</dt><dd>{unavailable(selected.rawEvidence?.retrievedAt)}</dd>
+        <dt>Checksum dokumen</dt><dd>{unavailable(selected.rawEvidence?.checksumSha256)}</dd>
         <dt>Waktu kandidat dibuat</dt><dd>{unavailable(selected.createdAt)}</dd>
         <dt>Status</dt><dd>{selected.status}</dd>
       <dt>Direview oleh / waktu</dt><dd>{unavailable(selected.reviewedBy)} / {unavailable(selected.reviewedAt)}</dd>
       <dt>Catatan review</dt><dd>{unavailable(selected.reviewNotes)}</dd>
       </dl>
       <p>Pastikan angka dan konteksnya sesuai sumber resmi. Tanggal observasi bukan tanggal rilis.</p>
+      <p>Metadata dokumen di atas adalah snapshot saat kandidat dibuat, bukan bukti bahwa angka telah diverifikasi. Jika tidak tersedia, periksa sumber resmi secara terpisah.</p>
       {selected.status === 'pending' && uncertain.includes(selected.id) && <div className="candidate-review__warning" role="alert">
         <p>Keputusan sebelumnya belum pasti. Status pending tidak membuktikan proses server selesai. Periksa status dan riwayat bersama pengelola sebelum keputusan ulang.</p>
         <p>Peringatan ini bukan kunci server dan tidak menjamin perlindungan pada tab atau perangkat lain.</p>
@@ -199,9 +218,10 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       </div>}
       {decision && <div className="candidate-review__confirmation">
         <p>Konfirmasi {decision === 'publish' ? 'publikasi' : 'penolakan'} kandidat #{selected.id}: {selected.indicatorName}, {unavailable(selected.period)}, {unavailable(selected.value)} {unavailable(selected.unit)}.</p>
+        {decision === 'publish' && <label className="candidate-review__source-check"><input type="checkbox" checked={sourceChecked} disabled={busy} onChange={event => setSourceChecked(event.target.checked)} /> Saya telah membandingkan indikator, nilai, satuan dan periode dengan sumber resmi.</label>}
         {decision === 'reject' && <label>Alasan penolakan <textarea value={notes} maxLength={500} onChange={event => setNotes(event.target.value)} /></label>}
-        <button type="button" className="tab" disabled={busy || (decision === 'reject' && !notes.trim())} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}
-        <button type="button" className="tab" disabled={busy} onClick={() => setDecision(null)}>Batal</button>
+        <button type="button" className="tab" disabled={busy || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}
+        <button type="button" className="tab" disabled={busy} onClick={() => { setDecision(null); setSourceChecked(false) }}>Batal</button>
       </div>}
     </article>}
   </section>

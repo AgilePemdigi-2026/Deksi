@@ -340,6 +340,7 @@ export interface AdminSession {
   authenticated: boolean;
   username: string | null;
   isStaff: boolean;
+  canReviewCandidates?: boolean;
 }
 
 export interface AcquisitionMethod {
@@ -416,6 +417,7 @@ export interface ReviewCandidate {
   observationDate: string | null; publicationDate: string | null; frequency: string | null;
   dataType: string | null; value: string | null; unit: string | null; rawFileId: number | null;
   previousValue: string | null; previousUnit: string | null; previousPeriod: string | null;
+  rawEvidence?: { documentName: string | null; periodLabel: string | null; retrievedAt: string | null; checksumSha256: string | null } | null;
   status: string; createdAt: string; reviewedAt: string | null; reviewedBy: string | null; reviewNotes: string;
 }
 
@@ -451,7 +453,8 @@ export async function fetchReviewCandidates(sourceId: string, page: number, stat
   return withCandidateDeadline(async signal => {
     const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`, { signal });
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) throw new Error('Sesi atau izin review Admin diperlukan.');
+      if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+      if (res.status === 403) throw new CandidateReviewError('forbidden', 'Akses ditolak: periksa izin review kandidat dengan pengelola.');
       throw new Error('Daftar kandidat tidak dapat dimuat.');
     }
     const body = await res.json() as CandidatePage;
