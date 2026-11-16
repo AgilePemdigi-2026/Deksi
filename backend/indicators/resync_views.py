@@ -117,7 +117,12 @@ def request_resync(request, source_id):
                 if previous.requested_by_id != request.user.pk or previous.source_id != source.pk:
                     return json_error("Identitas permintaan sudah digunakan.", status=409)
                 return _job_response(previous)
-            if source.source_id != "BPS":
+            from indicators.source_admin_views import SUPPORTED_METHODS
+            method = (source.acquisition_method or "").strip()
+            if not method:
+                legacy = {"BPS": "api_bps", "KEMENKEU": "pdf_kita", "BI": "file_xlsx", "BKPM": "file_zip_csv"}
+                method = legacy.get(source.source_id, "")
+            if method not in SUPPORTED_METHODS:
                 return json_error("Sinkronisasi ulang untuk sumber ini belum tersedia.", status=400)
             if source.status != Source.SourceStatus.ACTIVE:
                 return json_error("Sumber tidak aktif.", status=409)

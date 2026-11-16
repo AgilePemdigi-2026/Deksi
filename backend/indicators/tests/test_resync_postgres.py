@@ -25,10 +25,7 @@ class ResyncPostgresConcurrencyTests(TransactionTestCase):
     def setUp(self):
         self.assertEqual(connection.vendor, "postgresql")
         self.user = get_user_model().objects.create_user(username="race-admin", is_staff=True)
-        self.source = Source.objects.create(
-            source_id="BPS", source_name="Synthetic BPS", institution="Synthetic",
-            primary_url="https://example.test/",
-        )
+        self.source = Source.objects.get(source_id="BPS")
 
     def race(self, left, right):
         barrier = threading.Barrier(2, timeout=10)

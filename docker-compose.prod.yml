@@ -30,6 +30,8 @@ services:
       POSTGRES_PORT: "5432"
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
       SECURE_SSL_REDIRECT: "False"
+      BPS_API_KEY: ${BPS_API_KEY:-}
+      BPS_API_BASE_URL: https://webapi.bps.go.id/v1
     command:
       - sh
       - -c
