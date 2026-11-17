@@ -957,3 +957,43 @@ export async function updateAdminFeedbackStatus(
   }
   return { ...body.feedback, csrfToken: body.csrfToken } as AdminFeedbackDetail;
 }
+
+// ---------------------------------------------------------------------------
+// Feature 26 – Konfigurasi Notifikasi
+// ---------------------------------------------------------------------------
+
+export interface NotificationEntry {
+  kind: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  configured: boolean;
+  version: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+export async function fetchNotifications(): Promise<{ notifications: NotificationEntry[]; events?: { kind: string; sourceId: string | null; notified: boolean; message: string; createdAt: string | null }[] }> {
+  const res = await adminFetch("/admin/notifications/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  let events: { kind: string; sourceId: string | null; notified: boolean; message: string; createdAt: string | null }[] = [];
+  try {
+    const ev = await adminFetch("/admin/notifications/events/?limit=20");
+    if (ev.ok) events = ((await ev.json()) as { events: typeof events }).events ?? [];
+  } catch {
+    events = [];
+  }
+  return { notifications: (body?.notifications ?? []) as NotificationEntry[], events };
+}
+
+export async function updateNotification(kind: string, enabled: boolean): Promise<NotificationEntry> {
+  const res = await adminFetch(`/admin/notifications/${encodeURIComponent(kind)}/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return (body as { notification: NotificationEntry }).notification;
+}
