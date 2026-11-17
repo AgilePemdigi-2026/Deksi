@@ -169,6 +169,15 @@
 .candidate-review__confirmation textarea { min-height: 96px; resize: vertical; }
 .candidate-review__confirmation .tab + .tab { margin-left: 8px; }
 
+.candidate-review__bulk { margin: 0 0 24px; padding: 18px; border: 1px solid #aaa; border-radius: 5px; }
+.candidate-review__bulk p { margin: 0 0 12px; line-height: 1.5; }
+.candidate-review__bulk-preview,
+.candidate-review__bulk-result { margin-top: 16px; padding-top: 16px; border-top: 1px solid #aaa; }
+.candidate-review__bulk ol { max-height: 360px; overflow: auto; padding-left: 26px; margin: 14px 0; }
+.candidate-review__bulk li { padding: 8px 4px; border-bottom: 1px solid #bbb; overflow-wrap: anywhere; }
+.candidate-review__bulk label { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0; line-height: 1.5; }
+.candidate-review .candidate-review__bulk input { width: 18px; height: 18px; margin: 3px 0 0; flex: none; }
+
 @media (max-width: 760px) {
   .candidate-review__header { flex-direction: column; gap: 18px; }
   .candidate-review__header-actions { flex-shrink: 1; }

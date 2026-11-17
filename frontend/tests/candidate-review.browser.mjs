@@ -38,6 +38,7 @@ const mockApi = (req, res, next) => {
     institution: 'Sumber UJI', status: 'active', acquisitionMethod: '', dataFormat: 'json',
     frequency: 'mixed', lastFetch: {} }] })
   if (route === '/api/admin/sources/BPS/resync-active/') return send({ job: null })
+  if (route === '/api/admin/sources/BPS/candidates/bulk-review/active/') return send({ batch: null })
   if (route === '/api/auth/csrf/') return send({ csrfToken: 'synthetic-token' })
   if (route === '/api/admin/sources/BPS/candidates/') {
     const filter = new URL(req.url, 'http://localhost').searchParams.get('status') || 'pending'
