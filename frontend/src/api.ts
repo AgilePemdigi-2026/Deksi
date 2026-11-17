@@ -997,3 +997,18 @@ export async function updateNotification(kind: string, enabled: boolean): Promis
   if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
   return (body as { notification: NotificationEntry }).notification;
 }
+
+// ---------------------------------------------------------------------------
+// Feature 27 – Kembalikan Konfigurasi ke Default
+// ---------------------------------------------------------------------------
+
+export async function restoreDefaults(domains?: string[]): Promise<{ results: Record<string, { kind: string; status: string }[]>; message: string }> {
+  const res = await adminFetch("/admin/config/restore/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(domains ? { domains } : {}),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return body as { results: Record<string, { kind: string; status: string }[]>; message: string };
+}

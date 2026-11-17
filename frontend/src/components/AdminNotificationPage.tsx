@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AdminNavigation } from "./AdminNavigation";
-import { fetchNotifications, updateNotification, type NotificationEntry } from "../api";
+import { fetchNotifications, restoreDefaults, updateNotification, type NotificationEntry } from "../api";
 
 export function AdminNotificationPage() {
   const [items, setItems] = useState<NotificationEntry[]>([]);
@@ -8,6 +8,8 @@ export function AdminNotificationPage() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
+  const [confirming, setConfirming] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   async function load() {
     try {
@@ -35,6 +37,21 @@ export function AdminNotificationPage() {
       setEvents(data.events ?? []);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Gagal menyimpan");
+    }
+  }
+
+  async function confirmRestore() {
+    setRestoring(true);
+    setMsg(null);
+    try {
+      const out = await restoreDefaults();
+      setMsg(out.message || "Konfigurasi dikembalikan ke pengaturan awal");
+      setConfirming(false);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Pemulihan gagal; konfigurasi sebelumnya dipertahankan");
+    } finally {
+      setRestoring(false);
     }
   }
 
@@ -83,6 +100,17 @@ export function AdminNotificationPage() {
             </tbody>
           </table>
         </div>
+        <h3>Pemulihan konfigurasi</h3>
+        <p className="catalog-note">Mengembalikan preferensi notifikasi (dan domain terjadwal bila tersedia) ke nilai bawaan. Formula inti, data, dan riwayat tidak diubah.</p>
+        {!confirming && <button type="button" onClick={() => setConfirming(true)}>Kembalikan ke Default</button>}
+        {confirming && (
+          <div role="dialog" aria-modal="true" aria-labelledby="restore-title">
+            <h4 id="restore-title">Kembalikan ke Default?</h4>
+            <p>Konfigurasi saat ini digantikan nilai bawaan: notifikasi, jadwal, threshold (bila tersedia). Tindakan tercatat di audit log. Batal tidak mengubah apa pun.</p>
+            <button type="button" onClick={() => setConfirming(false)} disabled={restoring}>Batal</button>
+            <button type="button" onClick={() => void confirmRestore()} disabled={restoring}>{restoring ? "Memulihkan…" : "Konfirmasi pemulihan"}</button>
+          </div>
+        )}
       </section>
     </>
   );
