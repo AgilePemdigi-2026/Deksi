@@ -463,6 +463,20 @@ export async function fetchReviewCandidates(sourceId: string, page: number, stat
   }, options?.timeoutMs);
 }
 
+export async function fetchAdminAnalysisResults(page: number, status: 'all' | 'pending' | 'published' | 'rejected', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/analysis-results/?page=${page}&status=${status}`, { signal });
+    if (!res.ok) {
+      if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali untuk meninjau hasil analisis.');
+      if (res.status === 403) throw new CandidateReviewError('forbidden', 'Akses ditolak: periksa izin review hasil analisis dengan pengelola.');
+      throw new Error('Daftar hasil analisis tidak dapat dimuat.');
+    }
+    const body = await res.json() as CandidatePage;
+    if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons hasil analisis tidak valid.');
+    return body;
+  }, options?.timeoutMs);
+}
+
 export async function submitCandidateReview(sourceId: string, candidate: ReviewCandidate, decision: 'publish' | 'reject', notes: string, options?: { timeoutMs?: number }): Promise<void> {
   return withCandidateDeadline(async signal => {
     const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${candidate.id}/review/`, {
