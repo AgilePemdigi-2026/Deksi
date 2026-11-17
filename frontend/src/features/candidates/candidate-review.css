@@ -112,10 +112,24 @@
 }
 
 .candidate-review__detail h4 {
-  margin: 0 0 18px;
+  margin: 0 0 22px;
   font-size: 18px;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+.candidate-review__evidence,
+.candidate-review__analysis {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #bbb;
+}
+
+.candidate-review__detail h5 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
 }
 
 .candidate-review__detail dl {
@@ -123,7 +137,6 @@
   grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
   gap: 0 24px;
   margin: 0;
-  border-top: 1px solid #bbb;
 }
 
 .candidate-review__detail dt,
@@ -139,7 +152,11 @@
 .candidate-review__detail dt { color: #444; }
 .candidate-review__detail dd { font-weight: 500; }
 .candidate-review__detail a { color: #111; text-underline-offset: 3px; }
-.candidate-review__detail > p { max-width: 720px; margin: 18px 0; color: #333; font-size: 13px; line-height: 1.6; }
+.candidate-review__detail > p,
+.candidate-review__analysis p,
+.candidate-review__evidence > p { max-width: 720px; margin: 0; color: #333; font-size: 13px; line-height: 1.6; }
+.candidate-review__detail > p { margin-top: 20px; }
+.candidate-review__analysis h5:not(:first-child) { margin-top: 18px; }
 .candidate-review__warning,
 .candidate-review__confirmation { margin-top: 18px; padding: 18px; border: 1px solid #aaa; border-radius: 5px; background: #f5f5f5; }
 .candidate-review__warning p,

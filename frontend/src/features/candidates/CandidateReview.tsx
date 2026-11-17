@@ -240,27 +240,49 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     </>}
     {selected && <article className="trace-panel candidate-review__detail" aria-label={`Detail kandidat ${selected.id}`}>
       <h4>{unavailable(selected.indicatorName)} · {unavailable(selected.period)} · #{selected.id}</h4>
-      <dl>
-        <dt>Nilai dan satuan</dt><dd>{unavailable(selected.value)} {unavailable(selected.unit)}</dd>
-        <dt>Observasi sebelumnya pada basis kandidat</dt><dd>{selected.previousValue == null ? 'Tidak tersedia' : `${selected.previousValue} ${unavailable(selected.previousUnit)} · ${unavailable(selected.previousPeriod)}`}</dd>
-        <dt>Sumber saat kandidat dibuat</dt><dd>{unavailable(selected.sourceName)}</dd>
-        <dt>Portal saat kandidat dibuat</dt><dd>{safeExternalUrl(selected.sourceUrl) ? <a href={safeExternalUrl(selected.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">Buka portal sumber</a> : 'Tidak tersedia'}</dd>
-        <dt>Periode observasi</dt><dd>{unavailable(selected.period)}</dd>
-        <dt>Tanggal observasi</dt><dd>{unavailable(selected.observationDate)}</dd>
-        <dt>Tanggal rilis</dt><dd>{unavailable(selected.publicationDate)}</dd>
-        <dt>Frekuensi / jenis data</dt><dd>{unavailable(selected.frequency)} / {unavailable(selected.dataType)}</dd>
-        <dt>Dokumen RAW</dt><dd>{selected.rawFileId == null ? 'Tidak tersedia' : `ID ${selected.rawFileId}`}</dd>
-        <dt>Nama dokumen tersimpan</dt><dd>{unavailable(selected.rawEvidence?.documentName)}</dd>
-        <dt>Periode dokumen</dt><dd>{unavailable(selected.rawEvidence?.periodLabel)}</dd>
-        <dt>Waktu pengambilan dokumen</dt><dd>{unavailable(selected.rawEvidence?.retrievedAt)}</dd>
-        <dt>Checksum dokumen</dt><dd>{unavailable(selected.rawEvidence?.checksumSha256)}</dd>
-        <dt>Waktu kandidat dibuat</dt><dd>{unavailable(selected.createdAt)}</dd>
-        <dt>Status</dt><dd>{selected.status}</dd>
-      <dt>Direview oleh / waktu</dt><dd>{unavailable(selected.reviewedBy)} / {unavailable(selected.reviewedAt)}</dd>
-      <dt>Catatan review</dt><dd>{unavailable(selected.reviewNotes)}</dd>
-      </dl>
-      <p>Pastikan angka dan konteksnya sesuai sumber resmi. Tanggal observasi bukan tanggal rilis.</p>
-      <p>Metadata dokumen di atas adalah snapshot saat kandidat dibuat, bukan bukti bahwa angka telah diverifikasi. Jika tidak tersedia, periksa sumber resmi secara terpisah.</p>
+      <section className="candidate-review__evidence" aria-labelledby={`candidate-values-${selected.id}`}>
+        <h5 id={`candidate-values-${selected.id}`}>Nilai resmi dan periode</h5>
+        <dl>
+          <dt>Nilai dan satuan</dt><dd>{unavailable(selected.value)} {unavailable(selected.unit)}</dd>
+          <dt>Observasi sebelumnya pada basis kandidat</dt><dd>{selected.previousValue == null ? 'Tidak tersedia' : `${selected.previousValue} ${unavailable(selected.previousUnit)} · ${unavailable(selected.previousPeriod)}`}</dd>
+          <dt>Periode observasi</dt><dd>{unavailable(selected.period)}</dd>
+          <dt>Tanggal observasi</dt><dd>{unavailable(selected.observationDate)}</dd>
+          <dt>Tanggal rilis</dt><dd>{unavailable(selected.publicationDate)}</dd>
+          <dt>Frekuensi / jenis data</dt><dd>{unavailable(selected.frequency)} / {unavailable(selected.dataType)}</dd>
+        </dl>
+      </section>
+      <section className="candidate-review__analysis" aria-label="Hasil analisis">
+        <h5>Economic Engine</h5>
+        <p>Belum tersedia untuk versi kandidat ini. Tidak ada hasil turunan yang tersimpan untuk ditinjau.</p>
+        <h5>Diagnostic flags</h5>
+        <p>Belum tersedia untuk versi kandidat ini. Status diagnostik tidak diasumsikan aman atau lolos.</p>
+        <h5>Narasi Grounded AI</h5>
+        <p>Belum tersedia untuk versi kandidat ini. Tidak ada narasi AI yang digunakan sebagai dasar keputusan.</p>
+      </section>
+      <section className="candidate-review__evidence" aria-labelledby={`candidate-source-${selected.id}`}>
+        <h5 id={`candidate-source-${selected.id}`}>Source Trace dan bukti RAW</h5>
+        <dl>
+          <dt>ID sumber</dt><dd>{unavailable(selected.sourceId)}</dd>
+          <dt>Sumber saat kandidat dibuat</dt><dd>{unavailable(selected.sourceName)}</dd>
+          <dt>Portal saat kandidat dibuat</dt><dd>{safeExternalUrl(selected.sourceUrl) ? <a href={safeExternalUrl(selected.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">Buka portal sumber</a> : 'Tidak tersedia'}</dd>
+          <dt>Dokumen RAW</dt><dd>{selected.rawFileId == null ? 'Tidak tersedia' : `ID ${selected.rawFileId}`}</dd>
+          <dt>Nama dokumen tersimpan</dt><dd>{unavailable(selected.rawEvidence?.documentName)}</dd>
+          <dt>Periode dokumen</dt><dd>{unavailable(selected.rawEvidence?.periodLabel)}</dd>
+          <dt>Waktu pengambilan dokumen</dt><dd>{unavailable(selected.rawEvidence?.retrievedAt)}</dd>
+          <dt>Checksum dokumen</dt><dd>{unavailable(selected.rawEvidence?.checksumSha256)}</dd>
+        </dl>
+        <p>Metadata ini adalah snapshot saat kandidat dibuat, bukan bukti bahwa angka telah diverifikasi. Periksa sumber resmi secara terpisah.</p>
+      </section>
+      <section className="candidate-review__evidence" aria-labelledby={`candidate-review-${selected.id}`}>
+        <h5 id={`candidate-review-${selected.id}`}>Peninjauan</h5>
+        <dl>
+          <dt>Waktu kandidat dibuat</dt><dd>{unavailable(selected.createdAt)}</dd>
+          <dt>Status</dt><dd>{selected.status}</dd>
+          <dt>Direview oleh / waktu</dt><dd>{unavailable(selected.reviewedBy)} / {unavailable(selected.reviewedAt)}</dd>
+          <dt>Catatan review</dt><dd>{unavailable(selected.reviewNotes)}</dd>
+        </dl>
+      </section>
+      <p>Periksa konsistensi nilai, konteks, dan sumber resmi. Tanggal observasi bukan tanggal rilis.</p>
       {initialReadOk && selected.status === 'pending' && uncertain.includes(selected.id) && <div className="candidate-review__warning" role="alert">
         <p>Keputusan sebelumnya belum pasti. Status pending tidak membuktikan proses server selesai. Periksa status dan riwayat bersama pengelola sebelum keputusan ulang.</p>
         <p>Peringatan ini bukan kunci server dan tidak menjamin perlindungan pada tab atau perangkat lain.</p>
