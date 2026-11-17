@@ -1,0 +1,100 @@
+{
+  "captured_at": "2026-11-04T04:32:47.713280+07:00",
+  "sources": [
+    {
+      "id": "SRS",
+      "path": "E:\\Semester 5\\PPL Prak\\UTS_I3_Deksi_SRS.pdf",
+      "sha256": "32b775db9cc6153fb36164ddaf87e1b83b076bbac2da737692fab1db8281ac4d"
+    },
+    {
+      "id": "SPRINT",
+      "path": "E:\\Semester 5\\PPL Prak\\Laporan_Sprint1_DEKSI_Fitur_1-8_REVISI.docx",
+      "sha256": "dfbb336ef730b9e2cb91a911d5a2041f67ef527eed130097c5958e3e60c9c1de"
+    },
+    {
+      "id": "PRD",
+      "path": "E:\\Semester 5\\PPL Prak\\Deksi\\docs\\PRD.md",
+      "sha256": "fdb09915aee88975a7a6ae72733d312fe3aa183f90874696fb3836f383661205"
+    },
+    {
+      "id": "ACCEPTANCE",
+      "path": "E:\\Semester 5\\PPL Prak\\Deksi\\docs\\ACCEPTANCE_TESTS.md",
+      "sha256": "0396e59ac8ddc45979cba12c5a754bf3ea60b82a69cd6c967cd8f0d951373d59"
+    },
+    {
+      "id": "AUTH",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\docs\\LOGIN_ADMIN_API.md",
+      "sha256": "4ebfbff42b65eded59b492d632fc86d79523a397c0f598e979ebed58feae2754"
+    },
+    {
+      "id": "RESET",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\docs\\RESET_PASSWORD_API.md",
+      "sha256": "8ce9c4597c110bc98ae73d936b793bf4f295cdf8f8ca20707133a6073a3b3fee"
+    },
+    {
+      "id": "DASH",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-dashboard-be\\backend\\docs\\dashboard-foundation\\README.md",
+      "sha256": "b5101559c97904a4034cbc2eb3e28bb373a7281816780e3f2363444a7f86c4cd"
+    },
+    {
+      "id": "FEPLAN",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-dashboard-fe\\frontend\\docs\\sprint-1\\PLAN.md",
+      "sha256": "c3e888a16e1225e8cacd48898b146feaf7a2772884f795f696d7db7e2544042b"
+    },
+    {
+      "id": "BEPLAN",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\docs\\sprint1-unified\\PLAN.md",
+      "sha256": "67bd943f8aa23970db825ed02f4ff0fa5290b4b15b62ada88edcc3995f9c6b0c"
+    },
+    {
+      "id": "FEEDBACK_VIEW",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\indicators\\feedback_views.py",
+      "sha256": "5bd4c21516687b9859ae5300cdf81fd10b51b1edc5fbb817d2eb8ae52cca5fc4"
+    },
+    {
+      "id": "FEEDBACK_MODEL",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\indicators\\feedback_model.py",
+      "sha256": "e10c4487b9fd1f4f22222e6539e8990d2b552dd2b463225f39388340b242bfa0"
+    },
+    {
+      "id": "DASH_VIEW",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\indicators\\dashboard_views.py",
+      "sha256": "9b53bf8274e7623609c5c32120bf26f8a081ed5a74bc71bd44ffcfb4e27493d5"
+    },
+    {
+      "id": "URLS",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\indicators\\urls.py",
+      "sha256": "6aa24a188cd8b2c1b25594b6da80cc4b4a943121f4bb07cfc030636576d1973b"
+    },
+    {
+      "id": "HOOK",
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be\\backend\\backend\\features\\environment.py",
+      "sha256": "a4327dd5f5f19464a6df99bd357f9d4564ef7aafa09087aac85cd828a6ab6c67"
+    }
+  ],
+  "limitations": [
+    "SRS extracted sections 1–2 only; later pagination extraction failed. No full final-SRS detailed FR conformance claim.",
+    "Candidate worktrees are uncommitted and concurrently active; hashes describe captured reference bytes only.",
+    "Old Spesifikasi_Use_Case_Sistem_DEKSI_Revisi_v2.docx conflicts on public registration/login and is excluded as obsolete for this package."
+  ],
+  "worktrees": [
+    {
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-dashboard-fe",
+      "head": "94a05cd1fe5044d3d7e0f71ad6d0487edd5f921f",
+      "branch": "integration/sprint-1-dashboard-fe",
+      "dirty": true
+    },
+    {
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-dashboard-be",
+      "head": "5c9e20de5d71d74d2c9aabcf00dbf85d04ee8fe3",
+      "branch": "integration/sprint-1-dashboard-be",
+      "dirty": true
+    },
+    {
+      "path": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-unified-be",
+      "head": "5c9e20de5d71d74d2c9aabcf00dbf85d04ee8fe3",
+      "branch": "integration/sprint-1-unified-be",
+      "dirty": true
+    }
+  ]
+}

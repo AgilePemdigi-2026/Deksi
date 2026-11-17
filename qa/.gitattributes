@@ -1,0 +1,2 @@
+# Preserve exact test and specification bytes used by hash-bound receipts.
+* -text

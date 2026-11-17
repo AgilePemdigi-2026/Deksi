@@ -1,0 +1,980 @@
+{
+  "spec_status": "DRAFT_FOR_REVIEW",
+  "execution_status": "NOT RUN",
+  "requirements": [
+    {
+      "id": "R-F01-01",
+      "feature": "F01",
+      "description": "Akses Admin dan akses publik terpisah",
+      "basis": "AUTH; SRS 1.1, 2.3",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F01-02",
+      "feature": "F01",
+      "description": "Validasi kredensial dan pembatasan percobaan",
+      "basis": "AUTH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F01-03",
+      "feature": "F01",
+      "description": "Sesi dan logout ditegakkan server",
+      "basis": "AUTH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F01-04",
+      "feature": "F01",
+      "description": "CSRF dan kegagalan autentikasi ditangani jujur",
+      "basis": "AUTH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F02-01",
+      "feature": "F02",
+      "description": "Permintaan reset menjaga kerahasiaan akun",
+      "basis": "RESET; SPRINT",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F02-02",
+      "feature": "F02",
+      "description": "Token dan password divalidasi sebelum perubahan",
+      "basis": "RESET",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F02-03",
+      "feature": "F02",
+      "description": "Reset sukses tidak otomatis Login dan mencabut sesi lama",
+      "basis": "RESET",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F02-04",
+      "feature": "F02",
+      "description": "Reset gagal atau disabled tetap fail-closed",
+      "basis": "RESET",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F03-01",
+      "feature": "F03",
+      "description": "Ringkasan publik mempertahankan nilai dan konteks",
+      "basis": "SPRINT; SRS 2.2; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F03-02",
+      "feature": "F03",
+      "description": "Missing dan nol serta status pembaruan dibedakan",
+      "basis": "SRS 2.2; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F03-03",
+      "feature": "F03",
+      "description": "Hanya observasi yang layak publik boleh tampil",
+      "basis": "DASH; PRD Q-04",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F03-04",
+      "feature": "F03",
+      "description": "Loading dan error bukan data sintetis pengganti",
+      "basis": "DASH; PRD Q-03",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F04-01",
+      "feature": "F04",
+      "description": "Histori mempertahankan seri dan presisi",
+      "basis": "DASH; PRD F6-04",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F04-02",
+      "feature": "F04",
+      "description": "Granularitas dan kalkulasi berasal dari backend",
+      "basis": "DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F04-03",
+      "feature": "F04",
+      "description": "Histori kosong dan gap tidak menjadi nol",
+      "basis": "PRD F6-04; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F04-04",
+      "feature": "F04",
+      "description": "Perubahan indikator dan error tidak menampilkan seri keliru",
+      "basis": "DASH; PRD Q-03",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F05-01",
+      "feature": "F05",
+      "description": "Kategori dan tahun memilih konteks yang konsisten",
+      "basis": "SPRINT; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F05-02",
+      "feature": "F05",
+      "description": "Tahun tanpa data tidak memakai tahun lain",
+      "basis": "DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F05-03",
+      "feature": "F05",
+      "description": "Parameter filter invalid ditolak aman",
+      "basis": "DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F05-04",
+      "feature": "F05",
+      "description": "Filter dapat dipulihkan tanpa data stale",
+      "basis": "DASH; FEPLAN",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F06-01",
+      "feature": "F06",
+      "description": "Akses publik dan identitas indikator benar",
+      "basis": "PRD F6-01; SRS UC-02",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F06-02",
+      "feature": "F06",
+      "description": "Nilai dan perubahan tidak direka frontend",
+      "basis": "PRD F6-02,F6-03,F6-05",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F06-03",
+      "feature": "F06",
+      "description": "Histori dan metadata parsial ditampilkan jujur",
+      "basis": "PRD F6-04,F6-06",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F06-04",
+      "feature": "F06",
+      "description": "Navigasi dan request mempertahankan konteks",
+      "basis": "PRD F6-07; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F07-01",
+      "feature": "F07",
+      "description": "Trace publik terikat observasi yang dipilih",
+      "basis": "PRD F7-01,F7-04; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F07-02",
+      "feature": "F07",
+      "description": "Metadata resmi dan formula mempunyai batas epistemik",
+      "basis": "PRD F7-02,F7-03",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F07-03",
+      "feature": "F07",
+      "description": "Sumber dan RAW aman serta dapat ditelusuri",
+      "basis": "PRD F7-05; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F07-04",
+      "feature": "F07",
+      "description": "Partial missing dan error trace dibedakan",
+      "basis": "PRD F7-06; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F08-01",
+      "feature": "F08",
+      "description": "Pengiriman anonim tersimpan pending",
+      "basis": "SPRINT; SRS UC-05; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F08-02",
+      "feature": "F08",
+      "description": "Validasi kategori deskripsi dan identitas opsional",
+      "basis": "DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F08-03",
+      "feature": "F08",
+      "description": "CSRF dan pembatasan data publik ditegakkan",
+      "basis": "DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-F08-04",
+      "feature": "F08",
+      "description": "Kegagalan dan konteks laporan tidak menyesatkan",
+      "basis": "SPRINT; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-X-01",
+      "feature": "X",
+      "description": "Publik tetap tersedia terlepas dari sesi Admin",
+      "basis": "SRS 1.1,2.2; FEPLAN",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-X-02",
+      "feature": "X",
+      "description": "Alur ringkasan detail trace dan feedback konsisten",
+      "basis": "SPRINT; DASH",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-X-03",
+      "feature": "X",
+      "description": "Aksesibilitas dan status loading error tersedia",
+      "basis": "PRD Q-01,Q-02,Q-03",
+      "authority": "derived acceptance; candidate details need review"
+    },
+    {
+      "id": "R-X-04",
+      "feature": "X",
+      "description": "Batas test dan informasi sensitif terjaga",
+      "basis": "PRD Q-04,Q-05; BEPLAN",
+      "authority": "derived acceptance; candidate details need review"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "BDD-F01-01",
+      "requirement": "R-F01-01",
+      "feature": "F01",
+      "layer": "browser",
+      "file": "features/f01_login.feature",
+      "title": "Admin aktif berhasil masuk",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-02",
+      "requirement": "R-F01-01",
+      "feature": "F01",
+      "layer": "api",
+      "file": "features/f01_login.feature",
+      "title": "Akun non-Admin tidak memperoleh sesi Admin",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-03",
+      "requirement": "R-F01-02",
+      "feature": "F01",
+      "layer": "browser",
+      "file": "features/f01_login.feature",
+      "title": "Password salah tidak memberi keberhasilan palsu",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-04",
+      "requirement": "R-F01-02",
+      "feature": "F01",
+      "layer": "api",
+      "file": "features/f01_login.feature",
+      "title": "Lockout mengikuti kebijakan kandidat",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-05",
+      "requirement": "R-F01-03",
+      "feature": "F01",
+      "layer": "api",
+      "file": "features/f01_login.feature",
+      "title": "Sesi kedaluwarsa tidak tetap terautentikasi",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-06",
+      "requirement": "R-F01-03",
+      "feature": "F01",
+      "layer": "browser",
+      "file": "features/f01_login.feature",
+      "title": "Logout membatalkan sesi server",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-07",
+      "requirement": "R-F01-04",
+      "feature": "F01",
+      "layer": "api",
+      "file": "features/f01_login.feature",
+      "title": "Login tanpa CSRF ditolak",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F01-08",
+      "requirement": "R-F01-04",
+      "feature": "F01",
+      "layer": "browser",
+      "file": "features/f01_login.feature",
+      "title": "Gangguan Login bukan kredensial salah atau sukses",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-01",
+      "requirement": "R-F02-01",
+      "feature": "F02",
+      "layer": "api",
+      "file": "features/f02_reset.feature",
+      "title": "Email dikenal dan tidak dikenal mendapat acknowledgement generik",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-02",
+      "requirement": "R-F02-01",
+      "feature": "F02",
+      "layer": "browser",
+      "file": "features/f02_reset.feature",
+      "title": "Form meminta koreksi email malformed",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-03",
+      "requirement": "R-F02-02",
+      "feature": "F02",
+      "layer": "api",
+      "file": "features/f02_reset.feature",
+      "title": "Token kedaluwarsa dan token terpakai ditolak",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-04",
+      "requirement": "R-F02-02",
+      "feature": "F02",
+      "layer": "browser",
+      "file": "features/f02_reset.feature",
+      "title": "Password konfirmasi tidak cocok",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-05",
+      "requirement": "R-F02-03",
+      "feature": "F02",
+      "layer": "browser",
+      "file": "features/f02_reset.feature",
+      "title": "Reset lengkap melalui email locmem",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-06",
+      "requirement": "R-F02-03",
+      "feature": "F02",
+      "layer": "api",
+      "file": "features/f02_reset.feature",
+      "title": "Password tidak memenuhi policy tidak mengubah akun",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-07",
+      "requirement": "R-F02-04",
+      "feature": "F02",
+      "layer": "api",
+      "file": "features/f02_reset.feature",
+      "title": "Reset default disabled tidak mengirim email",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F02-08",
+      "requirement": "R-F02-04",
+      "feature": "F02",
+      "layer": "browser",
+      "file": "features/f02_reset.feature",
+      "title": "Hasil confirm tidak pasti tidak diulang otomatis",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-01",
+      "requirement": "R-F03-01",
+      "feature": "F03",
+      "layer": "browser",
+      "file": "features/f03_summary.feature",
+      "title": "Ringkasan dapat dibaca tanpa Login",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-02",
+      "requirement": "R-F03-01",
+      "feature": "F03",
+      "layer": "api",
+      "file": "features/f03_summary.feature",
+      "title": "Ringkasan mengikuti identitas pengukuran",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-03",
+      "requirement": "R-F03-02",
+      "feature": "F03",
+      "layer": "browser",
+      "file": "features/f03_summary.feature",
+      "title": "Nol sah tidak disamakan dengan data hilang",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-04",
+      "requirement": "R-F03-02",
+      "feature": "F03",
+      "layer": "api",
+      "file": "features/f03_summary.feature",
+      "title": "Pembaruan gagal mempertahankan last-valid",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-05",
+      "requirement": "R-F03-03",
+      "feature": "F03",
+      "layer": "api",
+      "file": "features/f03_summary.feature",
+      "title": "Draft dan published tanpa review tidak bocor",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-06",
+      "requirement": "R-F03-03",
+      "feature": "F03",
+      "layer": "browser",
+      "file": "features/f03_summary.feature",
+      "title": "Tanggal sumber bukan waktu halaman dibuka",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-07",
+      "requirement": "R-F03-04",
+      "feature": "F03",
+      "layer": "browser",
+      "file": "features/f03_summary.feature",
+      "title": "Loading tidak memakai angka demo",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F03-08",
+      "requirement": "R-F03-04",
+      "feature": "F03",
+      "layer": "browser",
+      "file": "features/f03_summary.feature",
+      "title": "Error berbeda dari ringkasan kosong",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-01",
+      "requirement": "R-F04-01",
+      "feature": "F04",
+      "layer": "api",
+      "file": "features/f04_trend.feature",
+      "title": "Histori mengirim desimal exact",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-02",
+      "requirement": "R-F04-01",
+      "feature": "F04",
+      "layer": "browser",
+      "file": "features/f04_trend.feature",
+      "title": "Seri tidak sebanding tidak disambung",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-03",
+      "requirement": "R-F04-02",
+      "feature": "F04",
+      "layer": "api",
+      "file": "features/f04_trend.feature",
+      "title": "Agregasi deterministik sesuai oracle",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-04",
+      "requirement": "R-F04-02",
+      "feature": "F04",
+      "layer": "browser",
+      "file": "features/f04_trend.feature",
+      "title": "Pilihan frekuensi mengikuti backend",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-05",
+      "requirement": "R-F04-03",
+      "feature": "F04",
+      "layer": "browser",
+      "file": "features/f04_trend.feature",
+      "title": "Gap kalender tidak menjadi observasi nol",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-06",
+      "requirement": "R-F04-03",
+      "feature": "F04",
+      "layer": "browser",
+      "file": "features/f04_trend.feature",
+      "title": "Histori kosong memberi empty state",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-07",
+      "requirement": "R-F04-04",
+      "feature": "F04",
+      "layer": "browser",
+      "file": "features/f04_trend.feature",
+      "title": "Respons indikator lama tidak mengganti pilihan baru",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F04-08",
+      "requirement": "R-F04-04",
+      "feature": "F04",
+      "layer": "browser",
+      "file": "features/f04_trend.feature",
+      "title": "Grafik gagal memberi error dan retry",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-01",
+      "requirement": "R-F05-01",
+      "feature": "F05",
+      "layer": "api",
+      "file": "features/f05_filter.feature",
+      "title": "Filter tahun memilih observasi pada tahun itu",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-02",
+      "requirement": "R-F05-01",
+      "feature": "F05",
+      "layer": "browser",
+      "file": "features/f05_filter.feature",
+      "title": "Ringkasan dan histori mengikuti filter",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-03",
+      "requirement": "R-F05-02",
+      "feature": "F05",
+      "layer": "api",
+      "file": "features/f05_filter.feature",
+      "title": "Tahun kosong tidak fallback ke terbaru",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-04",
+      "requirement": "R-F05-02",
+      "feature": "F05",
+      "layer": "browser",
+      "file": "features/f05_filter.feature",
+      "title": "Rentang kosong tetap memperlihatkan filter aktif",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-05",
+      "requirement": "R-F05-03",
+      "feature": "F05",
+      "layer": "api",
+      "file": "features/f05_filter.feature",
+      "title": "Tahun di luar domain ditolak",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-06",
+      "requirement": "R-F05-03",
+      "feature": "F05",
+      "layer": "api",
+      "file": "features/f05_filter.feature",
+      "title": "Parameter berulang dan kategori asing ditolak",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-07",
+      "requirement": "R-F05-04",
+      "feature": "F05",
+      "layer": "browser",
+      "file": "features/f05_filter.feature",
+      "title": "Reset filter kembali ke konteks terbaru",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F05-08",
+      "requirement": "R-F05-04",
+      "feature": "F05",
+      "layer": "browser",
+      "file": "features/f05_filter.feature",
+      "title": "Request filter lama tidak menimpa pilihan aktif",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-01",
+      "requirement": "R-F06-01",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Detail langsung dan dari kartu konsisten",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-02",
+      "requirement": "R-F06-01",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Indikator asing tidak diganti PDB",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-03",
+      "requirement": "R-F06-02",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Perubahan poin persentase tidak menjadi persen relatif",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-04",
+      "requirement": "R-F06-02",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Tanpa fakta kausal tidak ada narasi sebab akibat",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-05",
+      "requirement": "R-F06-03",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Metadata rilis yang hilang tetap hilang",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-06",
+      "requirement": "R-F06-03",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Grafik detail mempunyai alternatif dan gap",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-07",
+      "requirement": "R-F06-04",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Detail meneruskan selector observasi ke trace",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F06-08",
+      "requirement": "R-F06-04",
+      "feature": "F06",
+      "layer": "browser",
+      "file": "features/f06_detail.feature",
+      "title": "Pergantian detail tidak dicemari respons lama",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-01",
+      "requirement": "R-F07-01",
+      "feature": "F07",
+      "layer": "api",
+      "file": "features/f07_trace.feature",
+      "title": "Selector lengkap tidak fallback ke terbaru",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-02",
+      "requirement": "R-F07-01",
+      "feature": "F07",
+      "layer": "api",
+      "file": "features/f07_trace.feature",
+      "title": "Selector parsial ditolak",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-03",
+      "requirement": "R-F07-02",
+      "feature": "F07",
+      "layer": "browser",
+      "file": "features/f07_trace.feature",
+      "title": "Nilai resmi tidak memiliki formula buatan",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-04",
+      "requirement": "R-F07-02",
+      "feature": "F07",
+      "layer": "browser",
+      "file": "features/f07_trace.feature",
+      "title": "Provenance belum immutable tidak diklaim versi beku",
+      "status": "NOT RUN",
+      "gate": "Q03"
+    },
+    {
+      "id": "BDD-F07-05",
+      "requirement": "R-F07-03",
+      "feature": "F07",
+      "layer": "browser",
+      "file": "features/f07_trace.feature",
+      "title": "Konten sumber berbahaya tidak dieksekusi",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-06",
+      "requirement": "R-F07-03",
+      "feature": "F07",
+      "layer": "api",
+      "file": "features/f07_trace.feature",
+      "title": "RAW checksum rusak tidak diunduh",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-07",
+      "requirement": "R-F07-04",
+      "feature": "F07",
+      "layer": "browser",
+      "file": "features/f07_trace.feature",
+      "title": "Metadata parsial tetap dapat dibaca",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F07-08",
+      "requirement": "R-F07-04",
+      "feature": "F07",
+      "layer": "browser",
+      "file": "features/f07_trace.feature",
+      "title": "Error trace berbeda dari tidak ditemukan",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-01",
+      "requirement": "R-F08-01",
+      "feature": "F08",
+      "layer": "browser",
+      "file": "features/f08_feedback.feature",
+      "title": "Feedback anonim berhasil dikirim",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-02",
+      "requirement": "R-F08-01",
+      "feature": "F08",
+      "layer": "api",
+      "file": "features/f08_feedback.feature",
+      "title": "Publik tidak dapat menentukan status Admin",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-03",
+      "requirement": "R-F08-02",
+      "feature": "F08",
+      "layer": "api",
+      "file": "features/f08_feedback.feature",
+      "title": "Batas panjang deskripsi kandidat",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-04",
+      "requirement": "R-F08-02",
+      "feature": "F08",
+      "layer": "browser",
+      "file": "features/f08_feedback.feature",
+      "title": "Identitas opsional tidak menjadi kewajiban akun",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-05",
+      "requirement": "R-F08-03",
+      "feature": "F08",
+      "layer": "api",
+      "file": "features/f08_feedback.feature",
+      "title": "Feedback tanpa CSRF tidak tersimpan",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-06",
+      "requirement": "R-F08-03",
+      "feature": "F08",
+      "layer": "api",
+      "file": "features/f08_feedback.feature",
+      "title": "Payload malformed tidak tersimpan",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-07",
+      "requirement": "R-F08-04",
+      "feature": "F08",
+      "layer": "browser",
+      "file": "features/f08_feedback.feature",
+      "title": "Kegagalan simpan tidak memberi konfirmasi sukses",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-F08-08",
+      "requirement": "R-F08-04",
+      "feature": "F08",
+      "layer": "api",
+      "file": "features/f08_feedback.feature",
+      "title": "Konteks advisory bukan binding revisi",
+      "status": "NOT RUN",
+      "gate": "Q04"
+    },
+    {
+      "id": "BDD-X-01",
+      "requirement": "R-X-01",
+      "feature": "X",
+      "layer": "browser",
+      "file": "features/x_cross.feature",
+      "title": "Dashboard publik sebelum dan sesudah Login",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-X-02",
+      "requirement": "R-X-01",
+      "feature": "X",
+      "layer": "api",
+      "file": "features/x_cross.feature",
+      "title": "Pencabutan role Admin ditegakkan",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-X-03",
+      "requirement": "R-X-02",
+      "feature": "X",
+      "layer": "browser",
+      "file": "features/x_cross.feature",
+      "title": "Ringkasan detail trace membawa identitas yang sama",
+      "status": "NOT RUN",
+      "gate": "Q02"
+    },
+    {
+      "id": "BDD-X-04",
+      "requirement": "R-X-02",
+      "feature": "X",
+      "layer": "browser",
+      "file": "features/x_cross.feature",
+      "title": "Feedback setelah Login memakai CSRF yang berlaku",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-X-05",
+      "requirement": "R-X-03",
+      "feature": "X",
+      "layer": "browser",
+      "file": "features/x_cross.feature",
+      "title": "Alur utama dapat dioperasikan keyboard",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-X-06",
+      "requirement": "R-X-03",
+      "feature": "X",
+      "layer": "browser",
+      "file": "features/x_cross.feature",
+      "title": "Konten penting tetap terbaca pada viewport kecil",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-X-07",
+      "requirement": "R-X-04",
+      "feature": "X",
+      "layer": "api",
+      "file": "features/x_cross.feature",
+      "title": "Tes tidak memakai database atau provider kerja",
+      "status": "NOT RUN",
+      "gate": null
+    },
+    {
+      "id": "BDD-X-08",
+      "requirement": "R-X-04",
+      "feature": "X",
+      "layer": "browser",
+      "file": "features/x_cross.feature",
+      "title": "Input sensitif tidak masuk URL atau storage",
+      "status": "NOT RUN",
+      "gate": null
+    }
+  ]
+}

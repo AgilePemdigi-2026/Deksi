@@ -1,0 +1,29 @@
+{
+  "backend": {
+    "ref": "integration/sprint-1-unified-be",
+    "sha": "d9c673fac84992b91c160bfaa4f0de33a8ce548b"
+  },
+  "frontend": {
+    "ref": "integration/sprint1-docker-fe",
+    "sha": "e35d97899d345f18a3341bc19beba431f94179d9"
+  },
+  "spec": {
+    "catalog.json": "1620bb3aa2a10e3362eee40b305e29c20c0983f4308c2fdbba522c1a9e7f58cf",
+    "README.md": "9a1357db388a7a466dc1440516a0850fe0620a78ba4d65322b6a551cb8103bb2",
+    "REVIEW_GATES.md": "6a4ab9df3ba7a79c41ecdd68f59cbdc2df313f2e6dfa0bbe145884d66267d498",
+    "sources.json": "1d30b2753e8231445cfc0aa9f0f8381165afbf3a58e5bd9a147b945bdc28fadc",
+    "TRACEABILITY.md": "fe84d06e1893937983bf565e2549781669a9cf9d5d0bb3a81889765c811c361e",
+    "VERIFICATION.json": "0aca5773ff1442cf7136e578515f2471c35f5b364fa3cc77cd3afe7fc8f56d21",
+    "features\\f01_login.feature": "5db8a8ef696976d30c01ab3afac7c84460753d725851bd57bdd88e437eef1fba",
+    "features\\f02_reset.feature": "6537299a58ebf840285ae31df7d06928071c5b8df4f31615fad5018bc65c0cc3",
+    "features\\f03_summary.feature": "4fdfa7d4219ecda7e2f844fbdaf81b012130a7b72fc96bbe824441a8bef1f67e",
+    "features\\f04_trend.feature": "e928827766b0bacc7bd1de15b1370b5ba0b2cea2107f1957674bd712afdc36e1",
+    "features\\f05_filter.feature": "403363bef36eb7745a4a1a8685fcec6707c54fee5d83d88b3fca25792edb7129",
+    "features\\f06_detail.feature": "c7774e8552742f6decc3bba095d9dee3f6396cba3c977ae48635c44562024997",
+    "features\\f07_trace.feature": "383812448c2f8ec2408a46d19afa169fa3a9c4e37974d47a0f37fa62642dcbc0",
+    "features\\f08_feedback.feature": "729bb82168a7bd07e8d7067aa92b5d85285ac924e96cd0a8fed3af8368a2c6c6",
+    "features\\x_cross.feature": "68e900ec1864cc358b1ed9199bb683a56d02243b80b0c3c0837627a79f0105b7"
+  },
+  "dependency_source": "E:\\Deksi-Team\\.hermes\\worktrees\\sprint-1-dashboard-fe\\frontend\\node_modules",
+  "dependency_lock_equal": true
+}
