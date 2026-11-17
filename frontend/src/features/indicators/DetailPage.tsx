@@ -16,7 +16,7 @@ export function SourceLink({ url, children }: { url: string | null | undefined; 
 export function FeatureShell({ children }: { children: ReactNode }) {
   return <div className="deksi-page indicator-feature">
     <a className="skip-link" href="#feature-content">Lewati ke konten utama</a>
-    <header className="fd-top"><a href="/" className="fd-brand" aria-label="DEKSI, kembali ke dashboard"><BrandMark />DEKSI</a><a href="/#indikator">Kembali ke dashboard ↗</a><span>AKSES PUBLIK / TANPA AKUN</span></header>
+    <header className="fd-top"><a href="/" className="fd-brand" aria-label="DEKSI, kembali ke dashboard"><BrandMark />DEKSI</a><a href="/#economic-indicators">Kembali ke dashboard ↗</a><span>AKSES PUBLIK / TANPA AKUN</span></header>
     {children}
     <footer className="fd-footer"><strong>DEKSI / Data, konteks, sumber.</strong><p>Periode observasi, tanggal rilis, dan waktu akuisisi adalah metadata yang berbeda. Nama institusi bukan bukti angka sudah diverifikasi.</p></footer>
   </div>

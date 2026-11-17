@@ -40,9 +40,13 @@ try {
       if (url.endsWith('/admin/sources/')) {
         if(apiMode==='loading') return new Promise(()=>{});
         if(apiMode==='error') return Promise.resolve(json({error:'synthetic failure'},500));
+        if(apiMode==='malformed') return Promise.resolve(json({}));
         return Promise.resolve(json({sources:apiMode==='populated'?[item]:[]}));
       }
       if (url.endsWith('/acquisition-methods/')) return Promise.resolve(json({methods:[],frequencies:[]}));
+      if (url.includes('/admin/sync-history/')) return Promise.resolve(json({items:[],pagination:{page:1,pageSize:20,total:0,hasNext:false}}));
+      if (url.includes('/admin/feedback/')) return Promise.resolve(json({feedbacks:[]}));
+      if (url.endsWith('/sources/')) return Promise.resolve(json({sources:[]}));
       if (url.includes('/feedback/categories/')) return Promise.resolve(json({categories:[],csrfToken:'synthetic'}));
       if (url.includes('/indicators/categories/')) return Promise.resolve(json({categories:[]}));
       if (url.includes('/indicators/dashboard/')) {
@@ -65,13 +69,25 @@ try {
   async function go(route) { await send('Page.navigate', { url: origin + route }); await wait('document.readyState === "complete" && !!document.querySelector("#root")') }
   const mode = process.argv[2] || 'all'
   if (mode === 'hero') {
-    for (const width of [390, 1365]) {
+    for (const width of [320, 390, 600, 760, 761, 1024, 1025, 1365]) {
       await send('Emulation.setDeviceMetricsOverride', { width, height: 800, deviceScaleFactor: 1, mobile: false })
       await go('/?fixture=layout')
       await wait('document.querySelector(".hero-photo")?.complete && document.querySelector(".hero-photo").naturalWidth > 0')
       const image = await evaluate(`(()=>{const i=document.querySelector('.hero-photo');return {src:i.currentSrc,width:i.naturalWidth,height:i.naturalHeight,display:i.getBoundingClientRect().width}})()`)
-      assert.match(image.src, /jakarta-monument-pexels-35586803\.jpg/)
+      assert.match(image.src, /jakarta-skyline-pexels-35239459\.jpg/)
+      assert.equal(await evaluate('document.querySelector(".portrait-stage").getAttribute("aria-label")'), 'Foto ilustratif gedung dan skyline Jakarta')
+      assert.equal(await evaluate('document.querySelector(".p2-image-credit a").href'), 'https://www.pexels.com/photo/jakarta-city-skyline-with-modern-skyscrapers-35239459/')
       assert(image.width >= image.display, 'Hero asset must not be enlarged past its natural width')
+      if (width <= 1025) {
+        const sizes = await evaluate(`(()=>({intro:parseFloat(getComputedStyle(document.querySelector('.hero .about-copy')).fontSize),title:parseFloat(getComputedStyle(document.querySelector('.hero .display-title')).fontSize),card:document.querySelector('.hero .stats-frame').getBoundingClientRect().height,button:document.querySelector('.hero .book').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1}))()`)
+        assert(sizes.intro >= 13, `Mobile introduction text is too small: ${JSON.stringify(sizes)}`)
+        assert(sizes.intro <= 18, `Mobile introduction text is oversized: ${JSON.stringify(sizes)}`)
+        assert(sizes.title >= (width <= 1024 ? 70 : 55), `Hero title is too small: ${JSON.stringify(sizes)}`)
+        assert(sizes.title <= 105, `Mobile hero title is oversized: ${JSON.stringify(sizes)}`)
+        assert(sizes.card >= (width <= 1024 ? 165 : 140), `Hero stats frame is collapsed: ${JSON.stringify(sizes)}`)
+        assert(sizes.button >= 44, `Hero button is too small: ${JSON.stringify(sizes)}`)
+        assert.equal(sizes.overflow,false,`Unexpected horizontal overflow: ${JSON.stringify(sizes)}`)
+      }
 
       const folder = await mkdtemp(path.join(scratch, 'deksi-batch4-hero-'))
       const shot = await send('Page.captureScreenshot', { format:'png' })
@@ -169,9 +185,53 @@ try {
     assert.doesNotMatch(await evaluate('document.body.innerText'), /Belum ada sumber data/i)
     await go('/admin/sumber-data?fixture=error'); await wait('!!document.querySelector(".summary-error")')
     assert.doesNotMatch(await evaluate('document.body.innerText'), /Belum ada sumber data/i)
+    await go('/admin/sumber-data?fixture=malformed'); await wait('!!document.querySelector(".summary-error")')
+    assert.doesNotMatch(await evaluate('document.body.innerText'), /Belum ada sumber data/i)
     await go('/admin/sumber-data?fixture=loading'); await wait('document.body.innerText.includes("Memuat registry sumber")')
     assert.doesNotMatch(await evaluate('document.body.innerText'), /Belum ada sumber data/i)
     console.log('PASS admin empty + add form, populated, error and loading')
+  }
+  if (mode === 'transitions' || mode === 'all') {
+    await send('Emulation.setDeviceMetricsOverride', { width:1365,height:900,deviceScaleFactor:1,mobile:false })
+    await go('/admin/sumber-data')
+    await wait('document.body.innerText.includes("Tambah Sumber Data")')
+    async function checkAdminNav(active) {
+      const info = await evaluate(`(()=>{const n=document.querySelector('nav[aria-label="Navigasi admin"]');return n&&{links:Array.from(n.querySelectorAll('a'),a=>[a.getAttribute('href'),a.getAttribute('aria-current')]),visible:n.getBoundingClientRect().height>0}})()`)
+      assert(info?.visible, `Admin navigation missing on ${active}`)
+      for (const href of ['/', '/admin/sumber-data', '/admin/riwayat-sinkronisasi', '/admin/feedback']) assert(info.links.some(([url])=>url===href), `Missing ${href} on ${active}`)
+      assert(!info.links.some(([url])=>url==='/sumber-data'), `Public source tab must not appear in admin navigation on ${active}`)
+      assert.equal(await evaluate('document.querySelector(\'nav[aria-label="Navigasi admin"] a[href="/"]\').textContent'), 'Dashboard Publik')
+      assert.deepEqual(info.links.filter(([,current])=>current==='page').map(([url])=>url), [active])
+    }
+    async function follow(href, selector) {
+      await evaluate(`document.querySelector('nav[aria-label="Navigasi admin"] a[href="${href}"]').click()`)
+      await wait(`location.pathname === '${href}' && !!document.querySelector('${selector}')`)
+    }
+    await checkAdminNav('/admin/sumber-data')
+    await follow('/admin/riwayat-sinkronisasi', '#sync-history-title'); await checkAdminNav('/admin/riwayat-sinkronisasi')
+    await follow('/admin/feedback', '.admin-fb-title'); await checkAdminNav('/admin/feedback')
+    await follow('/admin/riwayat-sinkronisasi', '#sync-history-title'); await checkAdminNav('/admin/riwayat-sinkronisasi')
+    await follow('/admin/sumber-data', '#admin-sources-title'); await checkAdminNav('/admin/sumber-data')
+    await follow('/admin/feedback', '.admin-fb-title'); await checkAdminNav('/admin/feedback')
+    await follow('/admin/sumber-data', '#admin-sources-title'); await checkAdminNav('/admin/sumber-data')
+    await follow('/', '.segmented-nav')
+    await evaluate('document.querySelector("nav[aria-label=\\"Navigasi antarhalaman\\"] a[href=\\"/sumber-data\\"]").click()')
+    await wait('location.pathname === "/sumber-data" && !!document.querySelector("#sources-title")')
+    assert.equal(await evaluate('document.querySelector(\'.sources-nav a[href="/sumber-data"]\').getAttribute("aria-current")'), 'page')
+    await evaluate('document.querySelector(".sources-nav a[href=\\"/#economic-indicators\\"]").click()')
+    await wait('location.pathname === "/" && location.hash === "#economic-indicators" && !!document.getElementById("economic-indicators")')
+    assert(await evaluate('!!document.querySelector("nav[aria-label=\\"Navigasi antarhalaman\\"]") && !!document.querySelector("nav[aria-label=\\"Pintasan bagian dashboard\\"]")'))
+    await evaluate('document.querySelector("nav[aria-label=\\"Navigasi antarhalaman\\"] a[href=\\"/sumber-data\\"]").click()')
+    await wait('location.pathname === "/sumber-data" && !!document.querySelector("#sources-title")')
+    for (const [href, id] of [['/#economic-insights','economic-insights'],['/#about-deksi','about-deksi']]) {
+      await evaluate(`document.querySelector('.sources-nav a[href="${href}"]').click()`)
+      await wait(`location.pathname === '/' && location.hash === '#${id}' && !!document.getElementById('${id}')`)
+      await go('/sumber-data'); await wait('!!document.querySelector("#sources-title")')
+    }
+    await go('/indikator/pdb'); await wait('!!document.querySelector(".fd-top")')
+    await evaluate('document.querySelector(".fd-top a[href=\\"/#economic-indicators\\"]").click()')
+    await wait('location.pathname === "/" && location.hash === "#economic-indicators" && !!document.getElementById("economic-indicators")')
+    console.log('PASS desktop admin and public page transitions, persistent navigation and indicator return')
   }
   if (mode === 'public' || mode === 'all') {
     await go('/?fixture=empty'); await wait('!!document.querySelector(".dash-chart-empty") && !document.querySelector(".dash-chart-empty").textContent.includes("Memuat")')

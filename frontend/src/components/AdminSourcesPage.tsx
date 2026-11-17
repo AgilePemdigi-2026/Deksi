@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ResyncAction from "../features/resync/ResyncAction";
 import CandidateReview from "../features/candidates/CandidateReview";
+import { AdminNavigation } from "./AdminNavigation";
 import "./admin-source-card.css";
 import {
   adminLogin,
@@ -346,13 +347,7 @@ export function AdminSourcesPage() {
         <span className="section-badge">Admin DEKSI</span>
       </div>
 
-      <nav className="sources-nav" aria-label="Navigasi halaman">
-        <a href="/">Beranda</a>
-        <a href="/sumber-data">Sumber Data</a>
-        <a href="/admin/sumber-data" aria-current="page">Kelola Sumber</a>
-        <a href="/admin/riwayat-sinkronisasi">Riwayat Sinkronisasi</a>
-        <a href="/admin/feedback">Kelola Umpan Balik</a>
-      </nav>
+      <AdminNavigation active="sources" />
 
       {!sessionChecked || (loading && !authenticated) ? (
         <p className="summary-loading">Memeriksa sesi admin…</p>
@@ -389,6 +384,8 @@ export function AdminSourcesPage() {
           {canReviewCandidates !== true && <p className="admin-source-card__permission" role="status" id="candidate-review-permission">
             {canReviewCandidates === false ? "Akun ini tidak memiliki izin review kandidat. Hubungi pengelola untuk meminta izin." : "Izin review kandidat belum dapat dipastikan. Muat ulang halaman atau hubungi pengelola."}
           </p>}
+
+          {!loading && !error && sources.length === 0 && <p className="summary-empty" role="status">Belum ada sumber data. Gunakan Tambah Sumber Data untuk membuat sumber.</p>}
 
           {!loading && !error && (
             <div className="sources-grid admin-sources-grid">

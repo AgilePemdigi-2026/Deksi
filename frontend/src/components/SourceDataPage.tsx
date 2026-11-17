@@ -109,10 +109,10 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
 
       <nav className="sources-nav" aria-label="Navigasi halaman">
         <a href="/">Beranda</a>
-        <a href="#indikator">Indikator</a>
-        <a href="#analisis">Analisis</a>
+        <a href="/#economic-indicators">Indikator</a>
+        <a href="/#economic-insights">Panduan membaca</a>
         <a href="/sumber-data" aria-current="page">Sumber Data</a>
-        <a href="#tentang">Tentang</a>
+        <a href="/#about-deksi">Tentang</a>
       </nav>
 
       {loading && <p className="summary-loading">Memuat daftar sumber dari backend DEKSI…</p>}

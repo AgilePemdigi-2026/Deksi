@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AdminNavigation } from "./AdminNavigation";
 import {
   adminLogin,
   adminLogout,
@@ -295,6 +296,8 @@ export function AdminFeedbackPage() {
           </button>
         </div>
       </header>
+
+      <AdminNavigation active="feedback" />
 
       {logoutError && <p className="admin-fb-alert error" role="alert">{logoutError}</p>}
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
