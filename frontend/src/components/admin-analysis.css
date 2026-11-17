@@ -28,6 +28,9 @@
 }
 
 .admin-analysis h1 {
+  font-family: Archivo, sans-serif;
+  font-variation-settings: 'wdth' 104, 'wght' 640;
+  font-weight: 640;
   max-width: 760px;
   margin: 0 0 12px;
   font-size: clamp(32px, 4vw, 52px);
@@ -69,6 +72,9 @@
 }
 
 .admin-analysis h2 {
+  font-family: Archivo, sans-serif;
+  font-variation-settings: 'wdth' 104, 'wght' 640;
+  font-weight: 640;
   margin: 0;
   font-size: clamp(21px, 2.2vw, 28px);
   line-height: 1.2;
@@ -223,6 +229,9 @@
 }
 
 .admin-analysis__section h3 {
+  font-family: Archivo, sans-serif;
+  font-variation-settings: 'wdth' 104, 'wght' 600;
+  font-weight: 600;
   margin: 0 0 12px;
   font-size: 15px;
   line-height: 1.4;
