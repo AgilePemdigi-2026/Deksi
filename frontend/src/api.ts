@@ -419,7 +419,10 @@ export interface ReviewCandidate {
   previousValue: string | null; previousUnit: string | null; previousPeriod: string | null;
   rawEvidence?: { documentName: string | null; periodLabel: string | null; retrievedAt: string | null; checksumSha256: string | null } | null;
   status: string; createdAt: string; reviewedAt: string | null; reviewedBy: string | null; reviewNotes: string;
+  reviewHistory?: { decision: string; notes: string; reviewedAt: string; reviewedBy: string | null; fingerprint: string }[];
 }
+
+export type AnalysisDecision = 'publish' | 'needs_revision' | 'reject';
 
 export interface CandidatePage {
   items: ReviewCandidate[]; page: number; pageSize: number; total: number; hasNext: boolean;
@@ -449,7 +452,7 @@ async function withCandidateDeadline<T>(run: (signal: AbortSignal) => Promise<T>
   }
 }
 
-export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'rejected' = 'pending', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'needs_revision' | 'rejected' = 'pending', options?: { timeoutMs?: number }): Promise<CandidatePage> {
   return withCandidateDeadline(async signal => {
     const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`, { signal });
     if (!res.ok) {
@@ -463,7 +466,7 @@ export async function fetchReviewCandidates(sourceId: string, page: number, stat
   }, options?.timeoutMs);
 }
 
-export async function fetchAdminAnalysisResults(page: number, status: 'all' | 'pending' | 'published' | 'rejected', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+export async function fetchAdminAnalysisResults(page: number, status: 'all' | 'pending' | 'published' | 'needs_revision' | 'rejected', options?: { timeoutMs?: number }): Promise<CandidatePage> {
   return withCandidateDeadline(async signal => {
     const res = await adminFetch(`/admin/analysis-results/?page=${page}&status=${status}`, { signal });
     if (!res.ok) {
@@ -474,6 +477,26 @@ export async function fetchAdminAnalysisResults(page: number, status: 'all' | 'p
     const body = await res.json() as CandidatePage;
     if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons hasil analisis tidak valid.');
     return body;
+  }, options?.timeoutMs);
+}
+
+export async function submitAdminAnalysisDecision(candidate: ReviewCandidate, decision: AnalysisDecision, notes: string, options?: { timeoutMs?: number }): Promise<void> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/analysis-results/${candidate.id}/decision/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+      signal,
+    });
+    const body = await res.json().catch(() => ({})) as { id?: number; status?: string; error?: string };
+    if (res.status === 409) throw new CandidateReviewError('conflict', body.error ?? 'Versi berubah atau telah diputuskan. Muat ulang.');
+    if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali untuk menetapkan keputusan.');
+    if (res.status === 403) throw new CandidateReviewError('forbidden', 'Keputusan ditolak: periksa izin Admin dan token keamanan.');
+    const expectedStatus = decision === 'publish' ? 'published' : decision === 'needs_revision' ? 'needs_revision' : 'rejected';
+    if (!res.ok) throw new Error(body.error ?? 'Keputusan publikasi tidak dapat disimpan.');
+    if (body.id !== candidate.id || body.status !== expectedStatus) {
+      throw new Error('Respons keputusan tidak sesuai. Muat ulang hasil untuk memeriksa status terbaru.');
+    }
   }, options?.timeoutMs);
 }
 
@@ -992,4 +1015,59 @@ export async function updateSchedule(sourceId: string, payload: { intervalDays: 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
   return (body as { schedule: ScheduleEntry }).schedule;
+}
+
+// ---------------------------------------------------------------------------
+// Feature 19 – Dashboard Monitoring Admin
+// ---------------------------------------------------------------------------
+
+export interface MonitoringSummary {
+  totalSources: number;
+  activeSources: number;
+  inactiveSources: number;
+  syncSuccess: number;
+  syncFailed: number;
+  syncRunning: number;
+  quality: { label: string; validated: number; total: number };
+  lastSyncAt: string | null;
+  lastUpdateAt: string | null;
+}
+
+export interface MonitoringSource {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  status: string;
+  active: boolean;
+  lastSyncStatus: string | null;
+  lastSyncAt: string | null;
+  lastSyncMessage: string;
+  lastPeriod: string | null;
+  lastObservationDate: string | null;
+  observationCount: number;
+  updateSchedule: string;
+}
+
+export async function fetchMonitoringSummary(): Promise<MonitoringSummary> {
+  const res = await adminFetch("/admin/monitoring/summary/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as MonitoringSummary;
+}
+
+export async function fetchMonitoringSources(): Promise<MonitoringSource[]> {
+  const res = await adminFetch("/admin/monitoring/sources/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.sources ?? []) as MonitoringSource[];
+}
+
+export async function fetchMonitoringHistory(params?: { page?: number; pageSize?: number; status?: string; sourceId?: string }): Promise<{ items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number }> {
+  const q = new URLSearchParams();
+  q.set("page", String(params?.page ?? 1));
+  q.set("pageSize", String(params?.pageSize ?? 20));
+  if (params?.status) q.set("status", params.status);
+  if (params?.sourceId) q.set("sourceId", params.sourceId);
+  const res = await adminFetch(`/admin/monitoring/history/?${q}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as { items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number };
 }

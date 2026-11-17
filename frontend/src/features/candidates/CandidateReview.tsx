@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CandidateReviewError, confirmBulkReview, createBulkPreview, fetchActiveBulkReview, fetchBulkReview, fetchReviewCandidate, fetchReviewCandidates, reconcileBulkReview, submitCandidateReview, type BulkPreview, type BulkReviewResult, type CandidatePage, type ReviewCandidate } from '../../api'
+import { CandidateReviewError, confirmBulkReview, createBulkPreview, fetchActiveBulkReview, fetchBulkReview, fetchReviewCandidate, fetchReviewCandidates, reconcileBulkReview, submitAdminAnalysisDecision, type AnalysisDecision, type BulkPreview, type BulkReviewResult, type CandidatePage, type ReviewCandidate } from '../../api'
 import { safeExternalUrl } from '../indicators/data'
 import './candidate-review.css'
 
-type Decision = 'publish' | 'reject'
+type Decision = AnalysisDecision
+
+const decisionLabels: Record<Decision, string> = {
+  publish: 'Layak Publikasi',
+  needs_revision: 'Perlu Revisi',
+  reject: 'Ditolak',
+}
 
 // Only candidate IDs are retained; the marker is not an authorization or a server lock.
 const transientUncertain = new Map<string, number[]>()
@@ -37,7 +43,7 @@ function writeUncertain(sourceId: string, ids: number[]): boolean {
 
 export default function CandidateReview({ sourceId, onClose, onBusyChange }: { sourceId: string; onClose: () => void; onBusyChange: (busy: boolean) => void }) {
   const [page, setPage] = useState(1)
-  const [status, setStatus] = useState<'pending' | 'published' | 'rejected'>('pending')
+  const [status, setStatus] = useState<'pending' | 'published' | 'needs_revision' | 'rejected'>('pending')
   const [result, setResult] = useState<CandidatePage | null>(null)
   const [selected, setSelected] = useState<ReviewCandidate | null>(null)
   const [decision, setDecision] = useState<Decision | null>(null)
@@ -191,7 +197,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     return persisted
   }
   const submit = async () => {
-    if (!selected || !decision || !initialReadOk || submission.current || batchBlocksDecisions || bulkBusy || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
+    if (!selected || !decision || !initialReadOk || submission.current || batchBlocksDecisions || bulkBusy || uncertainRef.current.includes(selected.id) || (decision !== 'publish' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
     const id = selected.id
     const currentMarkers = readUncertain(sourceId)
     if (!currentMarkers.stored) {
@@ -216,7 +222,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     let accepted = false
     let definiteFailure: string | null = null
     try {
-      await submitCandidateReview(sourceId, selected, decision, notes.trim())
+      await submitAdminAnalysisDecision(selected, decision, notes.trim())
       accepted = true
     } catch (error) {
       definiteFailure = error instanceof CandidateReviewError ? error.message : null
@@ -224,7 +230,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     }
     try {
       const current = await fetchReviewCandidate(sourceId, id)
-      if ((current.status === 'published' || current.status === 'rejected') && !markUncertain(id, false)) {
+      if ((current.status === 'published' || current.status === 'needs_revision' || current.status === 'rejected') && !markUncertain(id, false)) {
         setActionError('Status kandidat telah dibaca, tetapi penanda belum bisa diperbarui. Periksa penyimpanan sebelum melanjutkan.')
       }
       setMessage(`Status kandidat #${id} saat diperiksa: ${current.status}. ${accepted ? 'Respons review diterima.' : 'Pastikan riwayat sebelum mengambil tindakan lain.'}`)
@@ -246,7 +252,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     try {
       const current = await fetchReviewCandidate(sourceId, selected.id)
       setSelected(current)
-      const terminal = current.status === 'published' || current.status === 'rejected'
+      const terminal = current.status === 'published' || current.status === 'needs_revision' || current.status === 'rejected'
       setMessage(`Status saat ini: ${current.status}. ${current.status === 'pending' ? 'Status ini tidak membuktikan proses sebelumnya sudah selesai.' : terminal ? 'Status terminal berhasil dibaca.' : 'Status ini belum dapat dipastikan.'}`)
       if (terminal || (current.status === 'pending' && allowRetry)) {
         if (markUncertain(current.id, false)) setAcknowledged(false)
@@ -273,7 +279,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     </header>
     <div className="candidate-review__toolbar">
       <label className="candidate-review__filter">Status kandidat <select value={status} disabled={busy || bulkBusy} onChange={event => { setStatus(event.target.value as typeof status); setPage(1) }}>
-        <option value="pending">Menunggu review</option><option value="published">Dipublikasikan</option><option value="rejected">Ditolak</option>
+        <option value="pending">Menunggu review</option><option value="published">Layak publikasi</option><option value="needs_revision">Perlu revisi</option><option value="rejected">Ditolak</option>
       </select></label>
       {result && <p className="candidate-review__count">{result.total} kandidat · Halaman {result.page}</p>}
     </div>
@@ -361,6 +367,18 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <dt>Direview oleh / waktu</dt><dd>{unavailable(selected.reviewedBy)} / {unavailable(selected.reviewedAt)}</dd>
         <dt>Catatan review</dt><dd>{unavailable(selected.reviewNotes)}</dd>
       </dl>
+      {selected.reviewHistory && selected.reviewHistory.length > 0 && <section aria-label="Riwayat audit keputusan">
+        <h5>Riwayat keputusan</h5>
+        <ol className="candidate-review__audit-list">
+          {selected.reviewHistory.map((entry, index) => (
+            <li key={`${entry.fingerprint}-${entry.reviewedAt}-${index}`}>
+              <strong>{decisionLabels[entry.decision as Decision] ?? entry.decision}</strong>
+              <span>{entry.reviewedAt} · {unavailable(entry.reviewedBy)}</span>
+              <p>{entry.notes || 'Tanpa catatan.'}</p>
+            </li>
+          ))}
+        </ol>
+      </section>}
       <p>Pastikan angka dan konteksnya sesuai sumber resmi. Tanggal observasi bukan tanggal rilis.</p>
       <p>Metadata dokumen di atas adalah snapshot saat kandidat dibuat, bukan bukti bahwa angka telah diverifikasi. Jika tidak tersedia, periksa sumber resmi secara terpisah.</p>
       {initialReadOk && selected.status === 'pending' && uncertain.includes(selected.id) && <div className="candidate-review__warning" role="alert">
@@ -372,14 +390,20 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <button type="button" className="tab" disabled={busy || !acknowledged} onClick={() => void recheckUncertain(true)}>Izinkan keputusan ulang</button>
       </div>}
       {initialReadOk && !batchBlocksDecisions && selected.status === 'pending' && !uncertain.includes(selected.id) && !decision && <div className="candidate-review__decision-actions">
-        <button type="button" className="tab" disabled={busy} onClick={() => setDecision('publish')}>Setujui untuk publikasi</button>{' '}
-        <button type="button" className="tab" disabled={busy} onClick={() => setDecision('reject')}>Tolak kandidat</button>
+        {(Object.keys(decisionLabels) as Decision[]).map(value => (
+          <button type="button" className="tab" disabled={busy} key={value} onClick={() => setDecision(value)}>
+            {decisionLabels[value]}
+          </button>
+        ))}
       </div>}
       {decision && <div className="candidate-review__confirmation">
-        <p>Konfirmasi {decision === 'publish' ? 'publikasi' : 'penolakan'} kandidat #{selected.id}: {unavailable(selected.indicatorName)}, {unavailable(selected.period)}, {unavailable(selected.value)} {unavailable(selected.unit)}.</p>
+        <p>Konfirmasi keputusan “{decisionLabels[decision]}” untuk kandidat #{selected.id}: {unavailable(selected.indicatorName)}, {unavailable(selected.period)}, {unavailable(selected.value)} {unavailable(selected.unit)}.</p>
+        {decision === 'publish'
+          ? <p>Versi ini akan menjadi data publik setelah validasi berhasil.</p>
+          : <p>Versi ini tidak dipublikasikan. Catatan wajib diisi untuk tindak lanjut.</p>}
         {decision === 'publish' && <label className="candidate-review__source-check"><input type="checkbox" checked={sourceChecked} disabled={busy} onChange={event => setSourceChecked(event.target.checked)} /> Saya telah membandingkan indikator, nilai, satuan dan periode dengan sumber resmi.</label>}
-        {decision === 'reject' && <label>Alasan penolakan <textarea value={notes} maxLength={500} onChange={event => setNotes(event.target.value)} /></label>}
-        <button type="button" className="tab" disabled={busy || bulkBusy || batchBlocksDecisions || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}
+        {decision !== 'publish' && <label>Catatan keputusan <span>(wajib)</span><textarea value={notes} maxLength={500} onChange={event => setNotes(event.target.value)} /></label>}
+        <button type="button" className="tab" disabled={busy || bulkBusy || batchBlocksDecisions || (decision !== 'publish' && !notes.trim()) || (decision === 'publish' && !sourceChecked)} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}
         <button type="button" className="tab" disabled={busy} onClick={() => { setDecision(null); setSourceChecked(false) }}>Batal</button>
       </div>}
     </article>}
