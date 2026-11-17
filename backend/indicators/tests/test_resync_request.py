@@ -7,6 +7,7 @@ from django.test import Client, TestCase
 
 from indicators.models import Source
 from indicators.resync_model import ResyncJob
+from indicators.sync_history_model import SyncRun
 from indicators.sync_history_service import begin_sync_run, create_sync_run
 
 
@@ -16,10 +17,8 @@ class ResyncRequestTests(TestCase):
         self.client = Client(enforce_csrf_checks=True)
         self.client.force_login(self.staff)
         self.csrf = self.client.get("/api/auth/csrf/").json()["csrfToken"]
-        self.source = Source.objects.create(
-            source_id="BPS", source_name="Synthetic BPS", institution="Synthetic",
-            primary_url="https://example.test/",
-        )
+        # DB seed 0017 sudah berisi BPS resmi; pakai yang ada.
+        self.source = Source.objects.get(source_id="BPS")
 
     def test_staff_request_is_queued_without_contacting_provider(self):
         from unittest.mock import patch
@@ -98,9 +97,17 @@ class ResyncRequestTests(TestCase):
         self.source.status = Source.SourceStatus.INACTIVE
         self.source.save(update_fields=["status"])
         self.assertEqual(self.post().status_code, 409)
-        unsupported = Source.objects.create(source_id="BI", source_name="BI", institution="Synthetic",
+        # Non-BPS belum didukung worker end-to-end -> tolak tanpa job.
+        for sid in ("BI", "KEMENKEU", "BKPM"):
+            resp = self.post(source=sid)
+            self.assertEqual(resp.status_code, 400, sid)
+            self.assertFalse(ResyncJob.objects.filter(source__source_id=sid).exists())
+        self.assertFalse(SyncRun.objects.exists())
+        unsupported = Source.objects.create(source_id="UNKNOWN_X", source_name="Unknown", institution="Synthetic",
                                             primary_url="https://example.test/")
         self.assertEqual(self.post(source=unsupported.source_id).status_code, 400)
+        self.assertFalse(ResyncJob.objects.filter(source__source_id="UNKNOWN_X").exists())
+        before = ResyncJob.objects.count()
         response = self.post(data={"requestId": str(uuid.uuid4()), "url": "https://example.test/"})
         self.assertEqual(response.status_code, 400)
-        self.assertFalse(ResyncJob.objects.exists())
+        self.assertEqual(ResyncJob.objects.count(), before)
