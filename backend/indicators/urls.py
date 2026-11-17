@@ -5,6 +5,7 @@ from indicators import (
     candidate_views,
     dashboard_views,
     feedback_views,
+    monitoring_views,
     resync_views,
     source_admin_views,
     sync_history_views,
@@ -94,6 +95,12 @@ urlpatterns = [
         source_admin_views.admin_source_update,
         name="admin-source-update",
     ),
+
+    # ── Feature 19: Dashboard Monitoring Admin ──────────────────────────
+    path("admin/monitoring/summary/", monitoring_views.admin_monitoring_summary, name="admin-monitoring-summary"),
+    path("admin/monitoring/sources/", monitoring_views.admin_monitoring_sources, name="admin-monitoring-sources"),
+    path("admin/monitoring/history/", monitoring_views.admin_monitoring_history, name="admin-monitoring-history"),
+    path("admin/monitoring/runs/<int:run_id>/", monitoring_views.admin_monitoring_run_detail, name="admin-monitoring-run-detail"),
 
     # ── Fitur 15-18: Daftar, Detail, Pencarian, dan Status Umpan Balik ──────
     path("admin/feedback/", feedback_views.admin_feedback_list, name="admin-feedback-list"),
