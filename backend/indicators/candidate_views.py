@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
 from indicators.lifecycle import require_reviewer, review_candidate
-from indicators.models import Indicator, ObservationCandidate, Source
+from indicators.models import AnalysisReviewAudit, Indicator, ObservationCandidate, Source
 from indicators.source_admin_views import _parse_json_body, _require_staff
 from indicators.views import json_error
 
@@ -51,6 +51,13 @@ def _serialize(candidate):
         'reviewedAt': candidate.reviewed_at.isoformat() if candidate.reviewed_at else None,
         'reviewedBy': candidate.reviewed_by.get_username() if candidate.reviewed_by else None,
         'reviewNotes': candidate.review_notes,
+        'reviewHistory': [{
+            'decision': audit.decision,
+            'notes': audit.notes,
+            'reviewedAt': audit.reviewed_at.isoformat(),
+            'reviewedBy': audit.reviewed_by.get_username() if audit.reviewed_by else None,
+            'fingerprint': audit.fingerprint,
+        } for audit in candidate.review_audits.all()],
     }
 
 
@@ -68,13 +75,42 @@ def candidate_list(request, source_id):
     except ValueError:
         return json_error('Halaman tidak valid.', status=400)
     status = request.GET.get('status', 'pending')
-    if status not in {'pending', 'published', 'rejected'}:
+    if status not in {'pending', 'published', 'needs_revision', 'rejected'}:
         return json_error('Status tidak valid.', status=400)
     query = ObservationCandidate.objects.filter(source__source_id=source_id, status=status).select_related(
-        'indicator', 'source', 'reviewed_by').order_by('-created_at', '-id')
+        'indicator', 'source', 'reviewed_by').prefetch_related('review_audits__reviewed_by').order_by(
+            '-created_at', '-id')
     total = query.count()
     size = 20
     items = [_serialize(c) for c in query[(page - 1) * size:page * size]]
+    response = JsonResponse({'items': items, 'page': page, 'pageSize': size, 'total': total,
+                             'hasNext': page * size < total})
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@require_GET
+def analysis_result_list(request):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    try:
+        page = int(request.GET.get('page', '1'))
+        if page < 1 or page > 100000:
+            raise ValueError
+    except ValueError:
+        return json_error('Halaman tidak valid.', status=400)
+    status = request.GET.get('status', 'all')
+    if status not in {'all', 'pending', 'published', 'needs_revision', 'rejected'}:
+        return json_error('Status tidak valid.', status=400)
+    query = ObservationCandidate.objects.select_related('indicator', 'source', 'reviewed_by').prefetch_related(
+        'review_audits__reviewed_by')
+    if status != 'all':
+        query = query.filter(status=status)
+    query = query.order_by('-created_at', '-id')
+    total = query.count()
+    size = 20
+    items = [_serialize(candidate) for candidate in query[(page - 1) * size:page * size]]
     response = JsonResponse({'items': items, 'page': page, 'pageSize': size, 'total': total,
                              'hasNext': page * size < total})
     response['Cache-Control'] = 'no-store'
@@ -118,13 +154,53 @@ def candidate_review(request, source_id, candidate_id):
     return response
 
 
+@require_POST
+def analysis_result_decision(request, candidate_id):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    data, error = _parse_json_body(request)
+    if error or data is None or set(data) != {'decision', 'fingerprint', 'notes'}:
+        return json_error('Permintaan keputusan publikasi tidak valid.', status=400)
+    decision, fingerprint, notes = data['decision'], data['fingerprint'], data['notes']
+    if (decision not in AnalysisReviewAudit.Decision.values
+            or not isinstance(fingerprint, str) or len(fingerprint) != 64 or not fingerprint.isascii()
+            or not isinstance(notes, str) or len(notes) > 500
+            or (decision != AnalysisReviewAudit.Decision.PUBLISH and not notes.strip())):
+        return json_error('Keputusan, identitas versi, atau catatan tidak valid.', status=400)
+    try:
+        with transaction.atomic():
+            candidate = ObservationCandidate.objects.select_for_update(of=("self",)).filter(
+                pk=candidate_id).first()
+            if candidate is None:
+                return json_error('Versi hasil tidak ditemukan.', status=404)
+            if candidate.status != ObservationCandidate.Status.PENDING or not hmac.compare_digest(
+                    candidate.fingerprint, fingerprint):
+                return json_error('Versi berubah atau telah diputuskan. Muat ulang.', status=409)
+            Indicator.objects.select_for_update().get(pk=candidate.indicator_id)
+            if not Source.objects.select_for_update().filter(pk=candidate.source_id).exists():
+                return json_error('Sumber versi tidak ditemukan.', status=404)
+            review_candidate(candidate.pk, request.user, decision=decision, notes=notes.strip())
+    except PermissionDenied:
+        return json_error('Izin review hasil analisis diperlukan.', status=403)
+    except ValidationError:
+        return json_error('Versi tidak dapat diputuskan; periksa perubahan atau validasi data.', status=409)
+    response = JsonResponse({'id': candidate_id, 'status': {
+        AnalysisReviewAudit.Decision.PUBLISH: ObservationCandidate.Status.PUBLISHED,
+        AnalysisReviewAudit.Decision.NEEDS_REVISION: ObservationCandidate.Status.NEEDS_REVISION,
+        AnalysisReviewAudit.Decision.REJECT: ObservationCandidate.Status.REJECTED,
+    }[decision]})
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
 @require_GET
 def candidate_detail(request, source_id, candidate_id):
     denied = _authorize(request)
     if denied is not None:
         return denied
-    candidate = ObservationCandidate.objects.select_related('indicator', 'source', 'reviewed_by').filter(
-        pk=candidate_id, source__source_id=source_id).first()
+    candidate = ObservationCandidate.objects.select_related('indicator', 'source', 'reviewed_by').prefetch_related(
+        'review_audits__reviewed_by').filter(pk=candidate_id, source__source_id=source_id).first()
     if candidate is None:
         return json_error('Kandidat tidak ditemukan.', status=404)
     response = JsonResponse({'candidate': _serialize(candidate)})

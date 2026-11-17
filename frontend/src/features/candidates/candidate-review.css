@@ -118,20 +118,6 @@
   overflow-wrap: anywhere;
 }
 
-.candidate-review__evidence,
-.candidate-review__analysis {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid #bbb;
-}
-
-.candidate-review__detail h5 {
-  margin: 0 0 12px;
-  font-size: 14px;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-}
-
 .candidate-review__detail dl {
   display: grid;
   grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
@@ -152,11 +138,7 @@
 .candidate-review__detail dt { color: #444; }
 .candidate-review__detail dd { font-weight: 500; }
 .candidate-review__detail a { color: #111; text-underline-offset: 3px; }
-.candidate-review__detail > p,
-.candidate-review__analysis p,
-.candidate-review__evidence > p { max-width: 720px; margin: 0; color: #333; font-size: 13px; line-height: 1.6; }
-.candidate-review__detail > p { margin-top: 20px; }
-.candidate-review__analysis h5:not(:first-child) { margin-top: 18px; }
+.candidate-review__detail > p { max-width: 720px; margin: 18px 0; color: #333; font-size: 13px; line-height: 1.6; }
 .candidate-review__warning,
 .candidate-review__confirmation { margin-top: 18px; padding: 18px; border: 1px solid #aaa; border-radius: 5px; background: #f5f5f5; }
 .candidate-review__warning p,
@@ -168,6 +150,14 @@
 .candidate-review .candidate-review__source-check input { flex: 0 0 auto; width: 16px; height: 16px; margin: 3px 0 0; accent-color: #286b5c; }
 .candidate-review__confirmation textarea { min-height: 96px; resize: vertical; }
 .candidate-review__confirmation .tab + .tab { margin-left: 8px; }
+.candidate-review__detail > section { margin-top: 20px; }
+.candidate-review__detail > section h5 { margin: 0 0 10px; font-size: 15px; }
+.candidate-review__audit-list { display: grid; gap: 10px; margin: 0; padding-left: 24px; }
+.candidate-review__audit-list li { padding: 10px 12px; border: 1px solid #c8c8c8; background: #f5f5f5; }
+.candidate-review__audit-list li strong,
+.candidate-review__audit-list li span { display: block; }
+.candidate-review__audit-list li span { margin-top: 4px; color: #444; font-size: 13px; }
+.candidate-review__audit-list li p { margin: 8px 0 0; }
 
 .candidate-review__bulk { margin: 0 0 24px; padding: 18px; border: 1px solid #aaa; border-radius: 5px; }
 .candidate-review__bulk p { margin: 0 0 12px; line-height: 1.5; }
