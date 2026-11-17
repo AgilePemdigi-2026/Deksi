@@ -149,9 +149,6 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
 
   const institutions = useMemo(() => Array.from(new Set(sources.map((s) => s.institution).filter(Boolean))), [sources]);
   const categories = useMemo(() => Array.from(new Set(sources.map((s) => frequencyLabel(s.frequency)).filter(Boolean))), [sources]);
-  const totalIndicators = useMemo(() => sources.reduce((a, s) => a + (s.indicatorCount || 0), 0), [sources]);
-  const availableCount = useMemo(() => sources.filter((s) => availabilityOf(s).kind === "ok").length, [sources]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let rows = sources.filter((s) => {
