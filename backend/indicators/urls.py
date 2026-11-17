@@ -8,6 +8,7 @@ from indicators import (
     resync_views,
     source_admin_views,
     sync_history_views,
+    threshold_views,
     views,
 )
 
@@ -90,6 +91,26 @@ urlpatterns = [
         "admin/sources/<str:source_id>/update/",
         source_admin_views.admin_source_update,
         name="admin-source-update",
+    ),
+
+    # ── Feature 24: Konfigurasi Threshold Diagnostik (Admin, session auth + staf)
+    path("admin/thresholds/", threshold_views.threshold_list, name="admin-threshold-list"),
+    path("admin/thresholds/supported/", threshold_views.threshold_supported, name="admin-threshold-supported"),
+    path("admin/thresholds/evaluate/", threshold_views.diagnostic_evaluate, name="admin-threshold-evaluate"),
+    path(
+        "admin/thresholds/<str:code>/<str:param>/history/",
+        threshold_views.threshold_history,
+        name="admin-threshold-history",
+    ),
+    path(
+        "admin/thresholds/<str:code>/<str:param>/",
+        threshold_views.threshold_detail,
+        name="admin-threshold-detail",
+    ),
+    path(
+        "admin/thresholds/<str:code>/<str:param>/update/",
+        threshold_views.threshold_update,
+        name="admin-threshold-update",
     ),
 
     # ── Fitur 15-18: Daftar, Detail, Pencarian, dan Status Umpan Balik ──────
