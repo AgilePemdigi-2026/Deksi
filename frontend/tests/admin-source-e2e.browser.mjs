@@ -9,7 +9,7 @@ import react from '@vitejs/plugin-react'
 const root = fileURLToPath(new URL('../', import.meta.url))
 const profile = await mkdtemp(path.join(process.env.HERMES_TEST_SCRATCH, 'deksi-admin-e2e-'))
 const trace = []
-const app = await createServer({root, configFile:false, plugins:[react()], server:{host:'127.0.0.1',port:0,strictPort:true,proxy:{'/api':{target:process.env.DEKSI_TEST_BACKEND,changeOrigin:false,configure(proxy){
+const app = await createServer({root, configFile:false, plugins:[react()], cacheDir:path.join(profile,'vite'), server:{host:'127.0.0.1',port:0,strictPort:true,proxy:{'/api':{target:process.env.DEKSI_TEST_BACKEND,changeOrigin:false,configure(proxy){
   proxy.on('proxyRes',(response,request)=>trace.push({method:request.method,path:request.url.split('?')[0],status:response.statusCode,hasCookie:Boolean(request.headers.cookie)}))
 }}}}})
 await app.listen()
@@ -24,7 +24,7 @@ try {
   ws=new WebSocket(pages.find(p=>p.type==='page').webSocketDebuggerUrl)
   await new Promise((resolve,reject)=>{ws.addEventListener('open',resolve,{once:true});ws.addEventListener('error',reject,{once:true})})
   let id=0;const pending=new Map()
-  ws.addEventListener('message',e=>{const r=JSON.parse(e.data);if(!r.id)return;const p=pending.get(r.id);if(!p)return;pending.delete(r.id);clearTimeout(p.timer);r.error?p.reject(new Error(JSON.stringify(r.error))):p.resolve(r.result)})
+  ws.addEventListener('message',e=>{const r=JSON.parse(e.data);if(!r.id)return;const p=pending.get(r.id);if(!p)return;pending.delete(r.id);clearTimeout(p.timer);if(r.error)p.reject(new Error(JSON.stringify(r.error)));else p.resolve(r.result)})
   send=(method,params={})=>new Promise((resolve,reject)=>{const n=++id,timer=setTimeout(()=>reject(new Error('CDP timeout '+method)),30000);pending.set(n,{resolve,reject,timer});ws.send(JSON.stringify({id:n,method,params}))})
   const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(JSON.stringify(r.exceptionDetails));return r.result.value}
   const wait=async expression=>{for(let i=0;i<200;i++){if(await evaluate(`Boolean(${expression})`))return;await delay(60)}throw new Error('Timeout: '+expression+'; page='+await evaluate('document.body.innerText'))}
@@ -37,12 +37,12 @@ try {
   await wait('Array.from(document.querySelectorAll("button")).some(x=>x.textContent.trim()==="Masuk"&&!x.disabled)')
   await evaluate('Array.from(document.querySelectorAll("button")).find(x=>x.textContent.trim()==="Masuk").click()')
   await wait('Array.from(document.querySelectorAll(".source-card")).some(x=>x.textContent.includes("Browser Fixture"))')
-  await evaluate('Array.from(document.querySelectorAll(".source-card")).find(x=>x.textContent.includes("Browser Fixture")).querySelector("button").click()')
+  await evaluate('Array.from(Array.from(document.querySelectorAll(".source-card")).find(x=>x.textContent.includes("Browser Fixture")).querySelectorAll("button")).find(b=>b.textContent.trim().startsWith("Edit")).click()')
   await wait('document.querySelector(".trace-panel select") && document.querySelector(".trace-panel input")?.value === "BROWSER_FIXTURE"')
   await evaluate(`(()=>{const e=Array.from(document.querySelectorAll('.trace-panel select')).find(x=>Array.from(x.options).some(o=>o.value==='inactive'));e.value='inactive';e.dispatchEvent(new Event('change',{bubbles:true}));})()`)
   await evaluate('Array.from(document.querySelectorAll("button")).find(x=>x.textContent.trim()==="Simpan Perubahan").click()')
   await wait('Array.from(document.querySelectorAll(".source-card")).some(x=>x.textContent.includes("Browser Fixture")&&x.textContent.includes("inactive"))')
-  await evaluate('Array.from(document.querySelectorAll(".source-card")).find(x=>x.textContent.includes("Browser Fixture")).querySelector("button").click()')
+  await evaluate('Array.from(Array.from(document.querySelectorAll(".source-card")).find(x=>x.textContent.includes("Browser Fixture")).querySelectorAll("button")).find(b=>b.textContent.trim().startsWith("Edit")).click()')
   await wait('document.querySelector(".trace-panel input")?.value === "BROWSER_FIXTURE"')
   await evaluate(`(()=>{const e=Array.from(document.querySelectorAll('.trace-panel select')).find(x=>Array.from(x.options).some(o=>o.value==='inactive'));e.value='active';e.dispatchEvent(new Event('change',{bubbles:true}));})()`)
   await evaluate('Array.from(document.querySelectorAll("button")).find(x=>x.textContent.trim()==="Simpan Perubahan").click()')

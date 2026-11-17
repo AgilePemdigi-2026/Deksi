@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL('../', import.meta.url))
 const vite = await createServer({ root, configFile: false, plugins: [react()], cacheDir: process.env.DEKSI_TEST_CACHE, server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom' })
 after(() => vite.close())
 const api = await vite.ssrLoadModule('/src/api.ts')
-const { labelSyncStatus } = await vite.ssrLoadModule('/src/features/sync-history/SyncHistoryPage.tsx')
+const { labelSyncStatus } = await vite.ssrLoadModule('/src/features/sync-history/types.ts')
 
 test('submits exactly one confirmed BPS request using admin CSRF/session transport and request UUID', async () => {
   const calls = []

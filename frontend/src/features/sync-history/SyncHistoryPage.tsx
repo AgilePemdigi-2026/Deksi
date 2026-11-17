@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { LoadSyncHistory, SyncHistoryQuery, SyncHistoryResult, SyncStatus } from './types'
+import { labelSyncStatus } from './types'
 import { reconcileAdminResyncJob } from '../../api'
+import { AdminNavigation } from '../../components/AdminNavigation'
 import './sync-history.css'
 
 type Props = { loadHistory?: LoadSyncHistory }
 type State = { kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ready'; data: SyncHistoryResult }
 type Settled = { query: SyncHistoryQuery; retry: number; loader: LoadSyncHistory; state: State }
-const statusLabels: Record<SyncStatus, string> = { queued: 'Antrean', running: 'Berlangsung', success: 'Berhasil', failed: 'Gagal', cancelled: 'Dibatalkan', unknown: 'Tidak diketahui' }
-export function labelSyncStatus(status: SyncStatus): string { return statusLabels[status] }
+
 const safeErrors = new Set([
   'Sesi admin telah berakhir atau diperlukan. Silakan masuk kembali.',
   'Anda tidak berwenang melihat riwayat sinkronisasi.',
@@ -87,6 +88,8 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
         <span className="sync-history__badge">Admin DEKSI</span>
       </header>
 
+      <AdminNavigation active="history" />
+
       <section className="sync-history__panel" aria-labelledby="sync-list-title">
         <div className="sync-history__panel-header">
           <div>
@@ -120,7 +123,7 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
                 </div>
               </td></tr> : state.data.items.map(item => <tr className="sync-history__row" key={item.id}>
                 <td>{dateText(item.startedAt)}</td><td>{item.sourceName || 'Tidak tersedia'}<span className="sync-history__subtext">ID: {item.sourceId || 'Tidak tersedia'}</span></td>
-                <td>{statusLabels[item.status] ?? 'Tidak tersedia'}{item.status === 'running' && <span className="sync-history__subtext">Hasil akhir belum tercatat; proses belum tentu masih aktif.</span>}{item.status === 'unknown' && <span className="sync-history__subtext">Hasil tidak diketahui; bukan sukses atau gagal. finishedAt tetap kosong.</span>}{item.resolvedBy && <span className="sync-history__subtext">Ditinjau {item.resolvedBy} · {dateText(item.resolvedAt ?? null)} · {item.resolutionReason}</span>}</td>
+                <td>{labelSyncStatus(item.status)}{item.status === 'running' && <span className="sync-history__subtext">Hasil akhir belum tercatat; proses belum tentu masih aktif.</span>}{item.status === 'unknown' && <span className="sync-history__subtext">Hasil tidak diketahui; bukan sukses atau gagal. finishedAt tetap kosong.</span>}{item.resolvedBy && <span className="sync-history__subtext">Ditinjau {item.resolvedBy} · {dateText(item.resolvedAt ?? null)} · {item.resolutionReason}</span>}</td>
                 <td>{dateText(item.finishedAt)}</td><td>{item.actor ?? 'Tidak tersedia'}</td><td>{item.itemCount ?? 'Tidak tersedia'}</td><td>
                   {item.message ?? 'Tidak tersedia'}
                   {item.status === 'running' && item.resyncJobId && <UnknownResolution id={item.resyncJobId} onDone={() => setRetry(value => value + 1)} />}

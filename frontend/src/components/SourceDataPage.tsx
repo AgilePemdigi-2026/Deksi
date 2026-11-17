@@ -213,6 +213,13 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
         <button type="button" className="catalog-download" onClick={downloadCatalog}>⭳ Unduh katalog</button>
       </div>
 
+      <nav className="sources-nav" aria-label="Navigasi halaman">
+        <a href="/">Beranda</a>
+        <a href="/#economic-indicators">Indikator</a>
+        <a href="/#economic-insights">Panduan membaca</a>
+        <a href="/sumber-data" aria-current="page">Sumber Data</a>
+        <a href="/#about-deksi">Tentang</a>
+      </nav>
       <div className="catalog-stats">
         <div className="catalog-stat"><p>SUMBER DATA</p><strong>{sources.length}</strong><span>Publikasi &amp; kumpulan data</span></div>
         <div className="catalog-stat"><p>INSTITUSI RESMI</p><strong>{institutions.length}</strong><span>{institutions.join(", ") || "—"}</span></div>

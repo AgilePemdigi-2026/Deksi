@@ -28,11 +28,16 @@ export function SourceTracePanel({
   const [trace, setTrace] = useState<SourceTrace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const queryKey = JSON.stringify([code, period, observationDate]);
+  const [previousQuery, setPreviousQuery] = useState(queryKey);
+  if (previousQuery !== queryKey) {
+    setPreviousQuery(queryKey);
+    setLoading(true);
+    setError(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     fetchSourceTrace(code, { period, observation_date: observationDate })
       .then((body) => {
         if (!cancelled) {

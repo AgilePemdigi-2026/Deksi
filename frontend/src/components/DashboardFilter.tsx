@@ -97,7 +97,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             onClick={resetFilters}
             aria-label="Reset semua filter"
           >
-            Γ£ò Reset Filter
+            Reset filter
           </button>
         )}
       </div>
@@ -111,7 +111,7 @@ export function DashboardFilter({ filters, onChange }: Props) {
             filters.year && `Tahun: ${filters.year}`,
           ]
             .filter(Boolean)
-            .join(" ┬╖ ")}
+            .join(" · ")}
         </p>
       )}
     </section>

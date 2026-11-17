@@ -103,10 +103,14 @@ export function useTrend(code: string) {
   const [trend, setTrend] = useState<TrendResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previousCode, setPreviousCode] = useState(code);
+  if (previousCode !== code) {
+    setPreviousCode(code);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     const load = async () => {
       try {
         const res = await fetch(`${API_BASE}/indicators/${code}/trend/`);
@@ -153,10 +157,15 @@ export function useDashboardFilter(filters: DashboardFilters) {
   const [summary, setSummary] = useState<FilteredSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const filterKey = JSON.stringify([filters.category, filters.year]);
+  const [previousFilter, setPreviousFilter] = useState(filterKey);
+  if (previousFilter !== filterKey) {
+    setPreviousFilter(filterKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     const params = new URLSearchParams();
     if (filters.category) params.set("category", filters.category);
@@ -331,6 +340,7 @@ export interface AdminSession {
   authenticated: boolean;
   username: string | null;
   isStaff: boolean;
+  canReviewCandidates?: boolean;
 }
 
 export interface AcquisitionMethod {
@@ -390,14 +400,95 @@ async function adminFetch(path: string, init?: RequestInit) {
   const method = (init?.method ?? "GET").toUpperCase();
   const headers = new Headers(init?.headers);
   if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
-    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: "include" });
+    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: "include", signal: init?.signal });
     if (!bootstrap.ok) throw new Error("Token keamanan tidak tersedia.");
     const body = await bootstrap.json();
     if (typeof body?.csrfToken !== "string" || !body.csrfToken) throw new Error("Token keamanan tidak tersedia.");
     headers.set("X-CSRFToken", body.csrfToken);
   }
+  if (init?.signal?.aborted) throw new DOMException("The operation was aborted", "AbortError");
   const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init, headers });
   return res;
+}
+
+export interface ReviewCandidate {
+  id: number; fingerprint: string; indicator: string | null; indicatorName: string | null;
+  sourceId: string; sourceName: string | null; sourceUrl: string | null; period: string | null;
+  observationDate: string | null; publicationDate: string | null; frequency: string | null;
+  dataType: string | null; value: string | null; unit: string | null; rawFileId: number | null;
+  previousValue: string | null; previousUnit: string | null; previousPeriod: string | null;
+  rawEvidence?: { documentName: string | null; periodLabel: string | null; retrievedAt: string | null; checksumSha256: string | null } | null;
+  status: string; createdAt: string; reviewedAt: string | null; reviewedBy: string | null; reviewNotes: string;
+}
+
+export interface CandidatePage {
+  items: ReviewCandidate[]; page: number; pageSize: number; total: number; hasNext: boolean;
+}
+
+export class CandidateReviewError extends Error {
+  readonly kind: 'conflict' | 'unauthenticated' | 'forbidden';
+  constructor(kind: 'conflict' | 'unauthenticated' | 'forbidden', message: string) {
+    super(message);
+    this.kind = kind;
+  }
+}
+
+async function withCandidateDeadline<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs = 15_000): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  const timedOut = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('Waktu tunggu kandidat habis.'));
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([run(controller.signal), timedOut]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
+export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'rejected' = 'pending', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`, { signal });
+    if (!res.ok) {
+      if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+      if (res.status === 403) throw new CandidateReviewError('forbidden', 'Akses ditolak: periksa izin review kandidat dengan pengelola.');
+      throw new Error('Daftar kandidat tidak dapat dimuat.');
+    }
+    const body = await res.json() as CandidatePage;
+    if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons kandidat tidak valid.');
+    return body;
+  }, options?.timeoutMs);
+}
+
+export async function submitCandidateReview(sourceId: string, candidate: ReviewCandidate, decision: 'publish' | 'reject', notes: string, options?: { timeoutMs?: number }): Promise<void> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${candidate.id}/review/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+      signal,
+    });
+    if (res.status === 409) throw new CandidateReviewError('conflict', 'Kandidat berubah atau sudah direview. Periksa status terbaru.');
+    if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+    if (res.status === 403) throw new CandidateReviewError('forbidden', 'Review ditolak: periksa izin Admin dan token keamanan.');
+    if (!res.ok) throw new Error('Review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+    const result = await res.json() as { id?: number; status?: string };
+    if (result.id !== candidate.id || result.status !== (decision === 'publish' ? 'published' : 'rejected')) {
+      throw new Error('Hasil review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+    }
+  }, options?.timeoutMs);
+}
+
+export async function fetchReviewCandidate(sourceId: string, id: number, options?: { timeoutMs?: number }): Promise<ReviewCandidate> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${id}/`, { signal });
+    if (!res.ok) throw new Error('Status kandidat tidak dapat dipastikan.');
+    const body = await res.json() as { candidate?: ReviewCandidate };
+    if (!body.candidate || body.candidate.id !== id || body.candidate.sourceId !== sourceId) throw new Error('Status kandidat tidak valid.');
+    return body.candidate;
+  }, options?.timeoutMs);
 }
 
 export async function fetchAdminSession(): Promise<AdminSession> {
@@ -436,7 +527,8 @@ export async function fetchAdminSources(): Promise<AdminSourceEntry[]> {
     throw new Error(`HTTP ${res.status}`);
   }
   const body = await res.json();
-  return (body?.sources ?? []) as AdminSourceEntry[];
+  if (!Array.isArray(body?.sources)) throw new Error("Respons daftar sumber tidak valid.");
+  return body.sources as AdminSourceEntry[];
 }
 
 export async function createAdminSource(payload: SourceCreatePayload): Promise<AdminSourceEntry> {

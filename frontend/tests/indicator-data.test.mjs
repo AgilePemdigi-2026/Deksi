@@ -64,7 +64,7 @@ test('chart refuses mixed source identities while preserving the original labell
   assert(data.chartGeometry(points.map(p=>({...p,sourceId:'SOURCE_A'})),'%'))
   assert(data.chartGeometry(points.map(({sourceId:_sourceId,...legacy})=>legacy),'%'))
 })
-test('consecutive observations stay connected without manufacturing observations or zeroes',()=>{
+test('regular calendar gaps split lines without manufacturing observations or zeroes',()=>{
   const cases=[
     ['monthly','1999-12-31','2000-01-31','2000-03-31'],
     ['quarterly','1999-12-31','2000-03-31','2000-09-30'],
@@ -74,7 +74,7 @@ test('consecutive observations stay connected without manufacturing observations
   for(const [frequency,...dates] of cases){
     const points=dates.map((observationDate,index)=>({period:observationDate,observationDate,value:String(index+1),unit:'%',frequency,dataType:'level',sourceId:'A'}))
     const original=JSON.stringify(points),chart=data.chartGeometry(points,'%')
-    assert.equal(chart.segments.length,1,frequency)
+    assert.equal(chart.segments.length,2,frequency)
     assert.equal(chart.points.length,3)
     assert.deepEqual(chart.points.map(p=>p.value),['1','2','3'])
     assert.equal(JSON.stringify(points),original)

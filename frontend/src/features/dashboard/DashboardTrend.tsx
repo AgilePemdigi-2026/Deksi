@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { availableRanges, chartGeometry, contextHref, formatDecimal, normalizeRange, type RangeKey } from '../indicators/data'
 import type { HistoryPoint } from '../indicators/types'
 import { useHistory, useTraceOptions } from './hooks'
@@ -15,9 +15,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
   const trace=useTraceOptions(code)
   // Opsi rentang mengikuti tahun yang benar-benar ada pada indikator aktif.
   const rangeOptions=useMemo(()=>availableRanges(history.data?.points),[history.data])
-  useEffect(()=>{
-    if(history.data&&!history.error&&!rangeOptions.includes(range as RangeKey))setRange(normalizeRange(range,rangeOptions))
-  },[code,history.data,history.error,range,rangeOptions])
+  if(history.data&&!history.error&&!rangeOptions.includes(range as RangeKey))setRange(normalizeRange(range,rangeOptions))
   const rows=visibleHistory(history.data?.points??[],year,range)
   const key=JSON.stringify([code,granularity,range,year,rows])
   const index=selection?.key===key?Math.min(selection.index,rows.length-1):rows.length-1
@@ -40,7 +38,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
   }
   const frequencies=[['native','Periode asli'],['Kuartalan','Kuartalan'],['Bulanan','Bulanan'],['Tahunan','Tahunan']]
   const supported=history.data?.granularities??[]
-  const status=history.loading?'Memuat histori…':history.error?history.error:rows.length===0?'Belum ada histori untuk pilihan ini.':chart===null?'Seri tidak sebanding. Garis tidak digabungkan; nilai asli tetap ada di tabel.':!chart.points.length?'Nilai histori belum tersedia. Data kosong bukan nol.':null
+  const status=history.loading?'Memuat histori…':history.error?history.error:history.data?.missingIndicator?'Indikator belum tersedia.':rows.length===0?'Belum ada histori untuk pilihan ini.':chart===null?'Seri tidak sebanding. Garis tidak digabungkan; nilai asli tetap ada di tabel.':!chart.points.length?'Nilai histori belum tersedia. Data kosong bukan nol.':null
   function rowGeometry(row:HistoryPoint,i:number) {
     if(!chart)return null
     return chart.points.find(p=>p.period===row.period&&p.value===row.value&&Math.abs(p.x-(rows.length===1?418:120+i*596/(rows.length-1)))<0.01)
@@ -55,7 +53,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
         <div className="dash-control-group"><span className="dash-kicker" id="range-label">RENTANG</span><div className="dash-pills" role="group" aria-labelledby="range-label">{rangeOptions.map(value=><button key={value} type="button" aria-pressed={range===value} onClick={()=>setRange(value)}>{value==='all'?'Semua':value+' tahun'}</button>)}</div></div>
       </div>
       <div className="dash-chart-toolbar"><p>Satuan: {rows[0]?.unit??'Belum tersedia'}{year?` · Tahun ${year}`:''}</p><button type="button" className="dash-text-button" disabled={!rows.length||history.loading||!!history.error} onClick={exportRows}>Ekspor JSON ↓</button></div>
-      <p id="chart-description" className="dash-chart-description">Gunakan panah kiri/kanan, Home dan End pada titik grafik. Tabel dan ekspor mempertahankan string presisi API. Rentang mengikuti tanggal observasi terakhir, bukan tanggal hari ini.</p>
+      <p id="chart-description" className="dash-chart-description">Gunakan panah kiri/kanan, Home dan End pada titik grafik. Tabel dan ekspor mempertahankan string presisi API. Rentang dihitung berdasarkan tahun kalender terbaru yang tersedia, bukan tanggal hari ini.</p>
       <div className="dash-chart-shell">{status?<div className="dash-chart-empty" role={history.error?'alert':'status'}><h3>{status}</h3>{history.error&&<button className="dash-pill" onClick={history.retry}>Coba histori lagi</button>}</div>:<svg id="trend-svg" viewBox="0 0 760 244" role="group" aria-label={`Grafik histori ${names[code]}`} aria-describedby="chart-description">
         {chart?.ticks.map(tick=><g key={tick.y}><line className="dash-grid" x1="120" x2="716" y1={tick.y} y2={tick.y}/><text x="108" y={tick.y+4} textAnchor="end">{tick.label}</text></g>)}
         {chart?.segments.map((points,i)=><polyline key={i} className="dash-line" points={points}/>)}
@@ -73,7 +71,7 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
         <text x="120" y="230">{rows[0]?.period}</text><text x="716" y="230" textAnchor="end">{rows.at(-1)?.period}</text>
       </svg>}</div>
       <div className="dash-point-panel" aria-live="polite"><div><span className="dash-kicker">OBSERVASI TERPILIH</span><strong>{selected?.period??'Belum tersedia'}</strong><small>{selected?.observationDate??'Tanggal belum tersedia'}</small></div><div><span className="dash-kicker">NILAI / SATUAN</span><strong>{formatDecimal(selected?.value)} {selected?.unit??''}</strong></div><div><span className="dash-kicker">JENIS / SUMBER</span><strong>{selected?.dataType??'Belum tersedia'}</strong><small>{selected?.sourceId??'Sumber belum tersedia'}</small></div></div>
-      <p className="dash-chart-note">{history.data?.note} Geometri menggunakan pendekatan numerik. Tidak ada target kebijakan atau rata-rata rentang buatan. Garis menghubungkan observasi berurutan; jarak horizontal tidak proporsional dengan waktu bila ada bulan yang hilang. Seri sumber, satuan, frekuensi dan jenis data berbeda tidak digabungkan.</p>
+      <p className="dash-chart-note">{history.data?.note} Geometri menggunakan pendekatan numerik. Tidak ada target kebijakan atau rata-rata rentang buatan. Garis terputus pada periode bulanan, kuartalan, semesteran, atau tahunan yang hilang bila metadata cukup untuk memastikannya; data harian dan ad hoc tidak dipaksakan ke kalender. Jarak horizontal tidak proporsional terhadap waktu. Seri sumber, satuan, frekuensi dan jenis data berbeda tidak digabungkan.</p>
       <div className="dash-chart-actions">{href?<a className="dash-text-button" href={href}>Source Trace titik terpilih ↗</a>:<p className="dash-chart-description">{trace.loading?'Memuat konteks sumber…':'Source Trace belum dapat diikat unik pada titik ini; tidak dialihkan ke terbaru.'}{trace.error&&<button type="button" className="dash-text-button" onClick={trace.retry}>Coba sumber lagi</button>}</p>}<a className="dash-text-button" href={'/indikator/'+code}>Detail indikator ↗</a></div>
       <details className="dash-history"><summary>Tabel histori ({rows.length} observasi)</summary><div className="dash-table-scroll" role="region" tabIndex={0} aria-label="Tabel histori"><table><caption>Periode observasi, bukan jurnal revisi immutable</caption><thead><tr><th>Periode</th><th>Nilai</th><th>Satuan</th><th>Sumber / jenis</th></tr></thead><tbody>{rows.map((row,i)=><tr key={i}><th scope="row"><button type="button" className="dash-text-button" onClick={()=>selectPoint(i)}>{row.period}</button></th><td>{formatDecimal(row.value)}</td><td>{row.unit}</td><td>{row.sourceId??'Belum tersedia'} / {row.dataType??'Belum tersedia'}</td></tr>)}</tbody></table></div></details>
       <p role="status" className="dash-chart-description">{exportStatus}</p>

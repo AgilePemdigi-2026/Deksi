@@ -14,11 +14,16 @@ export default function ResyncAction({ sourceId, sourceName, active, supported }
   const [historyChecked, setHistoryChecked] = useState(false)
   const [checking, setChecking] = useState(true)
   const available = sourceId === 'BPS' && active && supported
+  const availabilityKey = JSON.stringify([sourceId, available])
+  const [previousAvailability, setPreviousAvailability] = useState(availabilityKey)
+  if (previousAvailability !== availabilityKey) {
+    setPreviousAvailability(availabilityKey)
+    setChecking(available)
+  }
 
   useEffect(() => {
     let current = true
-    if (!available) { setChecking(false); return () => { current = false } }
-    setChecking(true)
+    if (!available) return () => { current = false }
     fetchActiveAdminResync(sourceId).then(found => {
       if (!current) return
       if (found) { setJob(found); setPhase('accepted') }
@@ -62,12 +67,12 @@ export default function ResyncAction({ sourceId, sourceName, active, supported }
   }
 
   return <section className="resync-action" aria-label={`Sinkronisasi ${sourceName}`}>
+    {available && phase === 'idle' && <label className="resync-action__message"><input type="checkbox" checked={historyChecked} onChange={event => setHistoryChecked(event.target.checked)} /> Saya sudah memeriksa riwayat BPS dan memastikan tidak ada permintaan belum terselesaikan.</label>}
     <button className="resync-action__button" type="button" onClick={() => void submit()} disabled={!available || checking || !historyChecked || phase !== 'idle'} aria-busy={phase === 'submitting' || checking}>
       {phase === 'submitting' ? 'Mengirim…' : `Sinkronkan ${sourceName}`}
     </button>
     {!available && <p className="resync-action__message" role="status">{sourceId !== 'BPS' ? 'Resinkronisasi hanya tersedia untuk sumber BPS.' : !active ? 'Sumber tidak aktif; sinkronisasi tidak tersedia.' : !supported ? 'Metode sumber ini belum didukung.' : ''}</p>}
     {available && checking && <p className="resync-action__message" role="status">Memeriksa antrean…</p>}
-    {available && phase === 'idle' && <label className="resync-action__message"><input type="checkbox" checked={historyChecked} onChange={event => setHistoryChecked(event.target.checked)} /> Saya sudah memeriksa riwayat BPS dan memastikan tidak ada permintaan belum terselesaikan.</label>}
     {phase === 'submitting' && <p className="resync-action__message" role="status">Mengirim permintaan…</p>}
     {phase === 'uncertain' && <p className="resync-action__message" role="alert">{message} Tidak ada pengiriman ulang otomatis.</p>}
     {phase === 'accepted' && job && <div className="resync-action__message" role="status">
