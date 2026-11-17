@@ -33,8 +33,16 @@ try {
     const apiMode = new URL(location.href).searchParams.get('fixture') || 'empty';
     const json = (body, status=200) => new Response(JSON.stringify(body), {status, headers:{'Content-Type':'application/json'}});
     const item = {sourceId:'BI',sourceName:'Sumber BI',institution:'Fixture',primaryUrl:'https://example.test/',description:'',acquisitionMethod:'file_xlsx',acquisitionMethodLabel:'File',endpointUrl:'',dataFormat:'xlsx',frequency:'monthly',updateSchedule:'',status:'active',revisionVersion:0,lastFetch:{retrievedAt:null,documentName:null,parseStatus:null}};
+    const feedback = {id:99,category:'other',category_label:'Simulasi',description:'Laporan sintetis',sender_name:'',sender_email:'',related_indicator_code:'',related_period:'',status:'pending',status_label:'Menunggu',admin_notes:'',created_at:null,updated_at:null,related_indicator:null,audit_logs:[]};
+    window.__feedbackPosts=0;
     window.fetch = (input, init) => {
       const url = String(input);
+      if (apiMode==='feedbackbusy') {
+        if(url.includes('/auth/csrf/')) return Promise.resolve(json({csrfToken:'synthetic'}));
+        if(url.includes('/admin/feedback/99/status/') && init?.method==='POST') { window.__feedbackPosts++; return new Promise(resolve=>{window.__releaseFeedback=()=>resolve(window.__feedbackFailure?json({error:'Kegagalan sintetis'},500):json({feedback:{...feedback,status:'resolved',status_label:'Selesai'},csrfToken:'synthetic'}))}); }
+        if(url.includes('/admin/feedback/99/')) return Promise.resolve(json({feedback,csrfToken:'synthetic'}));
+        if(url.endsWith('/admin/feedback/')) { if(window.__feedbackPosts) return new Promise(resolve=>{window.__releaseFeedbackList=()=>resolve(json({feedbacks:[feedback]}))}); return Promise.resolve(json({feedbacks:[feedback]})); }
+      }
       if (init?.method && init.method !== 'GET') throw new Error('Mutation blocked by fixture');
       if (url.endsWith('/admin/session/')) return Promise.resolve(json({authenticated:true,username:'fixture',isStaff:true}));
       if (url.endsWith('/admin/sources/')) {
@@ -190,6 +198,37 @@ try {
     await go('/admin/sumber-data?fixture=loading'); await wait('document.body.innerText.includes("Memuat registry sumber")')
     assert.doesNotMatch(await evaluate('document.body.innerText'), /Belum ada sumber data/i)
     console.log('PASS admin empty + add form, populated, error and loading')
+  }
+  if (mode === 'feedbackbusy' || mode === 'all') {
+    await send('Emulation.setDeviceMetricsOverride', { width:1365,height:900,deviceScaleFactor:1,mobile:false })
+    await go('/admin/feedback?fixture=feedbackbusy')
+    await wait('!!document.querySelector(".admin-fb-table button")')
+    await evaluate('document.querySelector(".admin-fb-table button").click()')
+    await wait('!!document.querySelector("#feedback-new-status")')
+    await evaluate('document.querySelector(".admin-fb-modal-content form").requestSubmit()')
+    await wait('window.__feedbackPosts === 1 && !!window.__releaseFeedback')
+    const checkBlocked = async () => {
+      const links=await evaluate('Array.from(document.querySelectorAll(".admin-fb-actions a, nav[aria-label=\\"Navigasi admin\\"] a"),a=>({href:a.getAttribute("href"),disabled:a.getAttribute("aria-disabled")}))')
+      assert.equal(links.length,6)
+      assert(links.every(link=>link.href===null && link.disabled==='true'), 'all feedback navigation must be disabled while saving or refreshing')
+      await evaluate('document.querySelector("nav[aria-label=\\"Navigasi admin\\"] a").click()')
+      assert.equal(await evaluate('location.pathname'),'/admin/feedback')
+      assert(await evaluate('!!document.querySelector("[role=dialog]")'))
+    }
+    await checkBlocked()
+    await evaluate('window.__releaseFeedback()')
+    await wait('!!window.__releaseFeedbackList')
+    await checkBlocked()
+    await evaluate('window.__releaseFeedbackList()')
+    await wait('document.body.innerText.includes("Status dan catatan berhasil disimpan.") && !!document.querySelector("nav[aria-label=\\"Navigasi admin\\"] a[href=\\"/\\"]")')
+    assert.equal(await evaluate('window.__feedbackPosts'),1)
+    await evaluate('window.__feedbackFailure=true; window.__releaseFeedback=null; document.querySelector(".admin-fb-modal-content form").requestSubmit()')
+    await wait('window.__feedbackPosts === 2 && !!window.__releaseFeedback')
+    await checkBlocked()
+    await evaluate('window.__releaseFeedback()')
+    await wait('document.body.innerText.includes("Kegagalan sintetis") && !!document.querySelector("nav[aria-label=\\"Navigasi admin\\"] a[href=\\"/\\"]")')
+    assert.equal(await evaluate('window.__feedbackPosts'),2,'failed response must not automatically repeat the POST')
+    console.log('PASS feedback navigation held during status save and list refresh')
   }
   if (mode === 'transitions' || mode === 'all') {
     await send('Emulation.setDeviceMetricsOverride', { width:1365,height:900,deviceScaleFactor:1,mobile:false })
