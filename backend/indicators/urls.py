@@ -48,6 +48,8 @@ urlpatterns = [
     path("admin/sources/<str:source_id>/resync/", resync_views.request_resync, name="admin-source-resync"),
     path("admin/sources/<str:source_id>/resync-active/", resync_views.active_resync, name="admin-source-resync-active"),
     path("admin/analysis-results/", candidate_views.analysis_result_list, name="admin-analysis-results"),
+    path("admin/analysis-results/<int:candidate_id>/decision/",
+         candidate_views.analysis_result_decision, name="admin-analysis-result-decision"),
     path("admin/sources/<str:source_id>/candidates/", candidate_views.candidate_list, name="admin-candidate-list"),
     path("admin/sources/<str:source_id>/candidates/bulk-preview/",
          bulk_candidate_views.bulk_candidate_preview, name="admin-candidate-bulk-preview"),

@@ -150,6 +150,14 @@
 .candidate-review .candidate-review__source-check input { flex: 0 0 auto; width: 16px; height: 16px; margin: 3px 0 0; accent-color: #286b5c; }
 .candidate-review__confirmation textarea { min-height: 96px; resize: vertical; }
 .candidate-review__confirmation .tab + .tab { margin-left: 8px; }
+.candidate-review__detail > section { margin-top: 20px; }
+.candidate-review__detail > section h5 { margin: 0 0 10px; font-size: 15px; }
+.candidate-review__audit-list { display: grid; gap: 10px; margin: 0; padding-left: 24px; }
+.candidate-review__audit-list li { padding: 10px 12px; border: 1px solid #c8c8c8; background: #f5f5f5; }
+.candidate-review__audit-list li strong,
+.candidate-review__audit-list li span { display: block; }
+.candidate-review__audit-list li span { margin-top: 4px; color: #444; font-size: 13px; }
+.candidate-review__audit-list li p { margin: 8px 0 0; }
 
 .candidate-review__bulk { margin: 0 0 24px; padding: 18px; border: 1px solid #aaa; border-radius: 5px; }
 .candidate-review__bulk p { margin: 0 0 12px; line-height: 1.5; }

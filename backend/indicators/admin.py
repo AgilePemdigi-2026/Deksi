@@ -5,6 +5,7 @@ from django.db import transaction
 from indicators.feedback_model import Feedback, FeedbackAuditLog
 from indicators.lifecycle import review_candidate
 from indicators.models import (
+    AnalysisReviewAudit,
     DataUpdateLog,
     Indicator,
     Observation,
@@ -130,6 +131,23 @@ class ObservationCandidateAdmin(admin.ModelAdmin):
     @admin.action(description="Tolak kandidat terpilih", permissions=["change"])
     def action_reject(self, request, queryset):
         self._review(request, queryset, False)
+
+
+@admin.register(AnalysisReviewAudit)
+class AnalysisReviewAuditAdmin(admin.ModelAdmin):
+    list_display = ("candidate", "decision", "reviewed_by", "reviewed_at", "fingerprint")
+    list_filter = ("decision", "reviewed_at")
+    search_fields = ("candidate__indicator__code", "candidate__source__source_id", "fingerprint")
+    readonly_fields = tuple(field.name for field in AnalysisReviewAudit._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(RawFile)
