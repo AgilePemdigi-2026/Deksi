@@ -11,6 +11,8 @@ const profile = await mkdtemp(path.join(process.env.HERMES_TEST_SCRATCH, 'deksi-
 const calls = []
 let status = 'pending'
 let releaseReview
+let holdReadback = false
+let releaseReadback
 let forcedReviewStatus = 0
 let detailFailure = false
 let includeEvidence = false
@@ -43,6 +45,7 @@ const mockApi = (req, res, next) => {
     return send({ items, page: 1, pageSize: 20, total: items.length, hasNext: false })
   }
   if (route === '/api/admin/sources/BPS/candidates/1/' && req.method === 'GET') {
+    if (holdReadback) { releaseReadback = () => send({ candidate: candidate() }); return }
     if (detailFailure) { res.statusCode = 503; return send({ error: 'synthetic failure' }) }
     return send({ candidate: candidate() })
   }
@@ -127,8 +130,23 @@ try {
   for (let i = 0; i < 100 && !releaseReview; i++) await delay(30)
   assert(releaseReview, 'review request did not reach mock server')
   assert(await evaluate("Array.from(document.querySelectorAll('.source-card')).find(x=>x.textContent.includes('Sumber lain')).querySelector('button').disabled"), 'source switching must be disabled while review is in flight')
+  const assertNavigationLocked = async () => {
+    const links = await evaluate("Array.from(document.querySelectorAll('nav[aria-label=\"Navigasi admin\"] a'), a=>({href:a.getAttribute('href'),disabled:a.getAttribute('aria-disabled')}))")
+    assert.equal(links.length, 4)
+    assert(links.every(link => link.href === null && link.disabled === 'true'), 'navigation must not allow leaving during review or readback')
+    await evaluate("document.querySelector('nav[aria-label=\"Navigasi admin\"] a').click()")
+    assert.equal(await evaluate('location.pathname'), '/admin/sumber')
+  }
+  await assertNavigationLocked()
+  holdReadback = true
   releaseReview()
+  for (let i = 0; i < 100 && !releaseReadback; i++) await delay(30)
+  assert(releaseReadback, 'candidate readback did not reach mock server')
+  await assertNavigationLocked()
+  holdReadback = false
+  releaseReadback()
   await wait("document.body.innerText.includes('Status kandidat #1 saat diperiksa: published')")
+  await wait("document.querySelector('nav[aria-label=\"Navigasi admin\"] a[href=\"/\"]')")
   assert.equal(calls.filter(c => c.path.endsWith('/review/') && c.method === 'POST').length, 1)
   assert(calls.some(c => c.path === '/api/admin/sources/BPS/candidates/1/' && c.method === 'GET'))
   for (const filter of ['published', 'rejected', 'pending']) {

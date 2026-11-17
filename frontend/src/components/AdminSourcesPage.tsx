@@ -347,7 +347,7 @@ export function AdminSourcesPage() {
         <span className="section-badge">Admin DEKSI</span>
       </div>
 
-      <AdminNavigation active="sources" />
+      <AdminNavigation active="sources" busy={reviewBusy} />
 
       {!sessionChecked || (loading && !authenticated) ? (
         <p className="summary-loading">Memeriksa sesi admin…</p>
