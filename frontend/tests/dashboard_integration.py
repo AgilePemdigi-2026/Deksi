@@ -14,15 +14,16 @@ from decimal import Decimal
 from pathlib import Path
 
 FRONTEND = Path(__file__).resolve().parents[1]
-BACKEND = Path('E:/Deksi-Team/.hermes/worktrees/sprint-1-dashboard-be/backend')
-SCRATCH = Path(os.environ['HERMES_TEST_SCRATCH']).resolve()
-OUTPUT = FRONTEND / '.artifacts' / 'sprint-1' / 'live'
+BACKEND = FRONTEND.parent / 'backend'
+SCRATCH = Path(r'C:/Users/Pongo/AppData/Local/hermes/cache/scratch').resolve()
+OUTPUT = SCRATCH / f'deksi-pr37-dashboard-output-{os.getpid()}-{time.time_ns()}'
 
 
 def configure():
     sys.dont_write_bytecode = True
     sys.path.insert(0, str(BACKEND))
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'backend.test_settings_indicators'
+    sys.path.insert(0, os.environ['DEKSI_QA_SETTINGS_DIR'])
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'deksi_isolated_settings'
     os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
     import django
     django.setup()
@@ -52,7 +53,7 @@ def seed(presentation=False):
                 value = '32.5' if year == 2025 else '21.5'
             Observation.objects.create(indicator=indicator, source=source, raw_file=raw,
                 observation_date=date(year,month,calendar.monthrange(year,month)[1]),
-                period_label=f'UJI {year}-{month:02}', frequency='monthly', data_type=types[code],
+                period_label=f'UJI {year}-{month:02}', frequency='daily' if code == 'birate' else 'monthly', data_type=types[code],
                 value=Decimal(value), unit=unit, publication_date=date(year,month,1),
                 validation_status='published', reviewed_by=user, reviewed_at=timezone.now())
     return {'synthetic':True, 'raw_path':raw.stored_path, 'raw_checksum':raw.checksum_sha256,
@@ -77,11 +78,20 @@ def run():
         owned=Path(temporary)
         os.environ['DEKSI_TEST_DATABASE']=str(owned/'qa.sqlite3')
         os.environ['DEKSI_TEST_RAW_ROOT']=str(owned/'raw')
+        os.environ['HERMES_TEST_SCRATCH']=str(SCRATCH)
         os.environ['DEKSI_PUBLIC_API_TARGET']='http://127.0.0.1:56121'
+        os.environ['DEKSI_AUTH_API_TARGET']='http://127.0.0.1:56121'
         os.environ['DEKSI_QA_FRONTEND']=str(FRONTEND)
         os.environ['DEKSI_QA_OUTPUT']=str(OUTPUT)
         os.environ['DEKSI_QA_PYTHON']=sys.executable
-        os.environ.pop('PYTHONPATH',None)
+        os.environ['DEKSI_QA_SETTINGS_DIR']=str(OUTPUT)
+        (OUTPUT/'deksi_isolated_settings.py').write_text(
+            'from backend.test_settings_indicators import *\n'
+            'INSTALLED_APPS = [*INSTALLED_APPS, "admin_auth"]\n'
+            '# The isolated browser opens concurrent loopback requests during navigation.\n'
+            'from django.core.servers.basehttp import WSGIServer\n'
+            'WSGIServer.request_queue_size = 64\n', encoding='utf-8')
+        os.environ['PYTHONPATH']=os.pathsep.join([str(OUTPUT),str(BACKEND)])
         os.environ.pop('PYTHONHOME',None)
         configure()
         from django.core.management import call_command
@@ -92,7 +102,7 @@ def run():
         os.environ['DEKSI_QA_FIXTURE']=str(fixture_path)
         log=(OUTPUT/'django.log').open('w',encoding='utf-8')
         server=subprocess.Popen([sys.executable,'-B',str(BACKEND/'manage.py'),'runserver','127.0.0.1:56121',
-            '--noreload','--settings=backend.test_settings_indicators'],cwd=owned,
+            '--noreload','--settings=deksi_isolated_settings'],cwd=owned,
             env=os.environ.copy(),stdout=log,stderr=subprocess.STDOUT)
         code=1
         try:
@@ -122,6 +132,7 @@ def run():
         receipt=OUTPUT/'browser.json'
         if receipt.exists():
             body=json.loads(receipt.read_text());body['owned_backend_stopped']=server.poll() is not None
+            body['backend_exit_code']=server.returncode
             body['owned_database']=str(owned/'qa.sqlite3');body['exit_code']=code
             receipt.write_text(json.dumps(body,indent=2)+'\n')
     if receipt.exists():

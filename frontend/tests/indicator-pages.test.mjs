@@ -19,6 +19,12 @@ test('detail renders actual selected zero and unit, with F7 bound to the same co
  assert.match(html,/href="\/indikator\/inflasi\/sumber\?tanggal=2000-01-31/)
  assert.doesNotMatch(html,/Tervalidasi Resmi|Sumber Terverifikasi|demo-v1/)
 })
+test('detail explains when missing regular periods break the history line',async()=>{
+ const data=await fetchDetail('inflasi',null,undefined,responder(dto()))
+ const html=render(data)
+ assert.match(html,/Garis terputus pada periode reguler yang hilang bila metadata cukup/)
+ assert.doesNotMatch(html,/Garis menghubungkan observasi berurutan/)
+})
 test('unreachable backend retains layout, missing value, error and working retry affordance',()=>{
  const html=render(null,{error:'Backend belum terhubung.'})
  assert.match(html,/Backend belum terhubung/)

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AdminNavigation } from "./AdminNavigation";
 import {
   adminLogin,
   adminLogout,
@@ -284,10 +285,10 @@ export function AdminFeedbackPage() {
           </p>
         </div>
         <div className="admin-fb-actions">
-          <a href="/admin/sumber" className="admin-fb-btn secondary">
+          <a href={statusUpdating ? undefined : "/admin/sumber"} aria-disabled={statusUpdating || undefined} className="admin-fb-btn secondary">
             Kelola Sumber Data
           </a>
-          <a href="/" className="admin-fb-btn secondary">
+          <a href={statusUpdating ? undefined : "/"} aria-disabled={statusUpdating || undefined} className="admin-fb-btn secondary">
             Lihat Dashboard Publik
           </a>
           <button onClick={handleLogout} disabled={logoutLoading || statusUpdating} className="admin-fb-btn outline danger">
@@ -295,6 +296,8 @@ export function AdminFeedbackPage() {
           </button>
         </div>
       </header>
+
+      <AdminNavigation active="feedback" busy={statusUpdating} />
 
       {logoutError && <p className="admin-fb-alert error" role="alert">{logoutError}</p>}
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
@@ -572,6 +575,7 @@ export function AdminFeedbackPage() {
                   </section>
                   <section className="admin-fb-detail-card highlight">
                     <h3>Tindak Lanjut dan Perubahan Status</h3>
+                    {statusUpdating && <p role="status">Tunggu hingga penyimpanan dan pemuatan ulang selesai sebelum berpindah halaman.</p>}
                     {statusUpdateMessage && (
                     <div className={`admin-fb-alert ${statusUpdateMessage.type}`} role="status">
                       {statusUpdateMessage.text}

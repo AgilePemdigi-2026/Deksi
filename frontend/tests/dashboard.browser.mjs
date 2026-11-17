@@ -4,6 +4,7 @@ import {readFile,writeFile,mkdtemp,rm} from 'node:fs/promises'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {createServer} from 'vite'
+import {browserHealthFailures} from './browser-guard.mjs'
 const frontend=process.env.DEKSI_QA_FRONTEND,output=process.env.DEKSI_QA_OUTPUT,scratch=process.env.HERMES_TEST_SCRATCH
 assert(frontend&&output&&scratch,'Use frontend-owned Python runner')
 const fixture=JSON.parse(await readFile(process.env.DEKSI_QA_FIXTURE,'utf8'))
@@ -13,10 +14,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms))
 let server,chrome,ws,send
 let failure=null
 try {
- server=await createServer({root:frontend,configLoader:'runner',cacheDir:path.join(output,'vite-cache'),server:{host:'127.0.0.1',port:56120,strictPort:true}})
+ server=await createServer({root:frontend,envDir:output,configLoader:'runner',cacheDir:path.join(output,'vite-cache'),server:{host:'127.0.0.1',port:56120,strictPort:true}})
  await server.listen()
  const origin='http://127.0.0.1:56120'
- chrome=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore'})
+ chrome=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--disable-gpu','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND,EXCLUDE localhost,EXCLUDE 127.0.0.1','--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore'})
  let port
  for(let n=0;n<120;n++){try{port=Number((await readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]);if(port)break}catch{}await pause(100)}
  assert(port)
@@ -45,6 +46,27 @@ try {
  const select=async(selector,value)=>js(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('change',{bubbles:true}))})()`)
  const dashboardReady=()=>wait('document.querySelectorAll(".dash-indicator").length===6&&!document.querySelector(".dash-overview").textContent.includes("Memuat…")')
  await send('Page.enable');await send('Runtime.enable');await send('Network.enable')
+ // Run first: use the live synthetic backend seed before other stateful checks.
+ await check('Daily BI-Rate monthly aggregation keeps January and March 2024 separate without synthetic dates',async()=>{
+  await go('/');await dashboardReady();await select('#filter-year','2024')
+  await js('[...document.querySelectorAll("[role=group][aria-labelledby=series-label] button")].find(button=>button.textContent==="BI-Rate").click()')
+  await wait('document.querySelector(".dash-trend-heading .dash-selected-value p")?.textContent==="BI-Rate"')
+  await wait('document.querySelector("[role=group][aria-labelledby=frequency-label] button[aria-pressed=true]")?.textContent==="Periode asli"')
+  await wait('[...document.querySelectorAll("[role=group][aria-labelledby=frequency-label] button")].some(button=>button.textContent==="Bulanan"&&!button.disabled)')
+  await js('[...document.querySelectorAll("[role=group][aria-labelledby=frequency-label] button")].find(button=>button.textContent==="Bulanan").click()')
+  await wait('document.querySelector("[role=group][aria-labelledby=frequency-label] button[aria-pressed=true]")?.textContent==="Bulanan"&&!document.querySelector("#economic-trend").getAttribute("aria-busy").includes("true")')
+  await wait('[...document.querySelectorAll(".dash-history tbody th button")].map(button=>button.textContent).join(",")==="2024-01,2024-03"')
+  await wait('document.querySelector(".dash-history summary")?.textContent.includes("2 observasi")')
+  const labels=await js('[...document.querySelectorAll(".dash-history tbody th button")].map(button=>button.textContent)')
+  assert.deepEqual(labels,['2024-01','2024-03'])
+  assert.equal(await js('document.querySelectorAll("#trend-svg .dash-line").length'),2)
+  assert.equal(await js('document.querySelectorAll("#trend-svg .dash-point").length'),2)
+  const aggregate=await js('(async()=>{const response=await fetch("/api/indicators/birate/trend/?granularity=Bulanan");return {status:response.status,body:await response.json()}})()')
+  assert.equal(aggregate.status,200)
+  assert.deepEqual(aggregate.body.points.map(point=>point.label),['2024-01','2024-03','2025-01'])
+  assert(aggregate.body.points.every(point=>!Object.hasOwn(point,'observationDate')),'monthly aggregates must not invent observation dates')
+  assert.equal(await js('document.querySelector(".dash-point-panel small").textContent'),'Tanggal belum tersedia')
+ })
  // No Fetch.enable, API interception, mocked success, source requests or provider calls.
  await check('Full Prototype2 composition uses actual public API; zero, exact strings and missing data stay distinct',async()=>{
   await go('/');await dashboardReady();await wait('document.querySelector("#trend-svg .dash-point")')
@@ -106,16 +128,17 @@ try {
   assert.equal(await js('localStorage.length+sessionStorage.length'),0)
   await shot('feedback-pending-synthetic.png')
  })
- await check('Login, forgot and reset routes preserve original forms, public navigation and honest unavailable auth',async()=>{
-  await go('/admin/login');await wait('document.querySelector("#form-status")?.textContent.includes("belum")||document.querySelector("#session-refresh")')
+ await check('Anonymous login, recovery and source routes preserve navigation',async()=>{
+  await go('/admin/login');await wait('document.querySelector("#login-submit")&&!document.querySelector("#login-submit").disabled')
   assert.equal(await js('!!document.querySelector("#economic-overview")'),false)
-  assert.equal(await js('document.querySelector("#login-submit").disabled'),true)
-  await shot('login-auth-unavailable.png')
+  assert.equal(await js('document.querySelector("#login-form").hidden'),false)
+  assert.equal(await js('!!document.querySelector("#admin-session")'),false)
+  await shot('login-anonymous.png')
   await js('document.querySelector("#recovery-help").click()');await wait('location.pathname==="/admin/forgot-password"&&document.querySelector("form")')
   await shot('forgot-password.png')
   await go('/admin/reset-password');assert.equal(await js('document.querySelectorAll("input[type=password]").length'),0)
   await shot('reset-without-capability.png')
-  await go('/sumber-data');assert((await js('document.body.textContent')).includes('Halaman tidak ditemukan'))
+  await go('/sumber-data');await wait('document.querySelector("#sumber-data-page h2")?.textContent==="Sumber Data"');await wait('document.querySelector(".source-name")?.textContent==="Dataset UJI SINTETIS"')
  })
  await check('Empty year never falls back to current data; offline error recovers with explicit retry',async()=>{
   await go('/');await dashboardReady();await select('#filter-year','2026');await wait('document.querySelectorAll(".dash-indicator").length===6&&document.querySelector("[data-indicator=inflasi] .dash-card-value").textContent==="Belum tersedia"')
@@ -130,18 +153,24 @@ try {
    await go('/',width);await dashboardReady()
    assert.equal(await js('document.documentElement.scrollWidth>innerWidth+1'),false,'overflow '+width)
    assert.equal(await js('document.querySelectorAll("img").length'),12)
-   await js('document.querySelector(".plate-menu").focus();document.querySelector(".plate-menu").click()');await wait('document.querySelector(".p2-info").open')
-   await key('Escape',27);assert.equal(await js('document.activeElement===document.querySelector(".plate-menu")'),true)
+   await js('document.querySelector(".dash-summary-grid button").focus();document.querySelector(".dash-summary-grid button").click()');await wait('document.querySelector(".p2-info").open')
+   await key('Escape',27);assert.equal(await js('document.activeElement===document.querySelector(".dash-summary-grid button")'),true)
    await shot(`dashboard-${width}-synthetic.png`,width===390)
   }
   await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});await go('/',390);await dashboardReady();await js('scrollTo(0,500)');await pause(150)
   assert.equal(await js('getComputedStyle(document.querySelector(".hero-photo-wrap")).transform'),'none')
  })
  assert.equal(errors.length,0,errors.join('\n'))
- assert(!requests.some(r=>/bps-status|\/api\/status\/|sync|ingest/.test(r.url)),'No provider probe')
+  const providerProbe=url=>/^\/api\//.test(new URL(url).pathname)&&/bps-status|\/api\/status\/|sync|ingest/.test(new URL(url).pathname)
+ assert(providerProbe(origin+'/api/system/bps-status/'))
+ assert(providerProbe(origin+'/api/admin/sources/TEST_ONLY/resync/'))
+ assert(!providerProbe(origin+'/src/features/sync-history/SyncHistoryPage.tsx'))
+ assert(!requests.some(r=>providerProbe(r.url)),'No provider probe')
  assert(!requests.some(r=>/^https?:/.test(r.url)&&!r.url.startsWith(origin)),'Unexpected non-proxy external request')
 } catch(error){failure=String(error.stack??error);console.error(failure);if(send){try{const image=await send('Page.captureScreenshot',{format:'png'});await writeFile(path.join(output,'failure.png'),Buffer.from(image.data,'base64'))}catch{}}}
 finally {
+ const healthFailures=browserHealthFailures({consoleErrors,responses})
+ if(healthFailures.length){const message='Browser health guard failed:\n'+healthFailures.join('\n');failure=failure?failure+'\n'+message:message;console.error(message)}
  if(send){try{await send('Browser.close')}catch{}}
  ws?.close()
  if(chrome&&chrome.exitCode===null){chrome.kill();await pause(300)}

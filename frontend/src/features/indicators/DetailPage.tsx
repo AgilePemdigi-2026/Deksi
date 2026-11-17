@@ -16,7 +16,7 @@ export function SourceLink({ url, children }: { url: string | null | undefined; 
 export function FeatureShell({ children }: { children: ReactNode }) {
   return <div className="deksi-page indicator-feature">
     <a className="skip-link" href="#feature-content">Lewati ke konten utama</a>
-    <header className="fd-top"><a href="/" className="fd-brand" aria-label="DEKSI, kembali ke dashboard"><BrandMark />DEKSI</a><a href="/#indikator">Kembali ke dashboard ↗</a><span>AKSES PUBLIK / TANPA AKUN</span></header>
+    <header className="fd-top"><a href="/" className="fd-brand" aria-label="DEKSI, kembali ke dashboard"><BrandMark />DEKSI</a><a href="/#economic-indicators">Kembali ke dashboard ↗</a><span>AKSES PUBLIK / TANPA AKUN</span></header>
     {children}
     <footer className="fd-footer"><strong>DEKSI / Data, konteks, sumber.</strong><p>Periode observasi, tanggal rilis, dan waktu akuisisi adalah metadata yang berbeda. Nama institusi bukan bukti angka sudah diverifikasi.</p></footer>
   </div>
@@ -38,7 +38,7 @@ function History({ history }: { history: HistoryPoint[] }) {
         {chart.segments.map((points, i) => <polyline key={i} points={points} className="fd-line" />)}
         {chart.points.map((point, i) => <circle key={i} cx={point.x} cy={point.y} r="4" className="fd-point"><title>{`${point.period}: ${formatDecimal(point.value)} ${history[0].unit}`}</title></circle>)}
         <text x="120" y="230">{history[0].period}</text><text x="716" y="230" textAnchor="end">{history[history.length - 1].period}</text>
-      </svg><figcaption>Geometri grafik menggunakan pendekatan numerik; tabel mempertahankan string presisi API. Garis menghubungkan observasi berurutan; jarak horizontal tidak proporsional dengan waktu bila ada periode yang hilang; kalender kerja harian tidak diasumsikan.</figcaption>
+      </svg><figcaption>Geometri grafik menggunakan pendekatan numerik; tabel mempertahankan string presisi API. Garis terputus pada periode reguler yang hilang bila metadata cukup untuk memastikannya; jarak horizontal tidak proporsional terhadap waktu, dan kalender kerja harian tidak diasumsikan.</figcaption>
     </figure>}
     {history.length > 0 && <details><summary>Lihat tabel histori</summary><div className="fd-table-scroll" tabIndex={0} role="region" aria-label="Tabel histori indikator"><table><caption>Observasi historis, bukan jurnal revisi</caption><thead><tr><th scope="col">Periode</th><th scope="col">Tanggal observasi</th><th scope="col">Nilai</th><th scope="col">Satuan</th><th scope="col">Frekuensi</th><th scope="col">Jenis data</th><th scope="col">Sumber</th></tr></thead><tbody>{history.map((point, index) => <tr key={index}><th scope="row">{point.period}</th><td>{point.observationDate ?? 'Belum tersedia'}</td><td>{formatDecimal(point.value)}</td><td>{point.unit}</td><td>{point.frequency ?? 'Belum tersedia'}</td><td>{point.dataType ?? 'Belum tersedia'}</td><td>{point.sourceId ?? 'Belum tersedia'}</td></tr>)}</tbody></table></div></details>}
   </section>

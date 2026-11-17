@@ -527,7 +527,8 @@ export async function fetchAdminSources(): Promise<AdminSourceEntry[]> {
     throw new Error(`HTTP ${res.status}`);
   }
   const body = await res.json();
-  return (body?.sources ?? []) as AdminSourceEntry[];
+  if (!Array.isArray(body?.sources)) throw new Error("Respons daftar sumber tidak valid.");
+  return body.sources as AdminSourceEntry[];
 }
 
 export async function createAdminSource(payload: SourceCreatePayload): Promise<AdminSourceEntry> {

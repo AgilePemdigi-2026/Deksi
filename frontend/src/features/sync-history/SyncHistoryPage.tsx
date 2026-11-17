@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import type { LoadSyncHistory, SyncHistoryQuery, SyncHistoryResult, SyncStatus } from './types'
 import { labelSyncStatus } from './types'
 import { reconcileAdminResyncJob } from '../../api'
+import { AdminNavigation } from '../../components/AdminNavigation'
 import './sync-history.css'
 
 type Props = { loadHistory?: LoadSyncHistory }
@@ -86,6 +87,8 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
         </div>
         <span className="sync-history__badge">Admin DEKSI</span>
       </header>
+
+      <AdminNavigation active="history" />
 
       <section className="sync-history__panel" aria-labelledby="sync-list-title">
         <div className="sync-history__panel-header">
