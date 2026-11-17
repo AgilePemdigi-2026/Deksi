@@ -497,6 +497,7 @@ export interface BulkPreview {
 }
 export interface BulkReviewResult {
   id: string; status: 'running' | 'completed' | 'unknown';
+  resolvedAt?: string | null; resolvedBy?: string | null; resolutionReason?: string | null;
   items: Array<{ id: number; status: 'excluded' | 'pending' | 'published' | 'skipped' | 'unknown'; reason: string | null }>;
   counts: { total: number; eligible: number; excluded: number; published: number; skipped: number; pending: number; unknown: number };
 }
@@ -504,7 +505,7 @@ const bulkPath = (sourceId: string) => `/admin/sources/${encodeURIComponent(sour
 function bulkError(status: number): Error {
   if (status === 401) return new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
   if (status === 403) return new CandidateReviewError('forbidden', 'Izin review atau token keamanan ditolak.');
-  if (status === 409) return new CandidateReviewError('conflict', 'Pratinjau sudah berubah atau kedaluwarsa. Muat ulang.');
+  if (status === 409) return new CandidateReviewError('conflict', 'Ada konflik pratinjau atau operasi sumber. Periksa status operasi sebelum keputusan baru.');
   return new Error('Operasi kandidat belum dapat dipastikan. Periksa statusnya sebelum mengambil keputusan baru.');
 }
 const validBulkId = (id: unknown): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id);
@@ -544,6 +545,22 @@ export async function confirmBulkReview(sourceId: string, id: string): Promise<B
     if (!res.ok) throw bulkError(res.status);
     const body = await res.json() as BulkReviewResult;
     if (!validBulkResult(body, id)) throw new Error('Hasil operasi belum dapat dipastikan.');
+    return body;
+  });
+}
+
+export async function reconcileBulkReview(sourceId: string, id: string, reason: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id) || !reason.trim() || reason.trim().length > 500) throw new Error('Identitas atau alasan pemeriksaan tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/reconcile/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acknowledged: true, reason: reason.trim() }), signal,
+    });
+    if (!res.ok) throw bulkError(res.status);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id) || !body.resolvedAt || !body.resolvedBy || !body.resolutionReason) {
+      throw new Error('Hasil pemeriksaan belum dapat dipastikan. Periksa status operasi.');
+    }
     return body;
   });
 }

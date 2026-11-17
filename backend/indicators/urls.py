@@ -54,6 +54,8 @@ urlpatterns = [
          bulk_candidate_views.bulk_candidate_active, name="admin-candidate-bulk-active"),
     path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/confirm/",
          bulk_candidate_views.bulk_candidate_confirm, name="admin-candidate-bulk-confirm"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/reconcile/",
+         bulk_candidate_views.bulk_candidate_reconcile, name="admin-candidate-bulk-reconcile"),
     path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/",
          bulk_candidate_views.bulk_candidate_status, name="admin-candidate-bulk-status"),
     path("admin/sources/<str:source_id>/candidates/<int:candidate_id>/",

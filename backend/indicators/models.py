@@ -219,6 +219,10 @@ class BulkCandidateReview(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     confirmed_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                    null=True, blank=True, related_name="resolved_bulk_candidate_reviews")
+    resolution_reason = models.TextField(blank=True, default="")
 
     class Meta:
         ordering = ["-created_at", "-id"]

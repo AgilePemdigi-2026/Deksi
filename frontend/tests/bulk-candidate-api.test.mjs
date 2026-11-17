@@ -56,3 +56,32 @@ test('mismatched snapshot identity is rejected before the UI can confirm it', as
   try { await assert.rejects(api.createBulkPreview('BPS'), /tidak valid/i) }
   finally { globalThis.fetch = previous }
 })
+
+test('source conflict does not tell Admin to blindly recreate a preview', async () => {
+  const previous = globalThis.fetch
+  globalThis.fetch = async url => url === '/api/auth/csrf/' ? Response.json({ csrfToken: 'synthetic-token' }) :
+    new Response(null, { status: 409 })
+  try {
+    await assert.rejects(api.confirmBulkReview('BPS', preview.id), error =>
+      error.kind === 'conflict' && /operasi sumber/i.test(error.message) && !/Muat ulang/i.test(error.message))
+  } finally { globalThis.fetch = previous }
+})
+
+test('manual reconciliation is explicit and never replays confirmation', async () => {
+  const previous = globalThis.fetch
+  const calls = []
+  const closed = { ...result, status: 'unknown', resolvedAt: '2026-11-17T15:00:00Z',
+    resolvedBy: 'Admin', resolutionReason: 'Diperiksa manual' }
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url, init })
+    if (url === '/api/auth/csrf/') return Response.json({ csrfToken: 'synthetic-token' })
+    if (url.endsWith('/reconcile/')) return Response.json(closed)
+    throw new Error(`unexpected request: ${url}`)
+  }
+  try {
+    assert.deepEqual(await api.reconcileBulkReview('BPS', preview.id, 'Diperiksa manual'), closed)
+    assert.deepEqual(calls.filter(call => call.init.method === 'POST').map(call => JSON.parse(call.init.body)),
+      [{ acknowledged: true, reason: 'Diperiksa manual' }])
+    assert(calls.every(call => !call.url.endsWith('/confirm/')))
+  } finally { globalThis.fetch = previous }
+})

@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -61,6 +61,9 @@ def _result(batch):
     return {
         "id": str(batch.pk),
         "status": batch.status,
+        "resolvedAt": batch.resolved_at.isoformat() if batch.resolved_at else None,
+        "resolvedBy": batch.resolved_by.get_username() if batch.resolved_by_id else None,
+        "resolutionReason": batch.resolution_reason or None,
         "items": [{"id": item.candidate_id, "status": item.status,
                    "reason": item.reason or item.exclusion_reason}
                   for item in batch.items.order_by("candidate_id")],
@@ -142,7 +145,8 @@ def bulk_candidate_confirm(request, source_id, batch_id):
                 return _no_store(JsonResponse(_result(batch)))
             if BulkCandidateReview.objects.filter(
                     source=source, status__in=[BulkCandidateReview.Status.RUNNING,
-                                               BulkCandidateReview.Status.UNKNOWN]).exclude(pk=batch.pk).exists():
+                                               BulkCandidateReview.Status.UNKNOWN],
+                    resolved_at__isnull=True).exclude(pk=batch.pk).exists():
                 return json_error("Ada operasi sumber ini yang belum pasti; periksa hasilnya sebelum konfirmasi baru.",
                                   status=409)
             if batch.expires_at <= timezone.now():
@@ -157,12 +161,17 @@ def bulk_candidate_confirm(request, source_id, batch_id):
                         .order_by("candidate_id").values_list("pk", flat=True)):
         try:
             with transaction.atomic():
-                item = BulkCandidateReviewItem.objects.select_for_update().select_related("candidate").get(
+                # A manual resolution fences this request's remaining writes.
+                current_batch = BulkCandidateReview.objects.select_for_update().get(pk=batch_id)
+                if current_batch.resolved_at is not None:
+                    break
+                item = BulkCandidateReviewItem.objects.select_for_update().get(
                     pk=item_id, batch_id=batch_id, status=BulkCandidateReviewItem.Status.PENDING)
+                candidate = ObservationCandidate.objects.select_for_update().get(pk=item.candidate_id)
                 # The individual lifecycle checks internal integrity, not the fingerprint shown in preview.
-                if item.candidate.fingerprint != item.candidate_snapshot["fingerprint"]:
+                if candidate.fingerprint != item.candidate_snapshot["fingerprint"]:
                     raise ValidationError("Kandidat berubah setelah preview.")
-                eligible, _ = _eligibility(item.candidate)
+                eligible, _ = _eligibility(candidate)
                 if not eligible:
                     raise ValidationError("Metadata kandidat tidak lagi memenuhi syarat bulk.")
                 review_candidate(item.candidate_id, request.user, publish=True)
@@ -177,12 +186,47 @@ def bulk_candidate_confirm(request, source_id, batch_id):
             # readback never retries this or any other item.
             BulkCandidateReviewItem.objects.filter(pk=item_id, status=BulkCandidateReviewItem.Status.PENDING).update(
                 status=BulkCandidateReviewItem.Status.UNKNOWN, reason="review_outcome_unknown")
-            BulkCandidateReview.objects.filter(pk=batch_id).update(status=BulkCandidateReview.Status.UNKNOWN)
+            BulkCandidateReview.objects.filter(pk=batch_id, resolved_at__isnull=True).update(
+                status=BulkCandidateReview.Status.UNKNOWN)
             break
 
-    BulkCandidateReview.objects.filter(pk=batch_id, status=BulkCandidateReview.Status.RUNNING).update(
+    BulkCandidateReview.objects.filter(pk=batch_id, status=BulkCandidateReview.Status.RUNNING,
+                                       resolved_at__isnull=True).update(
         status=BulkCandidateReview.Status.COMPLETED)
     batch = BulkCandidateReview.objects.get(pk=batch_id)
+    return _no_store(JsonResponse(_result(batch)))
+
+@require_POST
+def bulk_candidate_reconcile(request, source_id, batch_id):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    data, error = _parse_json_body(request)
+    if (error or not isinstance(data, dict) or set(data) != {"acknowledged", "reason"}
+            or data["acknowledged"] is not True or not isinstance(data["reason"], str)
+            or not 1 <= len(data["reason"].strip()) <= 500):
+        return json_error("Alasan dan konfirmasi pemeriksaan manual diperlukan.", status=400)
+    with transaction.atomic():
+        batches = BulkCandidateReview.objects.select_for_update().filter(
+            pk=batch_id, source__source_id=source_id)
+        if not request.user.is_superuser:
+            batches = batches.filter(reviewer_id=request.user.pk)
+        batch = batches.first()
+        if batch is None:
+            return json_error("Review bulk tidak ditemukan.", status=404)
+        if batch.status == BulkCandidateReview.Status.PREVIEW and batch.reviewer_id != request.user.pk:
+            return json_error("Review bulk tidak ditemukan.", status=404)
+        if batch.resolved_at is not None:
+            return _no_store(JsonResponse(_result(batch)))
+        if batch.status not in {BulkCandidateReview.Status.RUNNING, BulkCandidateReview.Status.UNKNOWN}:
+            return json_error("Hanya operasi belum pasti yang dapat ditutup.", status=409)
+        batch.items.filter(status=BulkCandidateReviewItem.Status.PENDING).update(
+            status=BulkCandidateReviewItem.Status.UNKNOWN, reason="manual_reconciliation")
+        batch.status = BulkCandidateReview.Status.UNKNOWN
+        batch.resolved_at = timezone.now()
+        batch.resolved_by = request.user
+        batch.resolution_reason = data["reason"].strip()
+        batch.save(update_fields=["status", "resolved_at", "resolved_by", "resolution_reason"])
     return _no_store(JsonResponse(_result(batch)))
 
 
@@ -191,9 +235,13 @@ def bulk_candidate_status(request, source_id, batch_id):
     denied = _authorize(request)
     if denied is not None:
         return denied
-    batch = BulkCandidateReview.objects.filter(
-        pk=batch_id, source__source_id=source_id, reviewer_id=request.user.pk).first()
+    batches = BulkCandidateReview.objects.filter(pk=batch_id, source__source_id=source_id)
+    if not request.user.is_superuser:
+        batches = batches.filter(reviewer_id=request.user.pk)
+    batch = batches.first()
     if batch is None:
+        return json_error("Review bulk tidak ditemukan.", status=404)
+    if batch.status == BulkCandidateReview.Status.PREVIEW and batch.reviewer_id != request.user.pk:
         return json_error("Review bulk tidak ditemukan.", status=404)
     if batch.status == BulkCandidateReview.Status.PREVIEW:
         return json_error("Preview belum dikonfirmasi.", status=409)
@@ -208,9 +256,21 @@ def bulk_candidate_active(request, source_id):
     denied = _authorize(request)
     if denied is not None:
         return denied
-    batch = BulkCandidateReview.objects.filter(
-        source__source_id=source_id, reviewer_id=request.user.pk,
-        status__in=[BulkCandidateReview.Status.RUNNING, BulkCandidateReview.Status.UNKNOWN,
-                   BulkCandidateReview.Status.COMPLETED],
-    ).first()
+    unresolved = BulkCandidateReview.objects.filter(
+        source__source_id=source_id, resolved_at__isnull=True,
+        status__in=[BulkCandidateReview.Status.RUNNING, BulkCandidateReview.Status.UNKNOWN])
+    if request.user.is_superuser:
+        batch = unresolved.first()
+    else:
+        batch = unresolved.filter(reviewer_id=request.user.pk).first()
+    if batch is None:
+        history = BulkCandidateReview.objects.filter(
+            source__source_id=source_id,
+            status__in=[BulkCandidateReview.Status.RUNNING, BulkCandidateReview.Status.UNKNOWN,
+                       BulkCandidateReview.Status.COMPLETED])
+        if request.user.is_superuser:
+            history = history.filter(Q(reviewer_id=request.user.pk) | Q(resolved_by_id=request.user.pk))
+        else:
+            history = history.filter(reviewer_id=request.user.pk)
+        batch = history.first()
     return _no_store(JsonResponse({"batch": _result(batch) if batch is not None else None}))

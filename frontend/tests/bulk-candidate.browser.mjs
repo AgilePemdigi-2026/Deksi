@@ -23,9 +23,18 @@ const preview = { id: batchId, status: 'preview', expiresAt: '2099-01-01T00:00:0
 const counts = { total: 21, eligible: 1, excluded: 20, published: 1, skipped: 0, pending: 0, unknown: 0 }
 const result = { id: batchId, status: 'completed', counts, items: preview.items.map(item => ({ id: item.id,
   status: item.eligible ? 'published' : 'excluded', reason: item.exclusionReason })) }
+const running = { ...result, status: 'running', counts: { ...counts, published: 0, pending: 1 },
+  items: result.items.map(item => item.id === 21 ? { ...item, status: 'pending' } : item) }
+const reconciledResult = { ...running, status: 'unknown', resolvedAt: '2026-11-17T15:00:00Z',
+  resolvedBy: 'UJI', resolutionReason: 'Diperiksa manual',
+  counts: { ...running.counts, pending: 0, unknown: 1 },
+  items: running.items.map(item => item.id === 21 ? { ...item, status: 'unknown' } : item) }
 let postCount = 0
 let releaseConfirm
 let submitted = false
+let unresolved = false
+let reconciled = false
+let recoveryCount = 0
 const mockApi = (req, res, next) => {
   if (!req.url.startsWith('/api/')) return next()
   res.setHeader('Content-Type', 'application/json')
@@ -37,11 +46,20 @@ const mockApi = (req, res, next) => {
     institution: 'Sintetis', status: 'active', acquisitionMethod: 'api_bps', dataFormat: 'json', frequency: 'mixed', lastFetch: {} }] })
   if (route === '/api/admin/sources/BPS/resync-active/') return send({ job: null })
   if (route === '/api/auth/csrf/') return send({ csrfToken: 'synthetic-token' })
-  if (route === '/api/admin/sources/BPS/candidates/bulk-review/active/') return send({ batch: submitted ? result : null })
+  if (route === '/api/admin/sources/BPS/candidates/bulk-review/active/') return send({ batch:
+    unresolved ? (reconciled ? reconciledResult : running) : submitted ? result : null })
   if (route === '/api/admin/sources/BPS/candidates/bulk-preview/' && req.method === 'POST') {
     assert.equal(req.headers['x-csrftoken'], 'synthetic-token'); return send(preview)
   }
-  if (route === `/api/admin/sources/BPS/candidates/bulk-review/${batchId}/` && req.method === 'GET') return send(result)
+  if (route === `/api/admin/sources/BPS/candidates/bulk-review/${batchId}/` && req.method === 'GET') return send(
+    unresolved ? (reconciled ? reconciledResult : running) : result)
+  if (route === `/api/admin/sources/BPS/candidates/bulk-review/${batchId}/reconcile/` && req.method === 'POST') {
+    assert.equal(req.headers['x-csrftoken'], 'synthetic-token')
+    let body = ''; req.on('data', chunk => { body += chunk }); req.on('end', () => {
+      assert.deepEqual(JSON.parse(body), { acknowledged: true, reason: 'Diperiksa manual' })
+      recoveryCount++; reconciled = true; send(reconciledResult)
+    }); return
+  }
   if (route === `/api/admin/sources/BPS/candidates/bulk-review/${batchId}/confirm/` && req.method === 'POST') {
     assert.equal(req.headers['x-csrftoken'], 'synthetic-token')
     let body = ''; req.on('data', chunk => { body += chunk }); req.on('end', () => {
@@ -115,6 +133,22 @@ try {
   await wait("document.querySelector('.candidate-review__bulk-result')?.textContent.includes('berhasil 1')")
   assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-result')?.textContent.includes('#21 · published')"), true)
   assert.equal(postCount, 1)
+  unresolved = true
+  await send('Page.reload', { ignoreCache: true })
+  await wait(button('Lihat Kandidat'))
+  await evaluate(`${button('Lihat Kandidat')}.click()`)
+  await wait("document.querySelector('.candidate-review__bulk-result')?.textContent.includes('Operasi running')")
+  assert.equal(await evaluate(`${button('Pratinjau kandidat yang memenuhi syarat')}.disabled`), true)
+  await wait(button('Tutup operasi setelah pemeriksaan manual'))
+  assert.equal(await evaluate(`${button('Tutup operasi setelah pemeriksaan manual')}.disabled`), true)
+  await evaluate("(()=>{const e=document.querySelector('.candidate-review__bulk-reconcile input[type=text]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'Diperiksa manual');e.dispatchEvent(new Event('input',{bubbles:true}))})()")
+  await evaluate("document.querySelector('.candidate-review__bulk-reconcile input[type=checkbox]').click()")
+  await wait(`${button('Tutup operasi setelah pemeriksaan manual')} && !${button('Tutup operasi setelah pemeriksaan manual')}.disabled`)
+  await evaluate(`${button('Tutup operasi setelah pemeriksaan manual')}.click()`)
+  await wait("document.querySelector('.candidate-review__bulk-result')?.textContent.includes('Ditinjau UJI')")
+  assert.equal(recoveryCount, 1)
+  assert.equal(postCount, 1, 'manual reconciliation does not repeat approval')
+  assert.equal(await evaluate(`${button('Pratinjau kandidat yang memenuhi syarat')}.disabled`), false)
   console.log('synthetic browser: preview 21 across pages, 20 excluded, one confirmed, readback displayed')
 } finally {
   if (ws) ws.close()

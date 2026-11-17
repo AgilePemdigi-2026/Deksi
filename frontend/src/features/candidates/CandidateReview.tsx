@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CandidateReviewError, confirmBulkReview, createBulkPreview, fetchActiveBulkReview, fetchBulkReview, fetchReviewCandidate, fetchReviewCandidates, submitCandidateReview, type BulkPreview, type BulkReviewResult, type CandidatePage, type ReviewCandidate } from '../../api'
+import { CandidateReviewError, confirmBulkReview, createBulkPreview, fetchActiveBulkReview, fetchBulkReview, fetchReviewCandidate, fetchReviewCandidates, reconcileBulkReview, submitCandidateReview, type BulkPreview, type BulkReviewResult, type CandidatePage, type ReviewCandidate } from '../../api'
 import { safeExternalUrl } from '../indicators/data'
 import './candidate-review.css'
 
@@ -62,6 +62,8 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   const [bulkLoading, setBulkLoading] = useState(true)
   const [bulkUncertain, setBulkUncertain] = useState(false)
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const [resolutionReason, setResolutionReason] = useState('')
+  const [resolutionAcknowledged, setResolutionAcknowledged] = useState(false)
   const uncertainRef = useRef(initialUncertain.ids)
 
   const submission = useRef(false)
@@ -94,7 +96,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     }).finally(() => { if (active) setBulkLoading(false) })
     return () => { active = false }
   }, [sourceId])
-  const batchBlocksDecisions = bulkLoading || bulkUncertain || (bulkResult != null && bulkResult.status !== 'completed')
+  const batchBlocksDecisions = bulkLoading || bulkUncertain || (bulkResult != null && bulkResult.status !== 'completed' && !bulkResult.resolvedAt)
   const previewBulk = async () => {
     if (!initialReadOk || uncertainRef.current.length || busy || bulkBusy || batchBlocksDecisions) return
     setBulkBusy(true); onBusyChange(true); setBulkError(null)
@@ -124,6 +126,19 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     } catch {
       setBulkUncertain(true)
       setBulkError('Konfirmasi mungkin sudah diproses. Jangan mengulanginya; baca status operasi di server.')
+    } finally { setBulkBusy(false); onBusyChange(false) }
+  }
+  const reconcileBulk = async () => {
+    if (!bulkResult || bulkResult.status === 'completed' || bulkResult.resolvedAt || !resolutionAcknowledged ||
+        !resolutionReason.trim() || resolutionReason.trim().length > 500 || bulkBusy || busy) return
+    setBulkBusy(true); onBusyChange(true); setBulkError(null)
+    try {
+      const current = await reconcileBulkReview(sourceId, bulkResult.id, resolutionReason)
+      setBulkResult(current); setBulkPreview(null); setBulkChecked(false)
+      setResolutionReason(''); setResolutionAcknowledged(false); refresh()
+    } catch {
+      setBulkUncertain(true)
+      setBulkError('Penutupan operasi belum dapat dipastikan. Baca statusnya; jangan kirim tindakan ini ulang otomatis.')
     } finally { setBulkBusy(false); onBusyChange(false) }
   }
   const recoverStorage = () => {
@@ -288,9 +303,16 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       </div>}
       {bulkResult && <div className="candidate-review__bulk-result" aria-label="Hasil persetujuan massal">
         <p role="status">Operasi {bulkResult.status}: berhasil {bulkResult.counts.published}, dilewati {bulkResult.counts.skipped}, dikecualikan {bulkResult.counts.excluded}, belum diproses {bulkResult.counts.pending}, belum pasti {bulkResult.counts.unknown}.</p>
-        {bulkResult.status !== 'completed' && <p role="alert">Proses dapat masih berjalan atau terputus. Jangan memulai operasi lain sampai statusnya jelas.</p>}
+        {bulkResult.resolvedAt ? <p role="status">Ditinjau {bulkResult.resolvedBy} · {bulkResult.resolvedAt} · {bulkResult.resolutionReason}. Hasil yang belum pasti tetap perlu diperiksa per kandidat.</p> :
+          bulkResult.status !== 'completed' && <p role="alert">Proses dapat masih berjalan atau terputus. Jangan memulai operasi lain sampai statusnya jelas.</p>}
         <ol>{bulkResult.items.map(item => <li key={item.id}>#{item.id} · {item.status}{item.reason ? ` · ${item.reason}` : ''}</li>)}</ol>
         <button type="button" className="tab" disabled={bulkBusy} onClick={() => void readBulk(bulkResult.id)}>Periksa status operasi</button>
+        {bulkResult.status !== 'completed' && !bulkResult.resolvedAt && <div className="candidate-review__bulk-reconcile">
+          <p>Periksa hasil setiap kandidat dan pastikan tidak ada proses lama yang perlu ditunggu. Penutupan tidak mengulang publikasi; item belum pasti tetap ditandai belum pasti. Proses yang masih berjalan dibatasi sebelum item berikutnya, bukan dibatalkan di tengah item.</p>
+          <label>Alasan pemeriksaan <input type="text" value={resolutionReason} maxLength={500} onChange={event => setResolutionReason(event.target.value)} /></label>
+          <label><input type="checkbox" checked={resolutionAcknowledged} onChange={event => setResolutionAcknowledged(event.target.checked)} /> Saya sudah memeriksa hasil dan memahami proses sebelumnya mungkin masih berjalan.</label>
+          <button type="button" className="tab" disabled={bulkBusy || busy || !resolutionAcknowledged || !resolutionReason.trim()} onClick={() => void reconcileBulk()}>Tutup operasi setelah pemeriksaan manual</button>
+        </div>}
       </div>}
       {bulkUncertain && bulkPreview && <button type="button" className="tab" disabled={bulkBusy} onClick={() => void readBulk(bulkPreview.id)}>Periksa status operasi</button>}
     </div>

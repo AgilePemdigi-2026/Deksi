@@ -3,6 +3,7 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.test import Client
 from django.utils import timezone
@@ -227,6 +228,71 @@ class BulkCandidateReviewApiTests(IndicatorCase):
         )
         self.assertEqual(response.status_code, 409)
         self.assertFalse(Observation.objects.exists())
+
+    def test_unresolved_batch_requires_explicit_review_before_new_confirmation(self):
+        self.stage(day=14)
+        first = self.preview().json()
+        BulkCandidateReview.objects.filter(pk=first["id"]).update(status=BulkCandidateReview.Status.RUNNING)
+        second = self.preview().json()
+        url = self.base + f"bulk-review/{first['id']}/reconcile/"
+        rejected = self.client.post(url, data=json.dumps({"reason": "", "acknowledged": True}),
+                                    content_type="application/json")
+        self.assertEqual(rejected.status_code, 400)
+        self.assertEqual(self.client.post(self.base + f"bulk-review/{second['id']}/confirm/",
+                          data=json.dumps({"confirmed": True}), content_type="application/json").status_code, 409)
+        resolved = self.client.post(url, data=json.dumps({"reason": "Diperiksa manual; hentikan batch lama",
+                                                       "acknowledged": True}), content_type="application/json")
+        self.assertEqual(resolved.status_code, 200)
+        self.assertEqual(resolved.json()["status"], "unknown")
+        self.assertEqual(resolved.json()["counts"]["unknown"], 1)
+        self.assertIsNotNone(resolved.json()["resolvedAt"])
+        self.assertEqual(resolved.json()["resolvedBy"], self.reviewer.get_username())
+        self.assertEqual(resolved.json()["resolutionReason"], "Diperiksa manual; hentikan batch lama")
+        self.assertEqual(self.client.post(url, data=json.dumps({"reason": "Lain", "acknowledged": True}),
+                          content_type="application/json").json(), resolved.json())
+        repeated = self.client.post(self.base + f"bulk-review/{first['id']}/confirm/",
+                                    data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(repeated.json(), resolved.json())
+        self.assertEqual(Observation.objects.count(), 0)
+        next_batch = self.client.post(self.base + f"bulk-review/{second['id']}/confirm/",
+                                      data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(next_batch.status_code, 200)
+        self.assertEqual(next_batch.json()["counts"]["published"], 1)
+        self.assertEqual(Observation.objects.count(), 1)
+
+    def test_reconcile_requires_reviewer_and_csrf(self):
+        self.stage(day=15)
+        preview = self.preview().json()
+        BulkCandidateReview.objects.filter(pk=preview["id"]).update(status=BulkCandidateReview.Status.UNKNOWN)
+        url = self.base + f"bulk-review/{preview['id']}/reconcile/"
+        payload = json.dumps({"reason": "Ditinjau manual", "acknowledged": True})
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.reviewer)
+        self.assertEqual(csrf_client.post(url, data=payload, content_type="application/json").status_code, 403)
+        other = type(self.reviewer).objects.create_user(username="unrelated-reviewer", is_staff=True)
+        other.user_permissions.add(Permission.objects.get(codename="change_observationcandidate",
+                                                          content_type__app_label="indicators"))
+        self.client.force_login(other)
+        self.assertEqual(self.client.post(url, data=payload, content_type="application/json").status_code, 404)
+        self.client.force_login(self.reviewer)
+        self.assertFalse(BulkCandidateReview.objects.get(pk=preview["id"]).resolved_at)
+
+    def test_admin_can_find_and_close_unresolved_batch_left_by_another_reviewer(self):
+        self.stage(day=16)
+        preview = self.preview().json()
+        BulkCandidateReview.objects.filter(pk=preview["id"]).update(status=BulkCandidateReview.Status.RUNNING)
+        admin = type(self.reviewer).objects.create_user(username="recovery-admin", is_staff=True, is_superuser=True)
+        self.client.force_login(admin)
+        active = self.client.get(self.base + "bulk-review/active/")
+        self.assertEqual(active.status_code, 200)
+        self.assertEqual(active.json()["batch"]["id"], preview["id"])
+        url = self.base + f"bulk-review/{preview['id']}/reconcile/"
+        resolved = self.client.post(url, data=json.dumps({"reason": "Pemeriksaan oleh Admin pengganti",
+                                                       "acknowledged": True}), content_type="application/json")
+        self.assertEqual(resolved.status_code, 200)
+        self.assertEqual(resolved.json()["resolvedBy"], admin.get_username())
+        self.assertEqual(self.client.get(self.base + f"bulk-review/{preview['id']}/").json(), resolved.json())
+        self.assertEqual(self.client.get(self.base + "bulk-review/active/").json()["batch"], resolved.json())
 
     def test_active_readback_is_read_only_and_scoped_to_reviewer(self):
         self.stage(day=7)

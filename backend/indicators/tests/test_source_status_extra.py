@@ -63,6 +63,7 @@ class SourceStatusExtraTests(TestCase):
         self.assertEqual(DataUpdateLog.objects.count(), before)
 
     def test_dry_run_does_not_create_missing_source(self):
+        Source.objects.filter(source_id="KEMENKEU").delete()
         with patch("indicators.kemenkeu_discovery.discover_via_anggaran_search", return_value=[]), \
              patch("indicators.management.commands.fetch_kemenkeu.discover_kita_urls", return_value=[]):
             with self.assertRaises(SystemExit):
