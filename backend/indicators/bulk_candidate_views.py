@@ -1,0 +1,216 @@
+"""Persistent, reviewer-bound bulk candidate previews and review results."""
+from datetime import date, timedelta
+
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.db.models import Count
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET, require_POST
+
+from indicators.candidate_views import _authorize, _serialize
+from indicators.lifecycle import review_candidate
+from indicators.models import (
+    BulkCandidateReview,
+    BulkCandidateReviewItem,
+    ObservationCandidate,
+    Source,
+)
+from indicators.source_admin_views import _parse_json_body
+from indicators.views import json_error
+
+MAX_PREVIEW_ITEMS = 500
+PREVIEW_TTL = timedelta(minutes=15)
+
+
+def _eligibility(candidate):
+    payload = candidate.payload if isinstance(candidate.payload, dict) else {}
+    raw_id = payload.get("raw_file_id")
+    if not isinstance(raw_id, int) or isinstance(raw_id, bool) or raw_id <= 0:
+        return False, "missing_raw_file"
+    if not isinstance(payload.get("publication_date"), str):
+        return False, "missing_publication_date"
+    try:
+        date.fromisoformat(payload["publication_date"])
+    except ValueError:
+        return False, "invalid_publication_date"
+    snapshot = candidate.base_snapshot if isinstance(candidate.base_snapshot, dict) else {}
+    raw = snapshot.get("candidate_raw")
+    if not isinstance(raw, dict) or raw.get("id") != raw_id or raw.get("source_id") != candidate.source_id:
+        return False, "raw_snapshot_source_mismatch"
+    return True, None
+
+
+def _counts(batch):
+    grouped = {
+        row["status"]: row["count"]
+        for row in batch.items.values("status").order_by().annotate(count=Count("id"))
+    }
+    total = sum(grouped.values())
+    eligible = batch.items.filter(eligible=True).count()
+    excluded = grouped.get(BulkCandidateReviewItem.Status.EXCLUDED, 0)
+    published = grouped.get(BulkCandidateReviewItem.Status.PUBLISHED, 0)
+    skipped = grouped.get(BulkCandidateReviewItem.Status.SKIPPED, 0)
+    unknown = grouped.get(BulkCandidateReviewItem.Status.UNKNOWN, 0)
+    pending = grouped.get(BulkCandidateReviewItem.Status.PENDING, 0)
+    return {"total": total, "eligible": eligible, "excluded": excluded, "published": published,
+            "skipped": skipped, "pending": pending, "unknown": unknown}
+
+
+def _result(batch):
+    return {
+        "id": str(batch.pk),
+        "status": batch.status,
+        "items": [{"id": item.candidate_id, "status": item.status,
+                   "reason": item.reason or item.exclusion_reason}
+                  for item in batch.items.order_by("candidate_id")],
+        "counts": _counts(batch),
+    }
+
+
+def _no_store(response):
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_POST
+def bulk_candidate_preview(request, source_id):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    data, error = _parse_json_body(request)
+    if error or data is None or data != {}:
+        return json_error("Permintaan preview tidak valid.", status=400)
+    try:
+        reviewer = request.user
+        with transaction.atomic():
+            source = Source.objects.filter(source_id=source_id).first()
+            if source is None:
+                return json_error("Sumber tidak ditemukan.", status=404)
+            # One bounded SELECT freezes the complete pending set at one database statement snapshot.
+            candidates = list(ObservationCandidate.objects.filter(source=source, status="pending")
+                              .select_related("indicator", "source", "reviewed_by")
+                              .order_by("pk")[:MAX_PREVIEW_ITEMS + 1])
+            if len(candidates) > MAX_PREVIEW_ITEMS:
+                return json_error("Terlalu banyak kandidat; lakukan review per halaman.", status=409)
+            batch = BulkCandidateReview.objects.create(
+                source=source, reviewer=reviewer, expires_at=timezone.now() + PREVIEW_TTL,
+            )
+            rows, items = [], []
+            for candidate in candidates:
+                eligible, reason = _eligibility(candidate)
+                serialized = _serialize(candidate)
+                rows.append(BulkCandidateReviewItem(
+                    batch=batch, candidate=candidate, candidate_snapshot=serialized,
+                    eligible=eligible, exclusion_reason=reason,
+                    status=(BulkCandidateReviewItem.Status.PENDING if eligible
+                            else BulkCandidateReviewItem.Status.EXCLUDED),
+                    reason=reason,
+                ))
+                items.append({**serialized, "eligible": eligible, "exclusionReason": reason})
+            BulkCandidateReviewItem.objects.bulk_create(rows)
+        eligible_count = sum(1 for item in items if item["eligible"])
+        return _no_store(JsonResponse({
+            "id": str(batch.pk), "status": "preview", "expiresAt": batch.expires_at.isoformat(),
+            "total": len(items), "eligible": eligible_count, "excluded": len(items) - eligible_count,
+            "items": items,
+        }))
+    except PermissionDenied:
+        return json_error("Izin review kandidat diperlukan.", status=403)
+
+
+@require_POST
+def bulk_candidate_confirm(request, source_id, batch_id):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    data, error = _parse_json_body(request)
+    if (error or not isinstance(data, dict) or set(data) != {"confirmed"}
+            or data["confirmed"] is not True):
+        return json_error("Konfirmasi tidak valid.", status=400)
+    try:
+        with transaction.atomic():
+            # Serialize confirmations for this source; the per-item work stays outside this lock.
+            source = Source.objects.select_for_update().filter(source_id=source_id).first()
+            if source is None:
+                return json_error("Sumber tidak ditemukan.", status=404)
+            batch = BulkCandidateReview.objects.select_for_update().filter(
+                pk=batch_id, source=source, reviewer_id=request.user.pk).first()
+            if batch is None:
+                return json_error("Preview tidak ditemukan.", status=404)
+            if batch.status != BulkCandidateReview.Status.PREVIEW:
+                return _no_store(JsonResponse(_result(batch)))
+            if BulkCandidateReview.objects.filter(
+                    source=source, status__in=[BulkCandidateReview.Status.RUNNING,
+                                               BulkCandidateReview.Status.UNKNOWN]).exclude(pk=batch.pk).exists():
+                return json_error("Ada operasi sumber ini yang belum pasti; periksa hasilnya sebelum konfirmasi baru.",
+                                  status=409)
+            if batch.expires_at <= timezone.now():
+                return json_error("Preview kedaluwarsa; buat preview baru.", status=409)
+            batch.status = BulkCandidateReview.Status.RUNNING
+            batch.confirmed_at = timezone.now()
+            batch.save(update_fields=["status", "confirmed_at"])
+    except (ValueError, TypeError):
+        return json_error("Preview tidak ditemukan.", status=404)
+
+    for item_id in list(BulkCandidateReviewItem.objects.filter(batch_id=batch_id, eligible=True)
+                        .order_by("candidate_id").values_list("pk", flat=True)):
+        try:
+            with transaction.atomic():
+                item = BulkCandidateReviewItem.objects.select_for_update().select_related("candidate").get(
+                    pk=item_id, batch_id=batch_id, status=BulkCandidateReviewItem.Status.PENDING)
+                # The individual lifecycle checks internal integrity, not the fingerprint shown in preview.
+                if item.candidate.fingerprint != item.candidate_snapshot["fingerprint"]:
+                    raise ValidationError("Kandidat berubah setelah preview.")
+                eligible, _ = _eligibility(item.candidate)
+                if not eligible:
+                    raise ValidationError("Metadata kandidat tidak lagi memenuhi syarat bulk.")
+                review_candidate(item.candidate_id, request.user, publish=True)
+                item.status = BulkCandidateReviewItem.Status.PUBLISHED
+                item.reason = None
+                item.save(update_fields=["status", "reason"])
+        except ValidationError:
+            BulkCandidateReviewItem.objects.filter(pk=item_id, status=BulkCandidateReviewItem.Status.PENDING).update(
+                status=BulkCandidateReviewItem.Status.SKIPPED, reason="candidate_changed_or_review_failed")
+        except Exception:
+            # The current item's transaction rolled back. Its outcome is deliberately uncertain;
+            # readback never retries this or any other item.
+            BulkCandidateReviewItem.objects.filter(pk=item_id, status=BulkCandidateReviewItem.Status.PENDING).update(
+                status=BulkCandidateReviewItem.Status.UNKNOWN, reason="review_outcome_unknown")
+            BulkCandidateReview.objects.filter(pk=batch_id).update(status=BulkCandidateReview.Status.UNKNOWN)
+            break
+
+    BulkCandidateReview.objects.filter(pk=batch_id, status=BulkCandidateReview.Status.RUNNING).update(
+        status=BulkCandidateReview.Status.COMPLETED)
+    batch = BulkCandidateReview.objects.get(pk=batch_id)
+    return _no_store(JsonResponse(_result(batch)))
+
+
+@require_GET
+def bulk_candidate_status(request, source_id, batch_id):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    batch = BulkCandidateReview.objects.filter(
+        pk=batch_id, source__source_id=source_id, reviewer_id=request.user.pk).first()
+    if batch is None:
+        return json_error("Review bulk tidak ditemukan.", status=404)
+    if batch.status == BulkCandidateReview.Status.PREVIEW:
+        return json_error("Preview belum dikonfirmasi.", status=409)
+    if batch.status not in {BulkCandidateReview.Status.RUNNING, BulkCandidateReview.Status.COMPLETED,
+                            BulkCandidateReview.Status.UNKNOWN}:
+        return json_error("Status review bulk tidak valid.", status=409)
+    return _no_store(JsonResponse(_result(batch)))
+
+
+@require_GET
+def bulk_candidate_active(request, source_id):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    batch = BulkCandidateReview.objects.filter(
+        source__source_id=source_id, reviewer_id=request.user.pk,
+        status__in=[BulkCandidateReview.Status.RUNNING, BulkCandidateReview.Status.UNKNOWN,
+                   BulkCandidateReview.Status.COMPLETED],
+    ).first()
+    return _no_store(JsonResponse({"batch": _result(batch) if batch is not None else None}))

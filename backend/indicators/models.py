@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -200,6 +202,47 @@ class ObservationCandidate(models.Model):
 
     def __str__(self):
         return f"Kandidat {self.pk}: {self.indicator.code} ({self.status})"
+
+
+class BulkCandidateReview(models.Model):
+    class Status(models.TextChoices):
+        PREVIEW = "preview", "Preview"
+        RUNNING = "running", "Berlangsung"
+        COMPLETED = "completed", "Selesai"
+        UNKNOWN = "unknown", "Hasil tidak diketahui"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source = models.ForeignKey(Source, on_delete=models.PROTECT, related_name="bulk_candidate_reviews")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                 related_name="bulk_candidate_reviews")
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PREVIEW)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
+class BulkCandidateReviewItem(models.Model):
+    class Status(models.TextChoices):
+        EXCLUDED = "excluded", "Dikecualikan"
+        PENDING = "pending", "Menunggu"
+        PUBLISHED = "published", "Dipublikasikan"
+        SKIPPED = "skipped", "Dilewati"
+        UNKNOWN = "unknown", "Tidak diketahui"
+
+    batch = models.ForeignKey(BulkCandidateReview, on_delete=models.CASCADE, related_name="items")
+    candidate = models.ForeignKey(ObservationCandidate, on_delete=models.PROTECT, related_name="bulk_review_items")
+    candidate_snapshot = models.JSONField()
+    eligible = models.BooleanField(default=False)
+    exclusion_reason = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    reason = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        ordering = ["candidate_id"]
+        constraints = [models.UniqueConstraint(fields=["batch", "candidate"], name="bulk_review_candidate_once")]
 
 
 class DataUpdateLog(models.Model):
