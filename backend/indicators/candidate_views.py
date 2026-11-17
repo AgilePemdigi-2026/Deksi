@@ -81,6 +81,33 @@ def candidate_list(request, source_id):
     return response
 
 
+@require_GET
+def analysis_result_list(request):
+    denied = _authorize(request)
+    if denied is not None:
+        return denied
+    try:
+        page = int(request.GET.get('page', '1'))
+        if page < 1 or page > 100000:
+            raise ValueError
+    except ValueError:
+        return json_error('Halaman tidak valid.', status=400)
+    status = request.GET.get('status', 'all')
+    if status not in {'all', 'pending', 'published', 'rejected'}:
+        return json_error('Status tidak valid.', status=400)
+    query = ObservationCandidate.objects.select_related('indicator', 'source', 'reviewed_by')
+    if status != 'all':
+        query = query.filter(status=status)
+    query = query.order_by('-created_at', '-id')
+    total = query.count()
+    size = 20
+    items = [_serialize(candidate) for candidate in query[(page - 1) * size:page * size]]
+    response = JsonResponse({'items': items, 'page': page, 'pageSize': size, 'total': total,
+                             'hasNext': page * size < total})
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
 @require_POST
 def candidate_review(request, source_id, candidate_id):
     denied = _authorize(request)

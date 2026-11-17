@@ -237,7 +237,7 @@ try {
     async function checkAdminNav(active) {
       const info = await evaluate(`(()=>{const n=document.querySelector('nav[aria-label="Navigasi admin"]');return n&&{links:Array.from(n.querySelectorAll('a'),a=>[a.getAttribute('href'),a.getAttribute('aria-current')]),visible:n.getBoundingClientRect().height>0}})()`)
       assert(info?.visible, `Admin navigation missing on ${active}`)
-      for (const href of ['/', '/admin/sumber-data', '/admin/riwayat-sinkronisasi', '/admin/feedback']) assert(info.links.some(([url])=>url===href), `Missing ${href} on ${active}`)
+      for (const href of ['/', '/admin/sumber-data', '/admin/riwayat-sinkronisasi', '/admin/analisis', '/admin/feedback']) assert(info.links.some(([url])=>url===href), `Missing ${href} on ${active}`)
       assert(!info.links.some(([url])=>url==='/sumber-data'), `Public source tab must not appear in admin navigation on ${active}`)
       assert.equal(await evaluate('document.querySelector(\'nav[aria-label="Navigasi admin"] a[href="/"]\').textContent'), 'Dashboard Publik')
       assert.deepEqual(info.links.filter(([,current])=>current==='page').map(([url])=>url), [active])
@@ -248,6 +248,7 @@ try {
     }
     await checkAdminNav('/admin/sumber-data')
     await follow('/admin/riwayat-sinkronisasi', '#sync-history-title'); await checkAdminNav('/admin/riwayat-sinkronisasi')
+    await follow('/admin/analisis', '#admin-analysis-title'); await checkAdminNav('/admin/analisis')
     await follow('/admin/feedback', '.admin-fb-title'); await checkAdminNav('/admin/feedback')
     await follow('/admin/riwayat-sinkronisasi', '#sync-history-title'); await checkAdminNav('/admin/riwayat-sinkronisasi')
     await follow('/admin/sumber-data', '#admin-sources-title'); await checkAdminNav('/admin/sumber-data')

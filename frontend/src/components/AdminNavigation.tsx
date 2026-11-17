@@ -1,12 +1,13 @@
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'analysis';
 
 export function AdminNavigation({ active, busy = false }: { active: AdminPage; busy?: boolean }) {
   const links = [
     { href: '/', label: 'Dashboard Publik' },
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
+    { href: '/admin/analisis', label: 'Peninjauan Analisis', page: 'analysis' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },
     { href: '/admin/jadwal', label: 'Jadwal Pembaruan', page: 'schedules' },
   ];

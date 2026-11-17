@@ -7,7 +7,7 @@ from django.contrib.sessions.models import Session
 from django.test import Client
 from django.utils import timezone
 
-from indicators.lifecycle import stage_observation
+from indicators.lifecycle import review_candidate, stage_observation
 from indicators.models import Observation, ObservationCandidate, RawFile
 from indicators.tests.support import IndicatorCase
 
@@ -39,6 +39,32 @@ class CandidateReviewApiTests(IndicatorCase):
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(detail.json()['candidate']['id'], self.candidate.pk)
         self.assertEqual(self.client.get(f'/api/admin/sources/OTHER/candidates/{self.candidate.pk}/').status_code, 404)
+
+    def test_analysis_result_list_is_global_paginated_filtered_and_reviewer_only(self):
+        analysis_url = '/api/admin/analysis-results/'
+        self.assertEqual(self.client.get(analysis_url).status_code, 401)
+        self.client.force_login(self.reviewer)
+
+        pending = self.client.get(analysis_url)
+        self.assertEqual(pending.status_code, 200)
+        self.assertEqual(pending['Cache-Control'], 'no-store')
+        self.assertEqual(pending.json()['total'], 1)
+        self.assertEqual(pending.json()['items'][0]['id'], self.candidate.pk)
+
+        rejected = stage_observation(indicator_id=self.indicator.pk, source_id=self.source.pk,
+            observation_date=date(2024, 2, 29), period_label='UJI 2024-02', frequency='monthly',
+            data_type='yoy', value=Decimal('2.500000'), unit='%')
+        assert rejected is not None
+        response = self.client.get(analysis_url, {'status': 'rejected'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['total'], 0)
+
+        review_candidate(rejected.pk, self.reviewer, publish=False, notes='Uji penolakan')
+        response = self.client.get(analysis_url, {'status': 'rejected'})
+        self.assertEqual(response.json()['total'], 1)
+        self.assertEqual(response.json()['items'][0]['reviewNotes'], 'Uji penolakan')
+        self.assertEqual(self.client.get(analysis_url, {'status': 'invalid'}).status_code, 400)
+        self.assertEqual(self.client.get(analysis_url, {'page': 0}).status_code, 400)
 
     def test_evidence_uses_candidate_snapshot_and_does_not_expose_source_url(self):
         raw = RawFile.objects.create(source=self.source, document_name='Bukti sintetis',
