@@ -1,10 +1,11 @@
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'monitoring';
 
 export function AdminNavigation({ active, busy = false }: { active: AdminPage; busy?: boolean }) {
   const links = [
     { href: '/', label: 'Dashboard Publik' },
+    { href: '/admin/monitoring', label: 'Monitoring', page: 'monitoring' },
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },

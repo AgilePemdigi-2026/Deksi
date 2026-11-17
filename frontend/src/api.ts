@@ -943,3 +943,58 @@ export async function updateAdminFeedbackStatus(
   }
   return { ...body.feedback, csrfToken: body.csrfToken } as AdminFeedbackDetail;
 }
+
+// ---------------------------------------------------------------------------
+// Feature 19 – Dashboard Monitoring Admin
+// ---------------------------------------------------------------------------
+
+export interface MonitoringSummary {
+  totalSources: number;
+  activeSources: number;
+  inactiveSources: number;
+  syncSuccess: number;
+  syncFailed: number;
+  syncRunning: number;
+  quality: { label: string; validated: number; total: number };
+  lastSyncAt: string | null;
+  lastUpdateAt: string | null;
+}
+
+export interface MonitoringSource {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  status: string;
+  active: boolean;
+  lastSyncStatus: string | null;
+  lastSyncAt: string | null;
+  lastSyncMessage: string;
+  lastPeriod: string | null;
+  lastObservationDate: string | null;
+  observationCount: number;
+  updateSchedule: string;
+}
+
+export async function fetchMonitoringSummary(): Promise<MonitoringSummary> {
+  const res = await adminFetch("/admin/monitoring/summary/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as MonitoringSummary;
+}
+
+export async function fetchMonitoringSources(): Promise<MonitoringSource[]> {
+  const res = await adminFetch("/admin/monitoring/sources/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.sources ?? []) as MonitoringSource[];
+}
+
+export async function fetchMonitoringHistory(params?: { page?: number; pageSize?: number; status?: string; sourceId?: string }): Promise<{ items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number }> {
+  const q = new URLSearchParams();
+  q.set("page", String(params?.page ?? 1));
+  q.set("pageSize", String(params?.pageSize ?? 20));
+  if (params?.status) q.set("status", params.status);
+  if (params?.sourceId) q.set("sourceId", params.sourceId);
+  const res = await adminFetch(`/admin/monitoring/history/?${q}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as { items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number };
+}
