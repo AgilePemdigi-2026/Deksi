@@ -16,6 +16,8 @@ const api = await vite.ssrLoadModule('/src/api.ts')
 test('candidate review API provides explicit source-bound operations', () => {
   assert.equal(typeof api.fetchReviewCandidates, 'function')
   assert.equal(typeof api.submitCandidateReview, 'function')
+  assert.equal(typeof api.fetchAdminAnalysisResults, 'function')
+  assert.equal(typeof api.submitAdminAnalysisDecision, 'function')
 })
 
 test('candidate list exposes a safe permission-specific message for revoked review access', async () => {
@@ -51,6 +53,32 @@ test('review POST includes CSRF and binds source, candidate, fingerprint, and de
     assert.equal(calls[1].url, '/api/admin/sources/BPS/candidates/7/review/')
     assert.equal(calls[1].options.headers.get('X-CSRFToken'), 'synthetic-csrf')
     assert.deepEqual(JSON.parse(calls[1].options.body), { decision: 'publish', fingerprint: 'x'.repeat(64), notes: '' })
+  } finally { globalThis.fetch = original }
+})
+
+test('publication decision POST includes CSRF, version fingerprint, decision, and notes', async () => {
+  const calls = []
+  const original = globalThis.fetch
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options })
+    return calls.length === 1
+      ? new Response(JSON.stringify({ csrfToken: 'synthetic-csrf' }))
+      : new Response(JSON.stringify({ id: 8, status: 'needs_revision' }))
+  }
+  try {
+    await api.submitAdminAnalysisDecision(
+      { id: 8, fingerprint: 'y'.repeat(64) },
+      'needs_revision',
+      'Perlu verifikasi ulang',
+    )
+    assert.equal(calls.length, 2)
+    assert.equal(calls[1].url, '/api/admin/analysis-results/8/decision/')
+    assert.equal(calls[1].options.headers.get('X-CSRFToken'), 'synthetic-csrf')
+    assert.deepEqual(JSON.parse(calls[1].options.body), {
+      decision: 'needs_revision',
+      fingerprint: 'y'.repeat(64),
+      notes: 'Perlu verifikasi ulang',
+    })
   } finally { globalThis.fetch = original }
 })
 

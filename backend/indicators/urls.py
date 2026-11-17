@@ -5,6 +5,7 @@ from indicators import (
     candidate_views,
     dashboard_views,
     feedback_views,
+    monitoring_views,
     notification_views,
     resync_views,
     source_admin_views,
@@ -49,6 +50,8 @@ urlpatterns = [
     path("admin/sources/<str:source_id>/resync/", resync_views.request_resync, name="admin-source-resync"),
     path("admin/sources/<str:source_id>/resync-active/", resync_views.active_resync, name="admin-source-resync-active"),
     path("admin/analysis-results/", candidate_views.analysis_result_list, name="admin-analysis-results"),
+    path("admin/analysis-results/<int:candidate_id>/decision/",
+         candidate_views.analysis_result_decision, name="admin-analysis-result-decision"),
     path("admin/sources/<str:source_id>/candidates/", candidate_views.candidate_list, name="admin-candidate-list"),
     path("admin/sources/<str:source_id>/candidates/bulk-preview/",
          bulk_candidate_views.bulk_candidate_preview, name="admin-candidate-bulk-preview"),
@@ -93,6 +96,13 @@ urlpatterns = [
         source_admin_views.admin_source_update,
         name="admin-source-update",
     ),
+
+    # ── Feature 19: Dashboard Monitoring Admin ──────────────────────────
+    path("admin/monitoring/summary/", monitoring_views.admin_monitoring_summary, name="admin-monitoring-summary"),
+    path("admin/monitoring/sources/", monitoring_views.admin_monitoring_sources, name="admin-monitoring-sources"),
+    path("admin/monitoring/history/", monitoring_views.admin_monitoring_history, name="admin-monitoring-history"),
+    path("admin/monitoring/runs/<int:run_id>/", monitoring_views.admin_monitoring_run_detail,
+         name="admin-monitoring-run-detail"),
 
     # ── Fitur 15-18: Daftar, Detail, Pencarian, dan Status Umpan Balik ──────
     path("admin/feedback/", feedback_views.admin_feedback_list, name="admin-feedback-list"),

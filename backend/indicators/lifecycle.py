@@ -9,7 +9,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from indicators.models import Indicator, Observation, ObservationCandidate, RawFile, Source
+from indicators.models import AnalysisReviewAudit, Indicator, Observation, ObservationCandidate, RawFile, Source
 from indicators.updates import record_update_success
 from indicators.validate import validate_one
 
@@ -115,7 +115,7 @@ def require_reviewer(user, permission="indicators.change_observationcandidate"):
 
 
 @transaction.atomic
-def review_candidate(candidate_id, user, *, publish=True, notes=""):
+def review_candidate(candidate_id, user, *, publish=True, notes="", decision=None):
     user = require_reviewer(user)
     candidate = ObservationCandidate.objects.select_for_update().get(pk=candidate_id)
     payload, base = candidate.payload, candidate.base_snapshot
@@ -124,6 +124,16 @@ def review_candidate(candidate_id, user, *, publish=True, notes=""):
         raise CandidateConflictError("Fakta kandidat berubah; impor ulang untuk review baru.")
     if candidate.status != ObservationCandidate.Status.PENDING:
         raise CandidateConflictError("Kandidat telah diproses.")
+    if decision is None:
+        decision = AnalysisReviewAudit.Decision.PUBLISH if publish else AnalysisReviewAudit.Decision.REJECT
+    if decision not in AnalysisReviewAudit.Decision.values:
+        raise ValidationError("Keputusan review tidak valid.")
+    publish = decision == AnalysisReviewAudit.Decision.PUBLISH
+    if not isinstance(notes, str) or len(notes) > 500:
+        raise ValidationError("Catatan review harus berupa teks maksimal 500 karakter.")
+    notes = notes.strip()
+    if not publish and not notes:
+        raise ValidationError("Catatan wajib untuk keputusan selain publikasi.")
     row = None
     if publish:
         row = _validated_row(payload)
@@ -134,10 +144,24 @@ def review_candidate(candidate_id, user, *, publish=True, notes=""):
             raise CandidateConflictError("Basis kandidat telah berubah; impor ulang sebelum review.")
     now = timezone.now()
     claimed = ObservationCandidate.objects.filter(pk=candidate.pk, status="pending",
-        fingerprint=candidate.fingerprint).update(status="published" if publish else "rejected",
+        fingerprint=candidate.fingerprint).update(
+            status={
+                AnalysisReviewAudit.Decision.PUBLISH: ObservationCandidate.Status.PUBLISHED,
+                AnalysisReviewAudit.Decision.NEEDS_REVISION: ObservationCandidate.Status.NEEDS_REVISION,
+                AnalysisReviewAudit.Decision.REJECT: ObservationCandidate.Status.REJECTED,
+            }[decision],
             reviewed_by=user, reviewed_at=now, review_notes=notes)
     if claimed != 1:
         raise CandidateConflictError("Kandidat diproses oleh review lain.")
+    AnalysisReviewAudit.objects.create(
+        candidate=candidate,
+        fingerprint=candidate.fingerprint,
+        version_snapshot={"payload": payload, "base_snapshot": base},
+        decision=decision,
+        notes=notes,
+        reviewed_by=user,
+        reviewed_at=now,
+    )
     if not publish:
         return None
     new_fields = {**payload, "validation_status": Observation.Status.PUBLISHED,
