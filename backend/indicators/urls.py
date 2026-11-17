@@ -1,6 +1,7 @@
 from django.urls import path
 
 from indicators import (
+    bulk_candidate_views,
     candidate_views,
     dashboard_views,
     feedback_views,
@@ -47,6 +48,16 @@ urlpatterns = [
     path("admin/sources/<str:source_id>/resync/", resync_views.request_resync, name="admin-source-resync"),
     path("admin/sources/<str:source_id>/resync-active/", resync_views.active_resync, name="admin-source-resync-active"),
     path("admin/sources/<str:source_id>/candidates/", candidate_views.candidate_list, name="admin-candidate-list"),
+    path("admin/sources/<str:source_id>/candidates/bulk-preview/",
+         bulk_candidate_views.bulk_candidate_preview, name="admin-candidate-bulk-preview"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/active/",
+         bulk_candidate_views.bulk_candidate_active, name="admin-candidate-bulk-active"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/confirm/",
+         bulk_candidate_views.bulk_candidate_confirm, name="admin-candidate-bulk-confirm"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/reconcile/",
+         bulk_candidate_views.bulk_candidate_reconcile, name="admin-candidate-bulk-reconcile"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/",
+         bulk_candidate_views.bulk_candidate_status, name="admin-candidate-bulk-status"),
     path("admin/sources/<str:source_id>/candidates/<int:candidate_id>/",
          candidate_views.candidate_detail, name="admin-candidate-detail"),
     path("admin/sources/<str:source_id>/candidates/<int:candidate_id>/review/",

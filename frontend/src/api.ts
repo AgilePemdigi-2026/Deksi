@@ -491,6 +491,102 @@ export async function fetchReviewCandidate(sourceId: string, id: number, options
   }, options?.timeoutMs);
 }
 
+export interface BulkPreview {
+  id: string; status: 'preview'; expiresAt: string; total: number; eligible: number; excluded: number;
+  items: Array<ReviewCandidate & { eligible: boolean; exclusionReason: string | null }>;
+}
+export interface BulkReviewResult {
+  id: string; status: 'running' | 'completed' | 'unknown';
+  resolvedAt?: string | null; resolvedBy?: string | null; resolutionReason?: string | null;
+  items: Array<{ id: number; status: 'excluded' | 'pending' | 'published' | 'skipped' | 'unknown'; reason: string | null }>;
+  counts: { total: number; eligible: number; excluded: number; published: number; skipped: number; pending: number; unknown: number };
+}
+const bulkPath = (sourceId: string) => `/admin/sources/${encodeURIComponent(sourceId)}/candidates/`;
+function bulkError(status: number): Error {
+  if (status === 401) return new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+  if (status === 403) return new CandidateReviewError('forbidden', 'Izin review atau token keamanan ditolak.');
+  if (status === 409) return new CandidateReviewError('conflict', 'Ada konflik pratinjau atau operasi sumber. Periksa status operasi sebelum keputusan baru.');
+  return new Error('Operasi kandidat belum dapat dipastikan. Periksa statusnya sebelum mengambil keputusan baru.');
+}
+const validBulkId = (id: unknown): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id);
+function validBulkResult(body: BulkReviewResult, id: string): boolean {
+  const counts = body?.counts;
+  return body?.id === id && ['running', 'completed', 'unknown'].includes(body.status) &&
+    Array.isArray(body.items) && counts != null &&
+    (['total', 'eligible', 'excluded', 'published', 'skipped', 'pending', 'unknown'] as const).every(key => Number.isSafeInteger(counts[key]) && counts[key] >= 0) &&
+    body.items.every(item => Number.isSafeInteger(item.id) && item.id > 0);
+}
+
+export async function createBulkPreview(sourceId: string): Promise<BulkPreview> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-preview/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal,
+    });
+    if (!res.ok) throw bulkError(res.status);
+    const body = await res.json() as BulkPreview;
+    if (!validBulkId(body?.id) || body.status !== 'preview' || !Array.isArray(body.items) ||
+        !Number.isSafeInteger(body.total) || body.total !== body.items.length ||
+        !Number.isSafeInteger(body.eligible) || !Number.isSafeInteger(body.excluded) ||
+        body.total !== body.eligible + body.excluded ||
+        body.items.some(item => item.sourceId !== sourceId || !Number.isSafeInteger(item.id) ||
+          typeof item.fingerprint !== 'string' || typeof item.eligible !== 'boolean')) {
+      throw new Error('Pratinjau kandidat tidak valid.');
+    }
+    return body;
+  });
+}
+
+export async function confirmBulkReview(sourceId: string, id: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id)) throw new Error('Identitas operasi tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/confirm/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmed: true }), signal,
+    });
+    if (!res.ok) throw bulkError(res.status);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id)) throw new Error('Hasil operasi belum dapat dipastikan.');
+    return body;
+  });
+}
+
+export async function reconcileBulkReview(sourceId: string, id: string, reason: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id) || !reason.trim() || reason.trim().length > 500) throw new Error('Identitas atau alasan pemeriksaan tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/reconcile/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acknowledged: true, reason: reason.trim() }), signal,
+    });
+    if (!res.ok) throw bulkError(res.status);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id) || !body.resolvedAt || !body.resolvedBy || !body.resolutionReason) {
+      throw new Error('Hasil pemeriksaan belum dapat dipastikan. Periksa status operasi.');
+    }
+    return body;
+  });
+}
+
+export async function fetchBulkReview(sourceId: string, id: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id)) throw new Error('Identitas operasi tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/`, { signal });
+    if (!res.ok) throw bulkError(res.status);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id)) throw new Error('Status operasi tidak valid.');
+    return body;
+  });
+}
+
+export async function fetchActiveBulkReview(sourceId: string): Promise<BulkReviewResult | null> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/active/`, { signal });
+    if (!res.ok) throw bulkError(res.status);
+    const body = await res.json() as { batch?: BulkReviewResult | null };
+    if (body?.batch == null) return null;
+    if (!validBulkId(body.batch.id) || !validBulkResult(body.batch, body.batch.id)) throw new Error('Status operasi tidak valid.');
+    return body.batch;
+  });
+}
+
 export async function fetchAdminSession(): Promise<AdminSession> {
   const res = await adminFetch("/admin/session/");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

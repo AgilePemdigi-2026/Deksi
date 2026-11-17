@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CandidateReviewError, fetchReviewCandidate, fetchReviewCandidates, submitCandidateReview, type CandidatePage, type ReviewCandidate } from '../../api'
+import { CandidateReviewError, confirmBulkReview, createBulkPreview, fetchActiveBulkReview, fetchBulkReview, fetchReviewCandidate, fetchReviewCandidates, reconcileBulkReview, submitCandidateReview, type BulkPreview, type BulkReviewResult, type CandidatePage, type ReviewCandidate } from '../../api'
 import { safeExternalUrl } from '../indicators/data'
 import './candidate-review.css'
 
@@ -55,6 +55,15 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   const [stored, setStored] = useState(initialUncertain.stored)
   const [acknowledged, setAcknowledged] = useState(false)
   const [sourceChecked, setSourceChecked] = useState(false)
+  const [bulkPreview, setBulkPreview] = useState<BulkPreview | null>(null)
+  const [bulkResult, setBulkResult] = useState<BulkReviewResult | null>(null)
+  const [bulkChecked, setBulkChecked] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(true)
+  const [bulkUncertain, setBulkUncertain] = useState(false)
+  const [bulkError, setBulkError] = useState<string | null>(null)
+  const [resolutionReason, setResolutionReason] = useState('')
+  const [resolutionAcknowledged, setResolutionAcknowledged] = useState(false)
   const uncertainRef = useRef(initialUncertain.ids)
 
   const submission = useRef(false)
@@ -78,6 +87,60 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
   }, [sourceId, page, status, reload])
 
   const refresh = useCallback(() => setReload(n => n + 1), [])
+  useEffect(() => {
+    let active = true
+    fetchActiveBulkReview(sourceId).then(batch => {
+      if (active) { setBulkResult(batch); setBulkUncertain(false) }
+    }).catch(() => {
+      if (active) { setBulkUncertain(true); setBulkError('Riwayat operasi massal tidak dapat diperiksa. Jangan memulai keputusan baru sampai statusnya diketahui.') }
+    }).finally(() => { if (active) setBulkLoading(false) })
+    return () => { active = false }
+  }, [sourceId])
+  const batchBlocksDecisions = bulkLoading || bulkUncertain || (bulkResult != null && bulkResult.status !== 'completed' && !bulkResult.resolvedAt)
+  const previewBulk = async () => {
+    if (!initialReadOk || uncertainRef.current.length || busy || bulkBusy || batchBlocksDecisions) return
+    setBulkBusy(true); onBusyChange(true); setBulkError(null)
+    try { setBulkPreview(await createBulkPreview(sourceId)); setBulkResult(null); setBulkChecked(false) }
+    catch (error) { setBulkError(error instanceof CandidateReviewError ? error.message : 'Pratinjau gagal. Tidak ada publikasi dimulai. Periksa status sebelum mencoba lagi.') }
+    finally { setBulkBusy(false); onBusyChange(false) }
+  }
+  const readBulk = async (id: string) => {
+    setBulkBusy(true); onBusyChange(true); setBulkError(null)
+    try {
+      const current = await fetchBulkReview(sourceId, id)
+      setBulkResult(current); setBulkUncertain(false)
+      if (current.status === 'completed') refresh()
+    } catch {
+      setBulkUncertain(true)
+      setBulkError('Hasil operasi belum dapat dipastikan. Jangan mengulangi konfirmasi. Periksa bersama pengelola.')
+    } finally { setBulkBusy(false); onBusyChange(false) }
+  }
+  const submitBulk = async () => {
+    if (!bulkPreview || !bulkChecked || bulkBusy || busy || batchBlocksDecisions || bulkPreview.eligible === 0) return
+    const id = bulkPreview.id
+    setBulkBusy(true); onBusyChange(true); setBulkError(null)
+    try {
+      const current = await confirmBulkReview(sourceId, id)
+      setBulkResult(current); setBulkPreview(null); setBulkChecked(false)
+      if (current.status === 'completed') refresh()
+    } catch {
+      setBulkUncertain(true)
+      setBulkError('Konfirmasi mungkin sudah diproses. Jangan mengulanginya; baca status operasi di server.')
+    } finally { setBulkBusy(false); onBusyChange(false) }
+  }
+  const reconcileBulk = async () => {
+    if (!bulkResult || bulkResult.status === 'completed' || bulkResult.resolvedAt || !resolutionAcknowledged ||
+        !resolutionReason.trim() || resolutionReason.trim().length > 500 || bulkBusy || busy) return
+    setBulkBusy(true); onBusyChange(true); setBulkError(null)
+    try {
+      const current = await reconcileBulkReview(sourceId, bulkResult.id, resolutionReason)
+      setBulkResult(current); setBulkPreview(null); setBulkChecked(false)
+      setResolutionReason(''); setResolutionAcknowledged(false); refresh()
+    } catch {
+      setBulkUncertain(true)
+      setBulkError('Penutupan operasi belum dapat dipastikan. Baca statusnya; jangan kirim tindakan ini ulang otomatis.')
+    } finally { setBulkBusy(false); onBusyChange(false) }
+  }
   const recoverStorage = () => {
     if (!storageAcknowledged || submission.current) return
     try {
@@ -128,7 +191,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     return persisted
   }
   const submit = async () => {
-    if (!selected || !decision || !initialReadOk || submission.current || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
+    if (!selected || !decision || !initialReadOk || submission.current || batchBlocksDecisions || bulkBusy || uncertainRef.current.includes(selected.id) || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)) return
     const id = selected.id
     const currentMarkers = readUncertain(sourceId)
     if (!currentMarkers.stored) {
@@ -204,15 +267,54 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <p className="trace-note">Periksa nilai, satuan, periode dan sumber resmi sebelum keputusan. Kandidat yang menunggu review belum menjadi data publik. Tautan sumber bukan bukti angka telah diverifikasi.</p>
       </div>
       <div className="candidate-review__header-actions">
-        <button type="button" className="tab" onClick={refresh} disabled={loading || busy}>Muat ulang</button>
-        <button type="button" className="tab" onClick={onClose} disabled={busy}>Tutup kandidat</button>
+        <button type="button" className="tab" onClick={refresh} disabled={loading || busy || bulkBusy}>Muat ulang</button>
+        <button type="button" className="tab" onClick={onClose} disabled={busy || bulkBusy}>Tutup kandidat</button>
       </div>
     </header>
     <div className="candidate-review__toolbar">
-      <label className="candidate-review__filter">Status kandidat <select value={status} disabled={busy} onChange={event => { setStatus(event.target.value as typeof status); setPage(1) }}>
+      <label className="candidate-review__filter">Status kandidat <select value={status} disabled={busy || bulkBusy} onChange={event => { setStatus(event.target.value as typeof status); setPage(1) }}>
         <option value="pending">Menunggu review</option><option value="published">Dipublikasikan</option><option value="rejected">Ditolak</option>
       </select></label>
       {result && <p className="candidate-review__count">{result.total} kandidat · Halaman {result.page}</p>}
+    </div>
+    <div className="candidate-review__bulk">
+      <p>Persetujuan massal berlaku untuk semua halaman kandidat pending sumber ini yang memiliki dokumen RAW dan tanggal rilis. Kandidat yang tidak lengkap tetap dapat direview satu per satu.</p>
+      <button type="button" className="tab" disabled={busy || bulkBusy || batchBlocksDecisions || !initialReadOk || uncertain.length > 0 || status !== 'pending'} onClick={() => void previewBulk()}>Pratinjau kandidat yang memenuhi syarat</button>
+      {bulkLoading && <p role="status">Memeriksa operasi massal sebelumnya…</p>}
+      {bulkError && <p role="alert">{bulkError}</p>}
+      {bulkPreview && <div className="candidate-review__bulk-preview" aria-label="Pratinjau persetujuan massal">
+        <p role="status">Total pending: {bulkPreview.total}. Memenuhi syarat: {bulkPreview.eligible}. Dikecualikan: {bulkPreview.excluded}. Pratinjau berlaku hingga {bulkPreview.expiresAt}.</p>
+        <p>Periksa setiap nilai, periode, satuan, sumber dan perubahan observasi sebelum konfirmasi. Pratinjau tidak mempublikasikan data.</p>
+        <ol tabIndex={0} aria-label="Semua kandidat dalam snapshot">{bulkPreview.items.map(item => <li key={item.id}>
+          #{item.id} · {unavailable(item.indicatorName)} · {unavailable(item.period)} · {unavailable(item.value)} {unavailable(item.unit)}
+          {' · '}Sumber: {unavailable(item.sourceName)}
+          {safeExternalUrl(item.sourceUrl) && <> · <a href={safeExternalUrl(item.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">Buka portal sumber</a></>}
+          {' · '}Tanggal rilis: {unavailable(item.publicationDate)}
+          {' · '}Dokumen RAW: {unavailable(item.rawEvidence?.documentName)} (ID {unavailable(item.rawFileId?.toString())})
+          {' · '}Checksum RAW: {unavailable(item.rawEvidence?.checksumSha256)}
+          {item.previousValue != null && <> · Revisi dari {item.previousValue} {unavailable(item.previousUnit)}</>}
+          {' · '}{item.eligible ? 'Memenuhi syarat' : `Dikecualikan: ${item.exclusionReason ?? 'metadata tidak tersedia'}`}
+        </li>)}</ol>
+        {bulkPreview.eligible > 0 && <label><input type="checkbox" checked={bulkChecked} disabled={bulkBusy || batchBlocksDecisions} onChange={event => setBulkChecked(event.target.checked)} /> Saya telah membandingkan seluruh kandidat yang memenuhi syarat dengan sumber resmi dan memahami bahwa konfirmasi mempublikasikannya.</label>}
+        <div className="candidate-review__decision-actions">
+          <button type="button" className="tab" disabled={bulkBusy || batchBlocksDecisions || !bulkChecked || bulkPreview.eligible === 0} onClick={() => void submitBulk()}>Setujui semua kandidat yang memenuhi syarat</button>
+          <button type="button" className="tab" disabled={bulkBusy} onClick={() => { setBulkPreview(null); setBulkChecked(false) }}>Batal</button>
+        </div>
+      </div>}
+      {bulkResult && <div className="candidate-review__bulk-result" aria-label="Hasil persetujuan massal">
+        <p role="status">Operasi {bulkResult.status}: berhasil {bulkResult.counts.published}, dilewati {bulkResult.counts.skipped}, dikecualikan {bulkResult.counts.excluded}, belum diproses {bulkResult.counts.pending}, belum pasti {bulkResult.counts.unknown}.</p>
+        {bulkResult.resolvedAt ? <p role="status">Ditinjau {bulkResult.resolvedBy} · {bulkResult.resolvedAt} · {bulkResult.resolutionReason}. Hasil yang belum pasti tetap perlu diperiksa per kandidat.</p> :
+          bulkResult.status !== 'completed' && <p role="alert">Proses dapat masih berjalan atau terputus. Jangan memulai operasi lain sampai statusnya jelas.</p>}
+        <ol>{bulkResult.items.map(item => <li key={item.id}>#{item.id} · {item.status}{item.reason ? ` · ${item.reason}` : ''}</li>)}</ol>
+        <button type="button" className="tab" disabled={bulkBusy} onClick={() => void readBulk(bulkResult.id)}>Periksa status operasi</button>
+        {bulkResult.status !== 'completed' && !bulkResult.resolvedAt && <div className="candidate-review__bulk-reconcile">
+          <p>Periksa hasil setiap kandidat dan pastikan tidak ada proses lama yang perlu ditunggu. Penutupan tidak mengulang publikasi; item belum pasti tetap ditandai belum pasti. Proses yang masih berjalan dibatasi sebelum item berikutnya, bukan dibatalkan di tengah item.</p>
+          <label>Alasan pemeriksaan <input type="text" value={resolutionReason} maxLength={500} onChange={event => setResolutionReason(event.target.value)} /></label>
+          <label><input type="checkbox" checked={resolutionAcknowledged} onChange={event => setResolutionAcknowledged(event.target.checked)} /> Saya sudah memeriksa hasil dan memahami proses sebelumnya mungkin masih berjalan.</label>
+          <button type="button" className="tab" disabled={bulkBusy || busy || !resolutionAcknowledged || !resolutionReason.trim()} onClick={() => void reconcileBulk()}>Tutup operasi setelah pemeriksaan manual</button>
+        </div>}
+      </div>}
+      {bulkUncertain && bulkPreview && <button type="button" className="tab" disabled={bulkBusy} onClick={() => void readBulk(bulkPreview.id)}>Periksa status operasi</button>}
     </div>
     {loading && <p role="status">Memuat kandidat…</p>}
     {message && <p role="status">{message}</p>}
@@ -226,7 +328,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
     {result && <>
       {result.items.length === 0 ? <p className="candidate-review__empty">Tidak ada kandidat pada halaman ini.</p> : <ul className="candidate-review__list">
         {result.items.map(item => <li key={item.id}>
-          <button type="button" className="candidate-review__item" aria-pressed={selected?.id === item.id} disabled={busy} onClick={() => { setSelected(item); setDecision(null); setNotes(''); setAcknowledged(false); setSourceChecked(false) }}>
+          <button type="button" className="candidate-review__item" aria-pressed={selected?.id === item.id} disabled={busy || bulkBusy} onClick={() => { setSelected(item); setDecision(null); setNotes(''); setAcknowledged(false); setSourceChecked(false) }}>
             <span className="candidate-review__item-name">{unavailable(item.indicatorName)}</span>{' '}
             <span className="candidate-review__item-meta">{unavailable(item.period)} · #{item.id}</span>{' '}
             <span className="candidate-review__item-value">{unavailable(item.value)} {unavailable(item.unit)}</span>
@@ -234,8 +336,8 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         </li>)}
       </ul>}
       <div className="candidate-review__pagination">
-        <button type="button" className="tab" disabled={page <= 1 || busy} onClick={() => setPage(n => n - 1)}>Sebelumnya</button>
-        <button type="button" className="tab" disabled={!result.hasNext || busy} onClick={() => setPage(n => n + 1)}>Berikutnya</button>
+        <button type="button" className="tab" disabled={page <= 1 || busy || bulkBusy} onClick={() => setPage(n => n - 1)}>Sebelumnya</button>
+        <button type="button" className="tab" disabled={!result.hasNext || busy || bulkBusy} onClick={() => setPage(n => n + 1)}>Berikutnya</button>
       </div>
     </>}
     {selected && <article className="trace-panel candidate-review__detail" aria-label={`Detail kandidat ${selected.id}`}>
@@ -269,7 +371,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <label><input type="checkbox" checked={acknowledged} disabled={busy} onChange={event => setAcknowledged(event.target.checked)} /> Saya telah memeriksa riwayat dan memahami bahwa proses sebelumnya mungkin masih berjalan.</label>
         <button type="button" className="tab" disabled={busy || !acknowledged} onClick={() => void recheckUncertain(true)}>Izinkan keputusan ulang</button>
       </div>}
-      {initialReadOk && selected.status === 'pending' && !uncertain.includes(selected.id) && !decision && <div className="candidate-review__decision-actions">
+      {initialReadOk && !batchBlocksDecisions && selected.status === 'pending' && !uncertain.includes(selected.id) && !decision && <div className="candidate-review__decision-actions">
         <button type="button" className="tab" disabled={busy} onClick={() => setDecision('publish')}>Setujui untuk publikasi</button>{' '}
         <button type="button" className="tab" disabled={busy} onClick={() => setDecision('reject')}>Tolak kandidat</button>
       </div>}
@@ -277,7 +379,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <p>Konfirmasi {decision === 'publish' ? 'publikasi' : 'penolakan'} kandidat #{selected.id}: {unavailable(selected.indicatorName)}, {unavailable(selected.period)}, {unavailable(selected.value)} {unavailable(selected.unit)}.</p>
         {decision === 'publish' && <label className="candidate-review__source-check"><input type="checkbox" checked={sourceChecked} disabled={busy} onChange={event => setSourceChecked(event.target.checked)} /> Saya telah membandingkan indikator, nilai, satuan dan periode dengan sumber resmi.</label>}
         {decision === 'reject' && <label>Alasan penolakan <textarea value={notes} maxLength={500} onChange={event => setNotes(event.target.value)} /></label>}
-        <button type="button" className="tab" disabled={busy || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}
+        <button type="button" className="tab" disabled={busy || bulkBusy || batchBlocksDecisions || (decision === 'reject' && !notes.trim()) || (decision === 'publish' && !sourceChecked)} onClick={() => void submit()}>{busy ? 'Memproses…' : 'Ya, konfirmasi'}</button>{' '}
         <button type="button" className="tab" disabled={busy} onClick={() => { setDecision(null); setSourceChecked(false) }}>Batal</button>
       </div>}
     </article>}
