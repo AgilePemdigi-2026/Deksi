@@ -6,6 +6,7 @@ import {
   type SourceDetail,
   type SourceEntry,
 } from "../api";
+import { FeatureShell } from "../features/indicators/DetailPage";
 import { SourceTracePanel } from "./SourceTracePanel";
 
 export interface SourcePageSelection {
@@ -95,30 +96,42 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
   }, [activeDetailIndicators, activeIndicator]);
 
   return (
-    <section className="sources-page" id="sumber-data-page" aria-labelledby="sources-title">
-      <div className="section-head">
-        <div>
-          <h2 className="section-title" id="sources-title">Sumber Data</h2>
-          <p className="section-sub">
-            Transparansi dan keterlacakan data ekonomi. Setiap angka dibaca bersama institusi,
-            periode, satuan, tanggal rilis, dan tautan publikasi resmi. Halaman publik tanpa login.
-          </p>
-        </div>
-        <span className="section-badge">Respons API DEKSI</span>
-      </div>
-
-      <nav className="sources-nav" aria-label="Navigasi halaman">
-        <a href="/">Beranda</a>
-        <a href="#indikator">Indikator</a>
-        <a href="#analisis">Analisis</a>
-        <a href="/sumber-data" aria-current="page">Sumber Data</a>
-        <a href="#tentang">Tentang</a>
+    <FeatureShell>
+      <main id="feature-content" className="fd-main" tabIndex={-1} aria-busy={loading || detailLoading}>
+      <nav className="fd-breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Dashboard</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Sumber Data</span>
       </nav>
+      <header className="fd-heading">
+        <div>
+          <p className="fd-kicker">07 / SUMBER DATA</p>
+          <h1 id="sources-title">Sumber Data.</h1>
+        </div>
+        <p className="fd-lead">
+          Transparansi dan keterlacakan data ekonomi. Setiap angka dibaca bersama institusi,
+          periode, satuan, tanggal rilis, dan tautan publikasi resmi. Halaman publik tanpa login.
+        </p>
+      </header>
 
-      {loading && <p className="summary-loading">Memuat daftar sumber dari backend DEKSI…</p>}
-      {!loading && error && <p className="summary-error">{error}</p>}
+      {sources.length > 0 && (
+        <nav className="fd-indicators" aria-label="Pilih sumber">
+          {sources.map((s) => (
+            <a
+              key={s.sourceId}
+              href={`/sumber-data?source=${encodeURIComponent(s.sourceId)}`}
+              aria-current={s.sourceId === activeSource ? "page" : undefined}
+            >
+              {s.institution || s.sourceId}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      {loading && <p className="fd-status" role="status">Memuat daftar sumber dari backend DEKSI…</p>}
+      {!loading && error && <p className="fd-status" role="alert">{error}</p>}
       {!loading && !error && sources.length === 0 && (
-        <p className="summary-empty">Belum ada sumber atau data. Tidak ada nilai contoh yang disisipkan.</p>
+        <p className="fd-status" role="status">Belum ada sumber atau data. Tidak ada nilai contoh yang disisipkan.</p>
       )}
 
       {!loading && !error && sources.length > 0 && (
@@ -156,8 +169,8 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
 
       {activeSource && (
         <div className="source-detail">
-          {detailLoading && <p className="summary-loading">Memuat indikator {activeSource}…</p>}
-          {detailError && <p className="summary-error">{detailError}</p>}
+          {detailLoading && <p className="fd-status" role="status">Memuat indikator {activeSource}…</p>}
+          {detailError && <p className="fd-status" role="alert">{detailError}</p>}
           {detail && !detailLoading && (
             <>
               <div className="source-detail-head">
@@ -170,7 +183,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
                 </a>
               </div>
               {activeDetailIndicators.length === 0 ? (
-                <p className="summary-empty">Belum ada indikator terpublikasi dari sumber ini.</p>
+                <p className="fd-status" role="status">Belum ada indikator terpublikasi dari sumber ini.</p>
               ) : (
                 <div className="source-indicators">
                   {activeDetailIndicators.map((ind) => (
@@ -202,6 +215,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
       {activeIndicator && (
         <SourceTracePanel code={activeIndicator} period={activePeriod} />
       )}
-    </section>
+      </main>
+    </FeatureShell>
   );
 }
