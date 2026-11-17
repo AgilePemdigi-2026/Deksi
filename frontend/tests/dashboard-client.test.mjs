@@ -41,6 +41,14 @@ test('feedback rejects html csrf errors honestly, never retries a POST or preten
 test('deadlines cover body parsing even when transport ignores cancellation',async()=>{
  await assert.rejects(client.requestJson('/api/test',{},undefined,async()=>({ok:true,json:()=>new Promise(()=>{})}),10),/waktu|Timeout/)
 })
+test('missing trend indicator requires matching JSON identity regardless of media type case',async()=>{
+ const request=(type,body,status=404)=>client.requestJson('/api/indicators/pdb/trend/',{},undefined,async()=>new Response(body,{status,headers:{'Content-Type':type}}))
+ const missing=JSON.stringify({error:"Indikator 'pdb' tidak ditemukan"})
+ for(const type of ['application/json','Application/JSON; charset=utf-8'])
+  await assert.rejects(request(type,missing),client.MissingHistoryIndicatorError)
+ for(const [type,body,status] of [['text/html',missing,404],['application/json',JSON.stringify({error:"Indikator 'inflasi' tidak ditemukan"}),404],['application/json',missing,500]])
+  await assert.rejects(request(type,body,status),error=>!(error instanceof client.MissingHistoryIndicatorError)&&error.message.includes(`HTTP ${status}`))
+})
 test('native selection binds an exact historical source, not the current summary',async()=>{
  const reading={indicatorCode:'inflasi',indicatorName:'UJI',value:'0',unit:'%',period:'Desember',observationDate:'2023-12-31',frequency:'monthly',dataType:'yoy',source:{sourceId:'A'}}
  assert(data.pointMatches(history[0],reading));assert(!data.pointMatches(history[1],reading))

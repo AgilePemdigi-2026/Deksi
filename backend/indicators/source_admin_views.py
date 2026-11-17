@@ -14,7 +14,8 @@ import socket
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 
 from django.views.decorators.http import require_GET, require_POST
@@ -332,9 +333,19 @@ def admin_logout(request):
 def admin_session(request):
     user = getattr(request, "user", None)
     authenticated = bool(user and user.is_authenticated and user.is_staff)
+    can_review = False
+    if authenticated:
+        from indicators.lifecycle import require_reviewer
+
+        try:
+            require_reviewer(user)
+            can_review = True
+        except (PermissionDenied, get_user_model().DoesNotExist):
+            pass
     return json_success(
         {
             "authenticated": authenticated,
+            "canReviewCandidates": can_review,
             "username": user.get_username() if authenticated else None,
             "isStaff": bool(user and user.is_authenticated and user.is_staff),
         }

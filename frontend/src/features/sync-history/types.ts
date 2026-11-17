@@ -1,5 +1,8 @@
 export type SyncStatus = 'queued' | 'running' | 'success' | 'failed' | 'cancelled' | 'unknown'
 
+const statusLabels: Record<SyncStatus, string> = { queued: 'Antrean', running: 'Berlangsung', success: 'Berhasil', failed: 'Gagal', cancelled: 'Dibatalkan', unknown: 'Tidak diketahui' }
+export function labelSyncStatus(status: SyncStatus): string { return statusLabels[status] ?? 'Tidak tersedia' }
+
 export interface SyncHistoryQuery {
   sourceId?: string
   status?: SyncStatus

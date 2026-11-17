@@ -213,12 +213,19 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
         <button type="button" className="catalog-download" onClick={downloadCatalog}>⭳ Unduh katalog</button>
       </div>
 
-      <div className="catalog-stats">
-        <div className="catalog-stat"><p>SUMBER DATA</p><strong>{sources.length}</strong><span>Publikasi &amp; kumpulan data</span></div>
-        <div className="catalog-stat"><p>INSTITUSI RESMI</p><strong>{institutions.length}</strong><span>{institutions.join(", ") || "—"}</span></div>
-        <div className="catalog-stat"><p>CAKUPAN INDIKATOR</p><strong>{totalIndicators}</strong><span>Indikator ekonomi terpetakan</span></div>
-        <div className="catalog-stat"><p>SUMBER DENGAN DATA</p><strong>{availableCount} / {sources.length}</strong><span>{sources.length - availableCount} belum ada data / nonaktif</span></div>
-      </div>
+      <nav className="sources-nav" aria-label="Navigasi halaman">
+        <a href="/">Beranda</a>
+        <a href="/#economic-indicators">Indikator</a>
+        <a href="/#economic-insights">Panduan membaca</a>
+        <a href="/sumber-data" aria-current="page">Sumber Data</a>
+        <a href="/#about-deksi">Tentang</a>
+      </nav>
+
+      {loading && <p className="summary-loading">Memuat daftar sumber dari backend DEKSI…</p>}
+      {!loading && error && <p className="summary-error">{error}</p>}
+      {!loading && !error && sources.length === 0 && (
+        <p className="summary-empty">Belum ada sumber atau data. Tidak ada nilai contoh yang disisipkan.</p>
+      )}
 
       <p className="catalog-note">ⓘ Data live dari API DEKSI. Jadwal yang tercatat berasal dari metadata sumber; waktu pembaruan aktual dapat berbeda.</p>
 
