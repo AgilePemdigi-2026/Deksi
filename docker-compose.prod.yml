@@ -72,6 +72,8 @@ services:
         condition: service_healthy
 
   frontend:
+    image: ${COMPOSE_PROJECT_NAME:-deksi}-frontend:production
+    pull_policy: build
     build:
       context: .
       dockerfile: frontend/Dockerfile.production
