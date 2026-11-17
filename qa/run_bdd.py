@@ -60,9 +60,11 @@ def _product_hashes():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--suite", choices=["as-built", "baseline", "sources", "sources-current", "sources-web", "feedback-admin", "sprint2", "sprint2-current"], default="as-built")
-    parser.add_argument("--tags", default="@sprint1")
+    parser.add_argument("--tags", default=None)
     parser.add_argument("--label", default="sprint1")
     args = parser.parse_args()
+    if args.tags is None:
+        args.tags = "@sources or @sources_current or @sources_web or @sprint2 or @feedback_admin" if args.suite == "sprint2-current" else "@sprint1"
     if not args.label.replace("-", "").replace("_", "").isalnum():
         parser.error("label must be alphanumeric")
     global BE

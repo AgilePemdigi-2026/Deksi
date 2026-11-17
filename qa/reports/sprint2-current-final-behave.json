@@ -1,0 +1,4530 @@
+[
+  {
+    "keyword": "Feature",
+    "name": "F15 Daftar Umpan Balik Admin",
+    "tags": [
+      "sprint2",
+      "feedback_admin",
+      "f15"
+    ],
+    "location": "qa/features/feedback-admin/f15_feedback_list.feature:2",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F15-01 - Daftar menampilkan kategori tanggal dan status",
+        "tags": [
+          "BDD_F15_01",
+          "R_F15_01",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f15_feedback_list.feature:5",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki dua laporan umpan balik sintetis dengan kategori dan status berbeda",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:6",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:58",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07351994514465332
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin meminta daftar umpan balik",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:7",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:73",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.010389089584350586
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "daftar berisi kedua laporan dengan kategori tanggal dan status",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:8",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:78",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0002467632293701172
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F15-02 - Daftar kosong ditangani sebagai hasil valid",
+        "tags": [
+          "BDD_F15_02",
+          "R_F15_02",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f15_feedback_list.feature:11",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki daftar umpan balik kosong",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:12",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:96",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.06366920471191406
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin meminta daftar umpan balik",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:13",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:73",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.004691123962402344
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons sukses menampilkan daftar kosong tanpa error",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:14",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:102",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001914501190185547
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F15-03 - Daftar umpan balik dilindungi untuk Admin",
+        "tags": [
+          "BDD_F15_03",
+          "R_F15_03",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f15_feedback_list.feature:17",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "pengunjung anonim belum memiliki sesi Admin",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:18",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:109",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0008156299591064453
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "pengunjung meminta daftar umpan balik Admin",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:19",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:115",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0022084712982177734
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak akses daftar dengan status 401",
+            "location": "qa/features/feedback-admin/f15_feedback_list.feature:20",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:120",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 9.298324584960938e-05
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F16 Detail Umpan Balik",
+    "tags": [
+      "sprint2",
+      "feedback_admin",
+      "f16"
+    ],
+    "location": "qa/features/feedback-admin/f16_feedback_detail.feature:2",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F16-01 - Detail mempertahankan laporan indikator dan status",
+        "tags": [
+          "BDD_F16_01",
+          "R_F16_01",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f16_feedback_detail.feature:5",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki laporan sintetis terkait indikator PDB",
+            "location": "qa/features/feedback-admin/f16_feedback_detail.feature:6",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:125",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.08384513854980469
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin membuka detail laporan tersebut",
+            "location": "qa/features/feedback-admin/f16_feedback_detail.feature:7",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:146",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.007428169250488281
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "detail menunjukkan indikator terkait dan status yang sama dengan daftar",
+            "location": "qa/features/feedback-admin/f16_feedback_detail.feature:8",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:151",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0027208328247070312
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F16-02 - Detail laporan tak dikenal tidak ditemukan",
+        "tags": [
+          "BDD_F16_02",
+          "R_F16_02",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f16_feedback_detail.feature:11",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki sesi valid tanpa laporan terpilih",
+            "location": "qa/features/feedback-admin/f16_feedback_detail.feature:12",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:170",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.06884455680847168
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin meminta detail laporan yang tidak ada",
+            "location": "qa/features/feedback-admin/f16_feedback_detail.feature:13",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:176",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0048716068267822266
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server mengembalikan status 404 tanpa detail laporan",
+            "location": "qa/features/feedback-admin/f16_feedback_detail.feature:14",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00016808509826660156
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F17 Cari Umpan Balik",
+    "tags": [
+      "sprint2",
+      "feedback_admin",
+      "f17"
+    ],
+    "location": "qa/features/feedback-admin/f17_feedback_search.feature:2",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F17-01 - Kata kunci menyaring laporan terkait",
+        "tags": [
+          "BDD_F17_01",
+          "R_F17_01",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f17_feedback_search.feature:5",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki laporan dengan kata kunci indikator dan laporan pembanding",
+            "location": "qa/features/feedback-admin/f17_feedback_search.feature:6",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:187",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07092571258544922
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin mencari umpan balik menggunakan kata kunci indikator",
+            "location": "qa/features/feedback-admin/f17_feedback_search.feature:7",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:211",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.004243373870849609
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "hanya laporan yang cocok ditampilkan",
+            "location": "qa/features/feedback-admin/f17_feedback_search.feature:8",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:216",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00016880035400390625
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F17-02 - Pencarian tanpa hasil menghasilkan daftar kosong",
+        "tags": [
+          "BDD_F17_02",
+          "R_F17_02",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f17_feedback_search.feature:11",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki laporan umpan balik sintetis",
+            "location": "qa/features/feedback-admin/f17_feedback_search.feature:12",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:204",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.06750011444091797
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin mencari umpan balik menggunakan kata kunci yang tidak ada",
+            "location": "qa/features/feedback-admin/f17_feedback_search.feature:13",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:225",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00342559814453125
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "pencarian sukses menampilkan nol hasil",
+            "location": "qa/features/feedback-admin/f17_feedback_search.feature:14",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:230",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00011587142944335938
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F18 Ubah Status Umpan Balik",
+    "tags": [
+      "sprint2",
+      "feedback_admin",
+      "f18"
+    ],
+    "location": "qa/features/feedback-admin/f18_feedback_status.feature:2",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F18-01 - Perubahan status menyimpan catatan waktu dan audit",
+        "tags": [
+          "BDD_F18_01",
+          "R_F18_01",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f18_feedback_status.feature:5",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki laporan pending dan token CSRF valid",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:6",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:238",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07381367683410645
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin mengubah status menjadi resolved dengan catatan penanganan sintetis",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:7",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:246",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.014197587966918945
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "status catatan waktu pembaruan dan audit log tersimpan",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:8",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:256",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0014412403106689453
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F18-02 - Status tidak valid tidak mengubah laporan",
+        "tags": [
+          "BDD_F18_02",
+          "R_F18_02",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f18_feedback_status.feature:11",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin memiliki laporan pending dan token CSRF valid",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:12",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:238",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0802001953125
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin mengirim perubahan dengan status yang tidak valid",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:13",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:275",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0030045509338378906
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak perubahan dan tidak membuat audit log",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:14",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:285",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0012950897216796875
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F18-03 - Pengunjung anonim tidak dapat mengubah status",
+        "tags": [
+          "BDD_F18_03",
+          "R_F18_03",
+          "api"
+        ],
+        "location": "qa/features/feedback-admin/f18_feedback_status.feature:17",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "laporan pending tersedia tanpa sesi Admin dan token CSRF valid",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:18",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:293",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.009849786758422852
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "pengunjung anonim mengirim perubahan status",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:19",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:301",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0009434223175048828
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak perubahan dan status laporan tetap pending",
+            "location": "qa/features/feedback-admin/f18_feedback_status.feature:20",
+            "match": {
+              "location": "qa/features/steps/feedback_admin_steps.py:311",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0015308856964111328
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F09 Daftar Sumber Data",
+    "tags": [
+      "sources",
+      "f09",
+      "api"
+    ],
+    "location": "qa/features/sources/f09_sources.feature:12",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-01 - Daftar sumber tampil lengkap",
+        "tags": [
+          "BDD_F09_01",
+          "R_F09_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:15",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "katalog dua sumber publik dengan observasi reviewed tersedia",
+            "location": "qa/features/sources/f09_sources.feature:16",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:98",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07914209365844727
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/\"",
+            "location": "qa/features/sources/f09_sources.feature:17",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.012938261032104492
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons daftar sumber berstatus 200 dengan 2 sumber dan field lengkap",
+            "location": "qa/features/sources/f09_sources.feature:18",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:112",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001823902130126953
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-02 - Detail sumber case-insensitive dan hanya indikator reviewed",
+        "tags": [
+          "BDD_F09_02",
+          "R_F09_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:21",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber \"TEST_A\" dengan satu observasi published-direview dan satu draft",
+            "location": "qa/features/sources/f09_sources.feature:22",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:123",
+              "arguments": [
+                {
+                  "value": "TEST_A",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.04886627197265625
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/test_a/\"",
+            "location": "qa/features/sources/f09_sources.feature:23",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/test_a/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.007717609405517578
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons detail sumber \"TEST_A\" berstatus 200 dengan 1 indikator",
+            "location": "qa/features/sources/f09_sources.feature:24",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:131",
+              "arguments": [
+                {
+                  "value": "TEST_A",
+                  "name": "sid"
+                },
+                {
+                  "value": 1,
+                  "name": "count",
+                  "original": "1"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00018548965454101562
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-03 - Daftar indikator per sumber konsisten dengan detail",
+        "tags": [
+          "BDD_F09_03",
+          "R_F09_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:27",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber \"TEST_A\" dengan dua indikator published-direview",
+            "location": "qa/features/sources/f09_sources.feature:28",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:139",
+              "arguments": [
+                {
+                  "value": "TEST_A",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0699911117553711
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/TEST_A/indicators/\"",
+            "location": "qa/features/sources/f09_sources.feature:29",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/TEST_A/indicators/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.013338088989257812
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons indikator sumber \"TEST_A\" berstatus 200 dengan 2 indikator",
+            "location": "qa/features/sources/f09_sources.feature:30",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:147",
+              "arguments": [
+                {
+                  "value": "TEST_A",
+                  "name": "sid"
+                },
+                {
+                  "value": 2,
+                  "name": "count",
+                  "original": "2"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00022220611572265625
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-04 - Sumber tak dikenal 404 tanpa bocor data",
+        "tags": [
+          "BDD_F09_04",
+          "R_F09_02",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:33",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "tidak ada sumber \"X_TIDAK_ADA\"",
+            "location": "qa/features/sources/f09_sources.feature:34",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:155",
+              "arguments": [
+                {
+                  "value": "X_TIDAK_ADA",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0017273426055908203
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/X_TIDAK_ADA/\"",
+            "location": "qa/features/sources/f09_sources.feature:35",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/X_TIDAK_ADA/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0014188289642333984
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons berstatus 404 tanpa daftar sumber",
+            "location": "qa/features/sources/f09_sources.feature:36",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:161",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00010800361633300781
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-05 - Indikator sumber kosong tetap 200",
+        "tags": [
+          "BDD_F09_05",
+          "R_F09_02",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:39",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber baru \"TEST_EMPTY\" tanpa observasi",
+            "location": "qa/features/sources/f09_sources.feature:40",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:167",
+              "arguments": [
+                {
+                  "value": "TEST_EMPTY",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.009834766387939453
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/TEST_EMPTY/indicators/\"",
+            "location": "qa/features/sources/f09_sources.feature:41",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/TEST_EMPTY/indicators/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.002639293670654297
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons indikator sumber \"TEST_EMPTY\" berstatus 200 dengan 0 indikator",
+            "location": "qa/features/sources/f09_sources.feature:42",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:147",
+              "arguments": [
+                {
+                  "value": "TEST_EMPTY",
+                  "name": "sid"
+                },
+                {
+                  "value": 0,
+                  "name": "count",
+                  "original": "0"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00012063980102539062
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-06 - Detail sumber huruf kecil semua",
+        "tags": [
+          "BDD_F09_06",
+          "R_F09_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:45",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber \"TEST_A\" dengan satu observasi published-direview dan satu draft",
+            "location": "qa/features/sources/f09_sources.feature:46",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:123",
+              "arguments": [
+                {
+                  "value": "TEST_A",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.062193870544433594
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/test_a/\"",
+            "location": "qa/features/sources/f09_sources.feature:47",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/test_a/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0103607177734375
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons detail sumber \"TEST_A\" berstatus 200 dengan 1 indikator",
+            "location": "qa/features/sources/f09_sources.feature:48",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:131",
+              "arguments": [
+                {
+                  "value": "TEST_A",
+                  "name": "sid"
+                },
+                {
+                  "value": 1,
+                  "name": "count",
+                  "original": "1"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001373291015625
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F09-07 - Sumber tanpa observasi reviewed tidak tersedia",
+        "tags": [
+          "BDD_F09_07",
+          "R_F09_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f09_sources.feature:51",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber \"TEST_DRAFT\" hanya dengan observasi draft",
+            "location": "qa/features/sources/f09_sources.feature:52",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:173",
+              "arguments": [
+                {
+                  "value": "TEST_DRAFT",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.030588150024414062
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/sources/TEST_DRAFT/\"",
+            "location": "qa/features/sources/f09_sources.feature:53",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/sources/TEST_DRAFT/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00563359260559082
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons detail sumber \"TEST_DRAFT\" berstatus 200 dengan 0 indikator",
+            "location": "qa/features/sources/f09_sources.feature:54",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:131",
+              "arguments": [
+                {
+                  "value": "TEST_DRAFT",
+                  "name": "sid"
+                },
+                {
+                  "value": 0,
+                  "name": "count",
+                  "original": "0"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00014472007751464844
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F10 Tambah Sumber Data",
+    "tags": [
+      "sources",
+      "f10",
+      "api"
+    ],
+    "location": "qa/features/sources/f10_source_create.feature:10",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "background",
+        "keyword": "Background",
+        "name": "",
+        "location": "qa/features/sources/f10_source_create.feature:12",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13"
+          }
+        ]
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-01 - Tambah sumber file_xlsx tanpa endpoint lolos",
+        "tags": [
+          "BDD_F10_01",
+          "R_F10_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:16",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.1526334285736084
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "payload tambah sumber file_xlsx valid",
+            "location": "qa/features/sources/f10_source_create.feature:17",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:187",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001678466796875
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client POST ke \"/api/admin/sources/create/\" dengan payload tambah",
+            "location": "qa/features/sources/f10_source_create.feature:18",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:193",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/create/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.012711763381958008
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 201 dengan revision tambah version 1",
+            "location": "qa/features/sources/f10_source_create.feature:19",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:199",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00013589859008789062
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-02 - Tanpa login ditolak 401",
+        "tags": [
+          "BDD_F10_02",
+          "R_F10_05",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:22",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.165001630783081
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "client anonim tanpa session admin",
+            "location": "qa/features/sources/f10_source_create.feature:23",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:208",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0009264945983886719
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client POST ke \"/api/admin/sources/create/\" dengan payload valid",
+            "location": "qa/features/sources/f10_source_create.feature:24",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:214",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/create/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0009925365447998047
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 401 dan sumber \"SRC_F10_NEW\" tidak tersimpan",
+            "location": "qa/features/sources/f10_source_create.feature:25",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:220",
+              "arguments": [
+                {
+                  "value": 401,
+                  "name": "status",
+                  "original": "401"
+                },
+                {
+                  "value": "SRC_F10_NEW",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0006377696990966797
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-03 - Akun non-staf ditolak 403",
+        "tags": [
+          "BDD_F10_03",
+          "R_F10_05",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:28",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.9061429500579834
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "session login milik akun non-staf yang valid",
+            "location": "qa/features/sources/f10_source_create.feature:29",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:226",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.4679257869720459
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client POST ke \"/api/admin/sources/create/\" dengan payload valid",
+            "location": "qa/features/sources/f10_source_create.feature:30",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:214",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/create/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.001367330551147461
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 403 dan sumber \"SRC_F10_NEW\" tidak tersimpan",
+            "location": "qa/features/sources/f10_source_create.feature:31",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:220",
+              "arguments": [
+                {
+                  "value": 403,
+                  "name": "status",
+                  "original": "403"
+                },
+                {
+                  "value": "SRC_F10_NEW",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0005702972412109375
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-04 - Duplikat sourceId ditolak 409",
+        "tags": [
+          "BDD_F10_04",
+          "R_F10_02",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:34",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.0677893161773682
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber \"SRC_F10_DUP\" revision 1 sudah ada",
+            "location": "qa/features/sources/f10_source_create.feature:35",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "SRC_F10_DUP",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.015421152114868164
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client POST ke \"/api/admin/sources/create/\" dengan sourceId \"SRC_F10_DUP\" yang sama",
+            "location": "qa/features/sources/f10_source_create.feature:36",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:238",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/create/",
+                  "name": "path"
+                },
+                {
+                  "value": "SRC_F10_DUP",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0019364356994628906
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 409 dan revision tetap 1",
+            "location": "qa/features/sources/f10_source_create.feature:37",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:244",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00029587745666503906
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-06 - Karakter sourceId invalid ditolak",
+        "tags": [
+          "BDD_F10_06",
+          "R_F10_03",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:46",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 35.230557680130005
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "payload tambah sumber dengan sourceId \"BAD-ID!\"",
+            "location": "qa/features/sources/f10_source_create.feature:47",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:265",
+              "arguments": [
+                {
+                  "value": "BAD-ID!",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001518726348876953
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client POST ke \"/api/admin/sources/create/\" dengan payload tambah",
+            "location": "qa/features/sources/f10_source_create.feature:48",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:193",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/create/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0023031234741210938
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 400 dan tidak ada sumber baru tersimpan",
+            "location": "qa/features/sources/f10_source_create.feature:49",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:271",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00048661231994628906
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-07 - Kombinasi nama dan institusi ganda ditolak",
+        "tags": [
+          "BDD_F10_07",
+          "R_F10_02",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:52",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.1790602207183838
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber bernama \"Data Investasi\" dari \"BKPM\" sudah terdaftar",
+            "location": "qa/features/sources/f10_source_create.feature:53",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:277",
+              "arguments": [
+                {
+                  "value": "Data Investasi",
+                  "name": "name"
+                },
+                {
+                  "value": "BKPM",
+                  "name": "institution"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.018578529357910156
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client POST ke \"/api/admin/sources/create/\" dengan nama dan institusi sama tetapi sourceId berbeda",
+            "location": "qa/features/sources/f10_source_create.feature:54",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:283",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/create/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.003534078598022461
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 400 menyebut kombinasi sudah terdaftar",
+            "location": "qa/features/sources/f10_source_create.feature:55",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:291",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00021982192993164062
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F10-08 - Daftar metode akuisisi tersedia untuk form admin",
+        "tags": [
+          "BDD_F10_08",
+          "R_F10_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f10_source_create.feature:58",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f10_source_create.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.0198421478271484
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/admin/sources/acquisition-methods/\"",
+            "location": "qa/features/sources/f10_source_create.feature:59",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/acquisition-methods/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0018422603607177734
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 200 memuat metode file_xlsx",
+            "location": "qa/features/sources/f10_source_create.feature:60",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:297",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00010347366333007812
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F11 Edit Sumber Data",
+    "tags": [
+      "sources",
+      "f11",
+      "api"
+    ],
+    "location": "qa/features/sources/f11_source_update.feature:10",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "background",
+        "keyword": "Background",
+        "name": "",
+        "location": "qa/features/sources/f11_source_update.feature:12",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13"
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14"
+          }
+        ]
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-01 - Edit deskripsi naikkan revisi",
+        "tags": [
+          "BDD_F11_01",
+          "R_F11_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:17",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.9269702434539795
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.014941930770874023
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "field \"description\" diubah menjadi \"Deskripsi revisi uji\"",
+            "location": "qa/features/sources/f11_source_update.feature:18",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:306",
+              "arguments": [
+                {
+                  "value": "description",
+                  "name": "field"
+                },
+                {
+                  "value": "Deskripsi revisi uji",
+                  "name": "value"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00017023086547851562
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client PATCH ke \"/api/admin/sources/BPS_T/update/\" dengan payload ubah",
+            "location": "qa/features/sources/f11_source_update.feature:19",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:311",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/update/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.012395858764648438
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 200 revision naik ke 2 dan changedFields memuat \"description\"",
+            "location": "qa/features/sources/f11_source_update.feature:20",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:318",
+              "arguments": [
+                {
+                  "value": 2,
+                  "name": "version",
+                  "original": "2"
+                },
+                {
+                  "value": "description",
+                  "name": "field"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00011658668518066406
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-02 - Tanpa login ditolak 401",
+        "tags": [
+          "BDD_F11_02",
+          "R_F11_05",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:23",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.9594330787658691
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.01707172393798828
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "client anonim tanpa session admin",
+            "location": "qa/features/sources/f11_source_update.feature:24",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:208",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0011065006256103516
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client PATCH ke \"/api/admin/sources/BPS_T/update/\" dengan payload valid",
+            "location": "qa/features/sources/f11_source_update.feature:25",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:326",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/update/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0007801055908203125
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 401 dan revision tetap 1",
+            "location": "qa/features/sources/f11_source_update.feature:26",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:332",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0004036426544189453
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-03 - sourceId tidak boleh diubah",
+        "tags": [
+          "BDD_F11_03",
+          "R_F11_02",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:29",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.9870996475219727
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.015649795532226562
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "payload ubah memuat sourceId \"BPS_LAIN\"",
+            "location": "qa/features/sources/f11_source_update.feature:30",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:338",
+              "arguments": [
+                {
+                  "value": "BPS_LAIN",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001430511474609375
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client PATCH ke \"/api/admin/sources/BPS_T/update/\" dengan payload ubah",
+            "location": "qa/features/sources/f11_source_update.feature:31",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:311",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/update/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.002353191375732422
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 400 menyebut sourceId dan revision tetap 1",
+            "location": "qa/features/sources/f11_source_update.feature:32",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:343",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0003714561462402344
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-05 - Tanpa perubahan tidak buat revisi baru",
+        "tags": [
+          "BDD_F11_05",
+          "R_F11_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:41",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.0312936305999756
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.015069007873535156
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "payload ubah sama dengan konfigurasi tersimpan",
+            "location": "qa/features/sources/f11_source_update.feature:42",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:363",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0006647109985351562
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client PATCH ke \"/api/admin/sources/BPS_T/update/\" dengan payload ubah",
+            "location": "qa/features/sources/f11_source_update.feature:43",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:311",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/update/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.011366605758666992
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 200 changedFields kosong dan revision tetap 1",
+            "location": "qa/features/sources/f11_source_update.feature:44",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:369",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00048732757568359375
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-06 - primaryUrl bukan-url ditolak",
+        "tags": [
+          "BDD_F11_06",
+          "R_F11_03",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:47",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.442633867263794
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.017940759658813477
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "field \"primaryUrl\" diubah menjadi \"bukan-url\"",
+            "location": "qa/features/sources/f11_source_update.feature:48",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:306",
+              "arguments": [
+                {
+                  "value": "primaryUrl",
+                  "name": "field"
+                },
+                {
+                  "value": "bukan-url",
+                  "name": "value"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001671314239501953
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client PATCH ke \"/api/admin/sources/BPS_T/update/\" dengan payload ubah",
+            "location": "qa/features/sources/f11_source_update.feature:49",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:311",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/update/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.003660917282104492
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 400 dan revision tetap 1",
+            "location": "qa/features/sources/f11_source_update.feature:50",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:376",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0005023479461669922
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-07 - Status di luar pilihan ditolak",
+        "tags": [
+          "BDD_F11_07",
+          "R_F11_03",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:53",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.1730923652648926
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.017110586166381836
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "field \"status\" diubah menjadi \"arsip\"",
+            "location": "qa/features/sources/f11_source_update.feature:54",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:306",
+              "arguments": [
+                {
+                  "value": "status",
+                  "name": "field"
+                },
+                {
+                  "value": "arsip",
+                  "name": "value"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001857280731201172
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client PATCH ke \"/api/admin/sources/BPS_T/update/\" dengan payload ubah",
+            "location": "qa/features/sources/f11_source_update.feature:55",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:311",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/update/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.003911733627319336
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 400 dan revision tetap 1",
+            "location": "qa/features/sources/f11_source_update.feature:56",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:376",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0004978179931640625
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "BDD-F11-08 - Riwayat revisi append-only terbaca",
+        "tags": [
+          "BDD_F11_08",
+          "R_F11_01",
+          "api"
+        ],
+        "location": "qa/features/sources/f11_source_update.feature:59",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "admin staf sudah login",
+            "location": "qa/features/sources/f11_source_update.feature:13",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:181",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.3698217868804932
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "sumber \"BPS_T\" revision 1 sudah ada",
+            "location": "qa/features/sources/f11_source_update.feature:14",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:232",
+              "arguments": [
+                {
+                  "value": "BPS_T",
+                  "name": "sid"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.010043621063232422
+            }
+          },
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "edit deskripsi sudah tersimpan sebagai revision 2",
+            "location": "qa/features/sources/f11_source_update.feature:60",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:382",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.012115478515625
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "client meminta GET \"/api/admin/sources/BPS_T/revisions/\"",
+            "location": "qa/features/sources/f11_source_update.feature:61",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:91",
+              "arguments": [
+                {
+                  "value": "/api/admin/sources/BPS_T/revisions/",
+                  "name": "path"
+                }
+              ]
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.005146503448486328
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons 200 dengan 2 revisi berurutan dan before sama dengan after sebelumnya",
+            "location": "qa/features/sources/f11_source_update.feature:62",
+            "match": {
+              "location": "qa/features/steps/source_steps.py:392",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001456737518310547
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "Kontrak operasional penyimpanan endpoint tanpa pemeriksaan jaringan",
+    "tags": [
+      "sources_current",
+      "api"
+    ],
+    "location": "qa/features/sources-current/source_endpoint.feature:2",
+    "status": "passed",
+    "description": [
+      "Ekspektasi lama BDD-F10-05 dan BDD-F11-04 tetap dipertahankan terpisah untuk keputusan requirement."
+    ],
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "ASBUILT-F10-05 - Endpoint baru disimpan tanpa memanggil jaringan",
+        "tags": [
+          "ASBUILT_F10_05"
+        ],
+        "location": "qa/features/sources-current/source_endpoint.feature:6",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin sumber sintetis siap membuat endpoint tanpa probe",
+            "location": "qa/features/sources-current/source_endpoint.feature:7",
+            "match": {
+              "location": "qa/features/steps/sources_current_steps.py:23",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.05622553825378418
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin menyimpan sumber sintetis dengan endpoint yang belum diverifikasi",
+            "location": "qa/features/sources-current/source_endpoint.feature:8",
+            "match": {
+              "location": "qa/features/steps/sources_current_steps.py:28",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.014399051666259766
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "sumber dan revisi pertama tersimpan tanpa memanggil probe",
+            "location": "qa/features/sources-current/source_endpoint.feature:9",
+            "match": {
+              "location": "qa/features/steps/sources_current_steps.py:37",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0012125968933105469
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "ASBUILT-F11-04 - Endpoint diubah tanpa memanggil jaringan",
+        "tags": [
+          "ASBUILT_F11_04"
+        ],
+        "location": "qa/features/sources-current/source_endpoint.feature:12",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin sumber sintetis siap mengubah endpoint tanpa probe",
+            "location": "qa/features/sources-current/source_endpoint.feature:13",
+            "match": {
+              "location": "qa/features/steps/sources_current_steps.py:46",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.06836175918579102
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin menyimpan perubahan endpoint yang belum diverifikasi dengan versi revisi",
+            "location": "qa/features/sources-current/source_endpoint.feature:14",
+            "match": {
+              "location": "qa/features/steps/sources_current_steps.py:57",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0142669677734375
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "endpoint baru dan revisi kedua tersimpan tanpa memanggil probe",
+            "location": "qa/features/sources-current/source_endpoint.feature:15",
+            "match": {
+              "location": "qa/features/steps/sources_current_steps.py:63",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0011050701141357422
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "Katalog sumber publik menggunakan data API sebenarnya",
+    "tags": [
+      "sources_web",
+      "browser"
+    ],
+    "location": "qa/features/sources-web/f09_public_browser.feature:2",
+    "status": "passed",
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "ASBUILT-F09-WEB-01 - Pengunjung melihat detail sumber sintetis",
+        "tags": [
+          "ASBUILT_F09_WEB_01"
+        ],
+        "location": "qa/features/sources-web/f09_public_browser.feature:4",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "browser katalog sumber menggunakan data sintetis yang direview",
+            "location": "qa/features/sources-web/f09_public_browser.feature:5",
+            "match": {
+              "location": "qa/features/steps/sources_web_steps.py:6",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.9329185485839844
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "pengunjung membuka katalog dan detail sumber sintetis",
+            "location": "qa/features/sources-web/f09_public_browser.feature:6",
+            "match": {
+              "location": "qa/features/steps/sources_web_steps.py:11",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.9799997806549072
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "browser menampilkan identitas dan indikator sumber yang sesuai respons Django",
+            "location": "qa/features/sources-web/f09_public_browser.feature:7",
+            "match": {
+              "location": "qa/features/steps/sources_web_steps.py:20",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.000997304916381836
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F12 Mengendalikan status aktif sumber data",
+    "tags": [
+      "sprint2",
+      "f12"
+    ],
+    "location": "qa/features/sprint2/f12_status_sumber.feature:2",
+    "status": "passed",
+    "description": [
+      "Agar akuisisi baru tidak menggunakan sumber yang dinonaktifkan",
+      "Sebagai Admin saya dapat meninjau dan mengubah status sumber dengan revisi"
+    ],
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Admin menonaktifkan sumber yang aktif",
+        "tags": [
+          "BDD_F12_01",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:7",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk dan sumber sintetis aktif memiliki revisi 1",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:8",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:121",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4.520702362060547
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin menonaktifkan sumber menggunakan revisi 1",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:9",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:130",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.25591516494750977
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "status sumber menjadi nonaktif dan revisi perubahan tersimpan",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:10",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:137",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0015034675598144531
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "status nonaktif terlihat setelah daftar sumber dimuat ulang",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:11",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:148",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.08409643173217773
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Admin mengaktifkan kembali sumber nonaktif",
+        "tags": [
+          "BDD_F12_02",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:14",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk dan sumber sintetis nonaktif memiliki revisi 2",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:15",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:155",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4.448545694351196
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin mengaktifkan sumber menggunakan revisi 2",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:16",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:173",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.25553059577941895
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "status sumber menjadi aktif dan revisi baru tercatat",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:17",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:179",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.002226114273071289
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Perubahan tanpa versi revisi yang diwajibkan ditolak",
+        "tags": [
+          "BDD_F12_03",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:20",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk dan sumber sintetis berada pada revisi 2",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:21",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:188",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.08524632453918457
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin mengirim perubahan status tanpa expectedRevision",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:22",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:203",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0026090145111083984
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "respons menyatakan permintaan tidak valid",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:23",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:210",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7.843971252441406e-05
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "status dan riwayat revisi tidak berubah",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:24",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:215",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0008685588836669922
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Pembaruan dari layar usang tidak menimpa perubahan lain",
+        "tags": [
+          "BDD_F12_04",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:27",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "dua Admin membaca sumber sintetis pada revisi 2",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:28",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:222",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.1637401580810547
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "Admin pertama sudah menyimpan perubahan sehingga revisi menjadi 3",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:29",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:231",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.01581406593322754
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin kedua mencoba mengganti status menggunakan revisi 2",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:30",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:242",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0032243728637695312
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak perubahan dengan konflik revisi",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:31",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:250",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7.390975952148438e-05
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "perubahan Admin pertama tetap tersimpan",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:32",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:255",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0010619163513183594
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Sumber nonaktif dilewati sebelum akuisisi baru",
+        "tags": [
+          "BDD_F12_05",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:35",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "sumber sintetis nonaktif dan provider diganti dengan stub yang mencatat panggilan",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:36",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:262",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.05871891975402832
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "proses akuisisi baru untuk sumber tersebut dimulai",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:37",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:271",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.15958547592163086
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "proses tidak memanggil provider atau membuat run sinkronisasi baru",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:38",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:283",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0003921985626220703
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "tidak ada catatan palsu bahwa sinkronisasi berhasil",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:39",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:290",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0009770393371582031
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Penonaktifan saat pekerjaan berjalan tidak digambarkan sebagai pembatalan otomatis",
+        "tags": [
+          "BDD_F12_06",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:42",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "pekerjaan sintetis sudah dimulai ketika sumber masih aktif",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:43",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:296",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07141423225402832
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin menonaktifkan sumber",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:44",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:304",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.015445947647094727
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "tidak ada pekerjaan baru dimulai untuk sumber nonaktif",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:45",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:321",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0005986690521240234
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "status pekerjaan yang sudah dimulai mengikuti hasilnya sendiri",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:46",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:329",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.008540153503417969
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Pengunjung anonim tidak dapat mengubah status",
+        "tags": [
+          "BDD_F12_07",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:49",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "pengunjung tanpa sesi Admin dan sumber sintetis aktif",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:50",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:339",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.01118612289428711
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "pengunjung mengirim perubahan status",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:51",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:346",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0006763935089111328
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak perubahan dan status tetap aktif",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:52",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:353",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0005333423614501953
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Simpan berhasil tetapi muat ulang daftar gagal",
+        "tags": [
+          "BDD_F12_08",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f12_status_sumber.feature:55",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin menonaktifkan sumber dan server mengonfirmasi penyimpanan",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:56",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:359",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4.620962381362915
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "permintaan berikutnya untuk memuat daftar gagal",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:57",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:384",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0006148815155029297
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "pengguna diberi tahu bahwa penyimpanan dan pembaruan tampilan memiliki hasil berbeda",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:58",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:389",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0021538734436035156
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "aplikasi tidak otomatis mengirim ulang perubahan status",
+            "location": "qa/features/sprint2/f12_status_sumber.feature:59",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:397",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001499652862548828
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F13 Riwayat sinkronisasi sumber data",
+    "tags": [
+      "sprint2",
+      "f13"
+    ],
+    "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:2",
+    "status": "passed",
+    "description": [
+      "Agar Admin dapat melihat hasil akuisisi tanpa mengira log lain sebagai sinkronisasi"
+    ],
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Riwayat menampilkan run sintetis terbaru",
+        "tags": [
+          "BDD_F13_01",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:6",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk dan ada dua run sintetis dengan waktu mulai berbeda",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:7",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:496",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4.942063093185425
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin membuka halaman riwayat sinkronisasi",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:8",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:504",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.8583683967590332
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "run ditampilkan dari yang terbaru beserta sumber status dan waktu mulai",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:9",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:511",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0008177757263183594
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "waktu selesai dan jumlah hanya ditampilkan jika memang tersedia",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:10",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:519",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.010141849517822266
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Filter sumber dan status membatasi hasil",
+        "tags": [
+          "BDD_F13_02",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:13",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "riwayat sintetis berisi beberapa sumber dan status",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:14",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:526",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5.842534303665161
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin memilih satu sumber dan satu status",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:15",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:536",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.23691391944885254
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "hanya run yang cocok dengan kedua filter yang tampil",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:16",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:546",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0008502006530761719
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Halaman berikutnya berisi run berikutnya tanpa duplikasi",
+        "tags": [
+          "BDD_F13_03",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:19",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "jumlah run sintetis lebih besar daripada ukuran satu halaman",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:20",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:404",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.13381195068359375
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin membaca halaman pertama lalu halaman kedua dengan filter yang sama",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:21",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:411",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.01931452751159668
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "masing-masing halaman mengikuti urutan waktu mulai terbaru",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:22",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:418",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00022101402282714844
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "ID run yang sama tidak muncul di kedua halaman untuk dataset yang tidak berubah",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:23",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:426",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00013113021850585938
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Riwayat kosong tidak dianggap gagal",
+        "tags": [
+          "BDD_F13_04",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:26",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk dan tidak ada run yang cocok dengan filter",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:27",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:552",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4.965502738952637
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin membuka riwayat dengan filter tersebut",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:28",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:558",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.811208963394165
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "halaman menampilkan kondisi kosong tanpa menciptakan run atau angka",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:29",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:567",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0029015541076660156
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Gagal mengambil riwayat tidak digambarkan sebagai kosong",
+        "tags": [
+          "BDD_F13_05",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:32",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk dan permintaan riwayat menghasilkan kegagalan server sintetis",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:33",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:576",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5.229141473770142
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin membuka riwayat",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:34",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:583",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.737114667892456
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "halaman menampilkan kesalahan dan menyediakan cara mencoba lagi",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:35",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:589",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0008461475372314453
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "tidak menampilkan data contoh sebagai riwayat nyata",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:36",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:594",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0010967254638671875
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Riwayat ditolak untuk pengunjung anonim",
+        "tags": [
+          "BDD_F13_06",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:39",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "pengunjung tidak memiliki sesi Admin",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:40",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:432",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.007347583770751953
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "pengunjung meminta riwayat sinkronisasi",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:41",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:438",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0007259845733642578
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak akses tanpa memberikan daftar run",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:42",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:443",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 8.749961853027344e-05
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Parameter filter tidak valid ditolak",
+        "tags": [
+          "BDD_F13_07",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:45",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin masuk",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:46",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:449",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.04603171348571777
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin meminta riwayat dengan status atau nomor halaman yang tidak valid",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:47",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:455",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.003049612045288086
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server menolak parameter tanpa mengubah run",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:48",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:463",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0003859996795654297
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Log historis ambigu tidak disajikan sebagai run sinkronisasi",
+        "tags": [
+          "BDD_F13_08",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:51",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "terdapat log lama sintetis yang jenis peristiwanya tidak dapat dipastikan",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:52",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:469",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07607841491699219
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "tidak ada run sinkronisasi terkait",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:53",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:478",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0004477500915527344
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin meminta riwayat sinkronisasi",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:54",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:483",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.004239559173583984
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "log ambigu tidak disajikan sebagai run atau keberhasilan sinkronisasi",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:55",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:488",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0006849765777587891
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Admin kembali dari riwayat ke pengelolaan sumber",
+        "tags": [
+          "BDD_F13_09",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:58",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin berada pada halaman riwayat sinkronisasi",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:59",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:600",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5.402618408203125
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin memilih tautan Kelola Sumber Data",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:60",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:607",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.8793137073516846
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "halaman Kelola Sumber terbuka dengan sesi Admin yang sama",
+            "location": "qa/features/sprint2/f13_riwayat_sinkronisasi.feature:61",
+            "match": {
+              "location": "qa/features/steps/sprint2_f12_f13_steps.py:615",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.10138797760009766
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  },
+  {
+    "keyword": "Feature",
+    "name": "F14 Sinkronisasi ulang BPS oleh Admin",
+    "tags": [
+      "sprint2",
+      "f14"
+    ],
+    "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:2",
+    "status": "passed",
+    "description": [
+      "Agar Admin meminta akuisisi ulang secara terkendali tanpa publikasi otomatis"
+    ],
+    "elements": [
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Permintaan BPS aktif setelah pemeriksaan riwayat",
+        "tags": [
+          "BDD_F14_01",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:6",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin browser F14 masuk dan sumber BPS sintetis aktif tanpa pekerjaan aktif",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:7",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:124",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5.305144309997559
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "given",
+            "name": "Admin F14 telah memeriksa riwayat dan menandai pernyataan pemeriksaan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:8",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:140",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.017275333404541016
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin F14 memilih sinkronkan dan mengonfirmasi permintaan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:9",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:146",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.34940600395202637
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "browser F14 menampilkan identitas pekerjaan dan status server",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:10",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:165",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0009806156158447266
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "pekerjaan F14 yang baru diterima tidak langsung disebut berhasil",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:11",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:174",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0007648468017578125
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Permintaan dibatalkan saat konfirmasi",
+        "tags": [
+          "BDD_F14_02",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:14",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin browser F14 masuk dan sumber BPS sintetis aktif siap disinkronkan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:15",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:131",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5.001686334609985
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin F14 membatalkan dialog konfirmasi",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:16",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:154",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.08815574645996094
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "browser F14 tidak mengirim permintaan sinkronisasi baru",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:17",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:183",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0004260540008544922
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Sumber nonaktif atau selain BPS tidak membuat pekerjaan",
+        "tags": [
+          "BDD_F14_03",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:20",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan tersedia sumber BPS nonaktif serta sumber lain aktif",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:21",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:191",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.05881166458129883
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin API F14 meminta sinkronisasi ulang untuk masing-masing sumber",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:22",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:199",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.005142927169799805
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server F14 menolak setiap permintaan dan tidak membuat pekerjaan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:23",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:207",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.000370025634765625
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Permintaan dengan identitas yang sama tidak membuat duplikat",
+        "tags": [
+          "BDD_F14_04",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:26",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan sumber BPS sintetis aktif dengan requestId valid",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:27",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:215",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.07199740409851074
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin API F14 mengirim dua kali requestId yang sama untuk sumber yang sama",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:28",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:223",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.011680364608764648
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server F14 mengembalikan identitas pekerjaan yang sama tanpa pekerjaan kedua",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:29",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:230",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0003936290740966797
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Dua permintaan berbeda tidak menjalankan pekerjaan aktif ganda",
+        "tags": [
+          "BDD_F14_05",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:32",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan pekerjaan BPS sintetis sudah aktif",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:33",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:239",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.08660697937011719
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin API F14 mengirim permintaan baru dengan requestId berbeda",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:34",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:247",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0029449462890625
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server F14 menolak permintaan karena terdapat pekerjaan aktif",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:35",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:252",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 7.319450378417969e-05
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "hanya pekerjaan F14 aktif semula yang dipertahankan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:36",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:257",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0007441043853759766
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Status queued ditemukan kembali setelah halaman dimuat ulang",
+        "tags": [
+          "BDD_F14_06",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:39",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin browser F14 masuk dan pekerjaan BPS sintetis diterima serta masih dalam antrean",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:40",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:266",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 5.330151796340942
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin F14 memuat ulang halaman Kelola Sumber",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:41",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:275",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 1.2752659320831299
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "browser F14 menampilkan pekerjaan aktif dan status antrean yang sama",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:42",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:283",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0016694068908691406
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "pemuatan ulang F14 tidak mengirim permintaan baru secara otomatis",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:43",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:290",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.001997709274291992
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Jawaban permintaan tidak pasti tidak menyebabkan pengiriman ulang otomatis",
+        "tags": [
+          "BDD_F14_07",
+          "browser"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:46",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin browser F14 masuk dan sumber BPS sintetis aktif siap disinkronkan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:47",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:131",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 4.908458709716797
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin F14 mengonfirmasi permintaan dan koneksi permintaan terputus",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:48",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:297",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.3543875217437744
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "browser F14 menampilkan hasil tidak diketahui dan meminta pemeriksaan antrean atau riwayat",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:49",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:333",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0008270740509033203
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "browser F14 tidak mengirim ulang permintaan secara otomatis",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:50",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:340",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0012540817260742188
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Rekonsiliasi manual mencatat hasil unknown tanpa mengarang hasil akhir",
+        "tags": [
+          "BDD_F14_08",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:53",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan pekerjaan serta run BPS sintetis berstatus running",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:54",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:350",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.11183476448059082
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin API F14 merekonsiliasi pekerjaan dengan konfirmasi dan alasan valid",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:55",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:358",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.016022443771362305
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "pekerjaan dan run F14 berstatus unknown dengan pemeriksa waktu dan alasan tercatat",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:56",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:367",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.002064228057861328
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "rekonsiliasi F14 tidak mengarang waktu selesai atau hasil sukses maupun gagal",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:57",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:379",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0001690387725830078
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Rekonsiliasi tanpa konfirmasi atau alasan valid ditolak",
+        "tags": [
+          "BDD_F14_09",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:60",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan pekerjaan serta run BPS sintetis berstatus running",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:61",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:350",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.08294534683227539
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "Admin API F14 mengirim rekonsiliasi tanpa konfirmasi atau dengan alasan tidak valid",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:62",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:386",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.004448890686035156
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server F14 menolak rekonsiliasi dan status pekerjaan serta run tidak berubah",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:63",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:396",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0014064311981201172
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Worker lama tidak dapat melanjutkan penulisan setelah rekonsiliasi",
+        "tags": [
+          "BDD_F14_10",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:66",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan pekerjaan BPS sintetis telah direkonsiliasi menjadi unknown",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:67",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:406",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.1078188419342041
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "worker lama F14 mencoba menulis metadata atau kandidat melalui jalur BPS yang dipagari",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:68",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:427",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0061187744140625
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "pagar worker F14 menolak penulisan dan tidak membuat kandidat baru",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:69",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:458",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0009684562683105469
+            }
+          },
+          {
+            "keyword": "And",
+            "step_type": "then",
+            "name": "hasil F14 tidak mengklaim request jaringan yang telah dikirim sudah dibatalkan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:70",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:466",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00014638900756835938
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Hasil akuisisi tidak otomatis menjadi nilai publik",
+        "tags": [
+          "BDD_F14_11",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:73",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "Admin API F14 login dan tersedia nilai publik terakhir yang sudah direview",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:74",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:474",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.11582183837890625
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "sinkronisasi F14 menstage kandidat sintetis baru yang belum direview",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:75",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:497",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.05191516876220703
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "nilai publik terakhir F14 tetap tersedia dan kandidat baru tidak dipublikasikan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:76",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:515",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.01012420654296875
+            }
+          }
+        ],
+        "status": "passed"
+      },
+      {
+        "type": "scenario",
+        "keyword": "Scenario",
+        "name": "Pengunjung anonim tidak dapat meminta sinkronisasi ulang",
+        "tags": [
+          "BDD_F14_12",
+          "api"
+        ],
+        "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:79",
+        "steps": [
+          {
+            "keyword": "Given",
+            "step_type": "given",
+            "name": "client anonim F14 dan sumber BPS sintetis aktif",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:80",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:539",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.009750127792358398
+            }
+          },
+          {
+            "keyword": "When",
+            "step_type": "when",
+            "name": "pengunjung anonim F14 meminta sinkronisasi ulang",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:81",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:545",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.00086212158203125
+            }
+          },
+          {
+            "keyword": "Then",
+            "step_type": "then",
+            "name": "server F14 menolak permintaan tanpa membuat pekerjaan",
+            "location": "qa/features/sprint2/f14_resinkronisasi_bps.feature:82",
+            "match": {
+              "location": "qa/features/steps/sprint2_f14_steps.py:550",
+              "arguments": []
+            },
+            "result": {
+              "status": "passed",
+              "duration": 0.0005238056182861328
+            }
+          }
+        ],
+        "status": "passed"
+      }
+    ]
+  }
+]

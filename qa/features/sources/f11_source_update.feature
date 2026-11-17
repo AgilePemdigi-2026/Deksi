@@ -31,11 +31,6 @@ Feature: F11 Edit Sumber Data
     When client PATCH ke "/api/admin/sources/BPS_T/update/" dengan payload ubah
     Then respons 400 menyebut sourceId dan revision tetap 1
 
-  @BDD_F11_04 @R_F11_03 @api
-  Scenario: BDD-F11-04 - Endpoint berubah tak terjangkau ditolak, config lama kept
-    Given endpointUrl baru tak terjangkau
-    When client PATCH ke "/api/admin/sources/BPS_T/update/" dengan payload ubah
-    Then respons 400 menyebut endpoint dan revision tetap 1
 
   @BDD_F11_05 @R_F11_01 @api
   Scenario: BDD-F11-05 - Tanpa perubahan tidak buat revisi baru

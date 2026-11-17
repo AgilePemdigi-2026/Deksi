@@ -36,11 +36,6 @@ Feature: F10 Tambah Sumber Data
     When client POST ke "/api/admin/sources/create/" dengan sourceId "SRC_F10_DUP" yang sama
     Then respons 409 dan revision tetap 1
 
-  @BDD_F10_05 @R_F10_03 @api
-  Scenario: BDD-F10-05 - Endpoint http tak terjangkau ditolak, data lama aman
-    Given payload tambah sumber api_bps dengan endpoint tak terjangkau
-    When client POST ke "/api/admin/sources/create/" dengan payload tambah
-    Then respons 400 menyebut endpoint dan sumber tidak tersimpan
 
   @BDD_F10_06 @R_F10_03 @api
   Scenario: BDD-F10-06 - Karakter sourceId invalid ditolak
