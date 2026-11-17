@@ -8,7 +8,7 @@ from django.test import Client
 from django.utils import timezone
 
 from indicators.lifecycle import review_candidate, stage_observation
-from indicators.models import Observation, ObservationCandidate, RawFile
+from indicators.models import AnalysisReviewAudit, Observation, ObservationCandidate, RawFile
 from indicators.tests.support import IndicatorCase
 
 
@@ -65,6 +65,52 @@ class CandidateReviewApiTests(IndicatorCase):
         self.assertEqual(response.json()['items'][0]['reviewNotes'], 'Uji penolakan')
         self.assertEqual(self.client.get(analysis_url, {'status': 'invalid'}).status_code, 400)
         self.assertEqual(self.client.get(analysis_url, {'page': 0}).status_code, 400)
+
+    def test_analysis_decisions_publish_revise_or_reject_and_are_audited(self):
+        self.client.force_login(self.reviewer)
+        endpoint = f'/api/admin/analysis-results/{self.candidate.pk}/decision/'
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.reviewer)
+        body = {
+            'decision': 'publish',
+            'fingerprint': self.candidate.fingerprint,
+            'notes': '',
+        }
+        self.assertEqual(csrf_client.post(endpoint, json.dumps(body), content_type='application/json').status_code, 403)
+        self.assertEqual(self.client.post(endpoint, json.dumps({**body, 'decision': 'unknown'}),
+                                          content_type='application/json').status_code, 400)
+
+        revise = stage_observation(indicator_id=self.indicator.pk, source_id=self.source.pk,
+            observation_date=date(2024, 2, 29), period_label='UJI REVISI', frequency='monthly',
+            data_type='yoy', value=Decimal('2.750000'), unit='%')
+        reject = stage_observation(indicator_id=self.indicator.pk, source_id=self.source.pk,
+            observation_date=date(2024, 3, 31), period_label='UJI TOLAK', frequency='monthly',
+            data_type='yoy', value=Decimal('1.750000'), unit='%')
+        assert revise is not None and reject is not None
+        decisions = [
+            (revise, 'needs_revision', 'needs_revision', 'Perlu bukti yang lebih lengkap'),
+            (reject, 'reject', 'rejected', 'Nilai tidak sesuai dokumen resmi'),
+            (self.candidate, 'publish', 'published', ''),
+        ]
+        for candidate, decision, expected_status, notes in decisions:
+            response = self.client.post(f'/api/admin/analysis-results/{candidate.pk}/decision/',
+                json.dumps({'decision': decision, 'fingerprint': candidate.fingerprint, 'notes': notes}),
+                content_type='application/json')
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(response.json()['status'], expected_status)
+            self.assertEqual(self.client.post(f'/api/admin/analysis-results/{candidate.pk}/decision/',
+                json.dumps({'decision': decision, 'fingerprint': candidate.fingerprint, 'notes': notes}),
+                content_type='application/json').status_code, 409)
+
+        self.assertEqual(Observation.objects.count(), 1)
+        revise_audit = AnalysisReviewAudit.objects.get(candidate=revise)
+        self.assertEqual(revise_audit.decision, 'needs_revision')
+        self.assertEqual(revise_audit.notes, 'Perlu bukti yang lebih lengkap')
+        self.assertEqual(revise_audit.reviewed_by_id, self.reviewer.pk)
+        self.assertEqual(revise_audit.version_snapshot['payload']['value'], '2.750000')
+        listed = self.client.get('/api/admin/analysis-results/', {'status': 'needs_revision'}).json()
+        self.assertEqual(listed['total'], 1)
+        self.assertEqual(listed['items'][0]['reviewHistory'][0]['decision'], 'needs_revision')
 
     def test_evidence_uses_candidate_snapshot_and_does_not_expose_source_url(self):
         raw = RawFile.objects.create(source=self.source, document_name='Bukti sintetis',

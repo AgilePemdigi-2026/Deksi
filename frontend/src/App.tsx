@@ -13,6 +13,7 @@ import './features/indicators/features.css'
 import { SourceDataPage, type SourcePageSelection } from './components/SourceDataPage'
 import { AdminSourcesPage } from './components/AdminSourcesPage'
 import { AdminFeedbackPage } from './components/AdminFeedbackPage'
+import { AdminMonitoringPage } from './components/AdminMonitoringPage'
 import { AdminAnalysisPage } from './components/AdminAnalysisPage'
 import { AdminNotificationPage } from './components/AdminNotificationPage'
 import SyncHistoryPage from './features/sync-history/SyncHistoryPage'
@@ -60,6 +61,7 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
   }
   if (path === '/admin/sumber' || path === '/admin/sumber-data') return <AdminSourcesPage />
   if (path === '/admin/feedback' || path === '/admin/umpan-balik') return <AdminFeedbackPage />
+  if (path === '/admin/monitoring') return <AdminMonitoringPage />
   if (path === '/admin/analisis') return <AdminAnalysisPage />
   if (path === '/admin/notifikasi') return <AdminNotificationPage />
   if (path === '/admin/riwayat-sinkronisasi') return <SyncHistoryPage loadHistory={loadAdminSyncHistory} />

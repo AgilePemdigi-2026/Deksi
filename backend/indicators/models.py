@@ -184,6 +184,7 @@ class ObservationCandidate(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending"
         PUBLISHED = "published"
+        NEEDS_REVISION = "needs_revision"
         REJECTED = "rejected"
 
     indicator = models.ForeignKey(Indicator, on_delete=models.PROTECT)
@@ -191,7 +192,7 @@ class ObservationCandidate(models.Model):
     payload = models.JSONField()
     base_snapshot = models.JSONField()
     fingerprint = models.CharField(max_length=64, unique=True)
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
     review_notes = models.TextField(blank=True, default="")
@@ -202,6 +203,35 @@ class ObservationCandidate(models.Model):
 
     def __str__(self):
         return f"Kandidat {self.pk}: {self.indicator.code} ({self.status})"
+
+
+class AnalysisReviewAudit(models.Model):
+    class Decision(models.TextChoices):
+        PUBLISH = "publish", "Layak publikasi"
+        NEEDS_REVISION = "needs_revision", "Perlu revisi"
+        REJECT = "reject", "Ditolak"
+
+    candidate = models.ForeignKey(
+        ObservationCandidate, on_delete=models.PROTECT, related_name="review_audits"
+    )
+    fingerprint = models.CharField(max_length=64)
+    version_snapshot = models.JSONField()
+    decision = models.CharField(max_length=16, choices=Decision.choices)
+    notes = models.CharField(max_length=500, blank=True, default="")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deksi_analysis_reviews",
+    )
+    reviewed_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ["-reviewed_at", "-id"]
+
+    def __str__(self):
+        return f"Review {self.candidate_id}: {self.get_decision_display()}"
 
 
 class BulkCandidateReview(models.Model):
