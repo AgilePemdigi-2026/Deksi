@@ -6,6 +6,7 @@ from indicators import (
     dashboard_views,
     feedback_views,
     resync_views,
+    schedule_views,
     source_admin_views,
     sync_history_views,
     views,
@@ -91,6 +92,11 @@ urlpatterns = [
         source_admin_views.admin_source_update,
         name="admin-source-update",
     ),
+
+    # ── Feature 23: Konfigurasi Jadwal Pembaruan ──────────────────────────
+    path("admin/schedules/", schedule_views.schedule_list, name="admin-schedule-list"),
+    path("admin/schedules/next/", schedule_views.schedule_next, name="admin-schedule-next"),
+    path("admin/schedules/<str:source_id>/", schedule_views.schedule_update, name="admin-schedule-update"),
 
     # ── Fitur 15-18: Daftar, Detail, Pencarian, dan Status Umpan Balik ──────
     path("admin/feedback/", feedback_views.admin_feedback_list, name="admin-feedback-list"),

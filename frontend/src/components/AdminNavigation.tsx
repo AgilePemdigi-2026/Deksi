@@ -1,6 +1,6 @@
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules';
 
 export function AdminNavigation({ active, busy = false }: { active: AdminPage; busy?: boolean }) {
   const links = [
@@ -8,6 +8,7 @@ export function AdminNavigation({ active, busy = false }: { active: AdminPage; b
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },
+    { href: '/admin/jadwal', label: 'Jadwal Pembaruan', page: 'schedules' },
   ];
   return <>
     <nav className="admin-navigation" aria-label="Navigasi admin" aria-describedby={busy ? 'admin-navigation-busy' : undefined}>
