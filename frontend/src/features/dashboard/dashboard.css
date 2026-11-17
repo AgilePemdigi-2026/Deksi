@@ -20,8 +20,8 @@
 .p2-dashboard .section-nav--sticky a[aria-current=location]{background:#111;color:#fff;font-weight:600}
 .p2-dashboard .section-nav--sticky a:focus-visible{outline:2px solid #111;outline-offset:2px}
 @media(max-width:760px){.p2-dashboard .section-nav--sticky{gap:2px;flex-wrap:wrap;overflow-x:visible;padding:6px 8px}.p2-dashboard .section-nav--sticky .section-nav-brand{font-size:17px;gap:6px;margin-right:6px}.p2-dashboard .section-nav--sticky .section-nav-logo{width:24px;height:20px}.p2-dashboard .section-nav--sticky a{min-height:44px;padding:0 10px;font-size:14px}}
-.p2-dashboard #hero,.p2-dashboard #economic-indicators,.p2-dashboard #economic-trend,.p2-dashboard #feedback-section,.p2-dashboard #about-deksi{scroll-margin-top:80px}
-@media(max-width:760px){.p2-dashboard #hero,.p2-dashboard #economic-indicators,.p2-dashboard #economic-trend,.p2-dashboard #feedback-section,.p2-dashboard #about-deksi{scroll-margin-top:120px}}
+.p2-dashboard #hero,.p2-dashboard #economic-overview,.p2-dashboard #economic-indicators,.p2-dashboard #economic-trend,.p2-dashboard #feedback-section,.p2-dashboard #about-deksi{scroll-margin-top:calc(var(--section-nav-height,0px) + 16px)}
+
 @media(max-width:760px){.p2-dashboard .hero{padding-top:155px}.p2-dashboard .hero .segmented-nav{top:20px;left:16px;width:calc(100% - 88px);max-width:none;flex-wrap:wrap;border-radius:16px}.p2-dashboard .hero .segmented-nav a,.p2-dashboard .hero .segmented-nav button{padding:0 8px;font-size:12px}.p2-dashboard .hero .contact{top:20px;right:16px;width:44px;height:44px}.p2-dashboard .hero .hero-date{top:120px;left:16px;font-size:12px}}
 .p2-dashboard .statement-body{display:grid;place-items:center;min-height:clamp(320px,42vw,650px);padding:48px 24px;text-align:center}
 .p2-dashboard .statement-body .manifesto{width:min(100%,calc(830 * var(--u)))}

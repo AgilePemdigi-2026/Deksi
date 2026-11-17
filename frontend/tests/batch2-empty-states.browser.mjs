@@ -45,8 +45,12 @@ try {
       if (url.endsWith('/acquisition-methods/')) return Promise.resolve(json({methods:[],frequencies:[]}));
       if (url.includes('/feedback/categories/')) return Promise.resolve(json({categories:[],csrfToken:'synthetic'}));
       if (url.includes('/indicators/categories/')) return Promise.resolve(json({categories:[]}));
-      if (url.includes('/indicators/dashboard/')) return Promise.resolve(apiMode==='dashboarderror'?json({error:'synthetic server error'},500):json({indicators:apiMode==='layout'?['pdb','inflasi','fiskal','investasi','birate','tpt'].map(id=>({id,name:id,available:false,value:null,unit:'',period:null,category:id,note:'Data belum tersedia'})):[]}));
+      if (url.includes('/indicators/dashboard/')) {
+        if(apiMode==='loading') return new Promise(()=>{});
+        return Promise.resolve(apiMode==='dashboarderror'?json({error:'synthetic server error'},500):json({indicators:apiMode==='layout'?['pdb','inflasi','fiskal','investasi','birate','tpt'].map(id=>({id,name:id,available:false,value:null,unit:'',period:null,category:id,note:'Data belum tersedia'})):[]}));
+      }
       if (url.includes('/trend/')) {
+        if(apiMode==='annualrange') return Promise.resolve(json({id:'pdb',available:true,granularities:['Tahunan'],points:[2020,2021,2022,2023,2024,2025].map(year=>({label:String(year),year,value:year,exactValue:String(year),unit:'%',sourceId:'A',frequency:'annual',dataType:'level'}))}));
         if(apiMode==='servererror') return Promise.resolve(json({error:'synthetic failure'},500));
         if(apiMode==='route404') return Promise.resolve(new Response('not found',{status:404,headers:{'Content-Type':'text/html'}}));
         if(apiMode==='other404') return Promise.resolve(json({error:"Indikator 'inflasi' tidak ditemukan"},404));
@@ -91,13 +95,69 @@ try {
       await wait('!document.querySelector(".p2-info").open && document.activeElement === document.querySelector(".dash-summary-grid button")')
       console.log(`PASS navigation ${width}: data link and dialog focus restoration`)
     }
+    const anchors = ['hero','economic-indicators','economic-trend','feedback-section','about-deksi']
+    for (const width of [312,320,390,1365]) {
+      await send('Emulation.setDeviceMetricsOverride', { width, height: 800, deviceScaleFactor: 1, mobile: false })
+      await go('/?fixture=layout')
+      for (const id of anchors) {
+        await evaluate(`document.querySelector('.section-nav a[href="#${id}"]').focus()`)
+        await send('Input.dispatchKeyEvent', { type:'keyDown', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, text:'\\r', unmodifiedText:'\\r' })
+        await send('Input.dispatchKeyEvent', { type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13 })
+        await wait(`location.hash === "#${id}"`)
+        const alignment = await evaluate(`(()=>{const n=document.querySelector('.section-nav-bar').getBoundingClientRect().height;const r=document.getElementById('${id}').getBoundingClientRect();return {top:r.top,nav:n,focus:document.activeElement.id}})()`)
+        assert(alignment.top >= alignment.nav - 2, `${id} anchor must clear the responsive sticky navigation at ${width}: ${JSON.stringify(alignment)}`)
+        assert.equal(alignment.focus, id, `${id} anchor must receive keyboard focus at ${width}`)
+      }
+    }
+    await evaluate('document.documentElement.style.scrollBehavior="auto";window.scrollTo(0,0)')
+    for (const section of ['statement','economic-overview']) {
+      await evaluate(`window.scrollTo(0,document.getElementById('${section}').getBoundingClientRect().top+window.scrollY-document.querySelector('.section-nav-bar').getBoundingClientRect().height+24)`)
+      await wait(`document.getElementById('${section}').getBoundingClientRect().top < document.querySelector('.section-nav-bar').getBoundingClientRect().height`)
+      await delay(200)
+      await wait(`document.querySelector('.section-nav a[href="#hero"]').getAttribute('aria-current') === "location"`)
+      assert.equal(await evaluate('document.querySelectorAll(".section-nav a[aria-current=location]").length'),1, `${section} has one active navigation item`)
+    }
+    for (const id of ['hero','economic-indicators','economic-trend','feedback-section','about-deksi']) {
+      await evaluate(`window.scrollTo(0,document.getElementById('${id}').getBoundingClientRect().top+window.scrollY-document.querySelector('.section-nav-bar').getBoundingClientRect().height-8)`)
+      await wait(`document.querySelector('.section-nav a[href="#${id}"]').getAttribute('aria-current') === "location"`)
+      assert.equal(await evaluate(`document.querySelector('.section-nav a[href="#${id}"]').getAttribute('aria-current')`), 'location', `${id} active link`)
+    }
+    await send('Emulation.setDeviceMetricsOverride', { width:390,height:800,deviceScaleFactor:1.25,mobile:false })
+    await evaluate('window.dispatchEvent(new Event("resize"))')
+    await evaluate('document.querySelector(".section-nav a[href=\\"#economic-indicators\\"]").click()')
+    await wait('location.hash === "#economic-indicators"')
+    const zoomAlignment = await evaluate('({top:document.getElementById("economic-indicators").getBoundingClientRect().top,nav:document.querySelector(".section-nav-bar").getBoundingClientRect().height})')
+    assert(zoomAlignment.top >= zoomAlignment.nav - 2, `zoom anchor alignment: ${JSON.stringify(zoomAlignment)}`)
+    await evaluate('document.querySelector(".skip").focus()')
+    await send('Input.dispatchKeyEvent', { type:'keyDown', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, text:'\\r', unmodifiedText:'\\r' })
+    await send('Input.dispatchKeyEvent', { type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13 })
+    await wait('location.hash === "#economic-overview"')
+    assert.equal(await evaluate('document.activeElement.id'), 'economic-overview', 'skip link target must receive keyboard focus')
+    await wait('document.getElementById("economic-overview").getBoundingClientRect().top >= document.querySelector(".section-nav-bar").getBoundingClientRect().height - 2')
+    console.log('PASS sticky navigation: physical keyboard anchors, focus, active areas, responsive/zoom offsets')
   }
   if (mode === 'counts' || mode === 'all') {
     await go('/?fixture=dashboarderror')
     await wait('!!document.querySelector(".dash-empty[role=alert]")')
     assert.notEqual(await evaluate('document.querySelector(".inventory-card .mini-value").textContent'), '0', 'API failure must not claim zero indicators')
     assert.notEqual(await evaluate('document.querySelector(".awards-card .trust-value").textContent'), '0', 'API failure must not claim zero indicators in trust section')
-    console.log('PASS layout error does not invent zero available indicators')
+    assert.doesNotMatch(await evaluate('document.querySelector(".dash-catalogue-caption").textContent'), /0 indikator/, 'API failure must not caption unavailable data as an empty result')
+    await go('/?fixture=loading')
+    await wait('document.querySelector(".dash-catalogue-caption")?.textContent.includes("Memuat indikator")')
+    assert.doesNotMatch(await evaluate('document.querySelector(".dash-catalogue-caption").textContent'), /0 indikator/, 'loading must not caption unresolved data as an empty result')
+    await go('/?fixture=empty')
+    await wait('document.querySelector(".dash-catalogue-caption")?.textContent.includes("0 indikator pada pilihan ini")')
+    assert.match(await evaluate('document.querySelector(".dash-catalogue-caption").textContent'), /0 indikator pada pilihan ini/, 'successful empty response must retain a zero count')
+    console.log('PASS indicator caption distinguishes error/loading from successful empty')
+  }
+  if (mode === 'range' || mode === 'all') {
+    await go('/?fixture=annualrange')
+    await wait('Array.from(document.querySelectorAll(".dash-control-group button")).some(b=>b.textContent==="3 tahun")')
+    await evaluate('Array.from(document.querySelectorAll(".dash-control-group button")).find(b=>b.textContent==="3 tahun").click()')
+    await wait('document.querySelector(".dash-history summary")?.textContent.includes("3 observasi")')
+    const labels=await evaluate('Array.from(document.querySelectorAll(".dash-history tbody th button"),b=>b.textContent)')
+    assert.deepEqual(labels,['2023','2024','2025'])
+    console.log('PASS annual year-only 3-year selection keeps last three calendar years')
   }
   if (mode === 'admin' || mode === 'all') {
     await go('/admin/sumber-data?fixture=empty')

@@ -50,7 +50,7 @@ export async function requestJson(path: string, options: RequestInit = {}, signa
       const response=await fetcher(path,{...options,credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal})
       if (!response.ok) {
         const match=path.match(/^\/api\/indicators\/([a-z][a-z0-9_-]{0,31})\/trend\/(?:\?.*)?$/)
-        if(response.status===404 && match && response.headers.get('content-type')?.includes('application/json')) {
+        if(response.status===404 && match && response.headers.get('content-type')?.split(';',1)[0].trim().toLowerCase()==='application/json') {
           const body=await response.clone().json().catch(()=>null)
           if(body && body.error===`Indikator '${match[1]}' tidak ditemukan`) throw new MissingHistoryIndicatorError('Indikator belum tersedia.')
         }

@@ -114,13 +114,35 @@ export function chartGeometry(history: HistoryPoint[], unit: string) {
     y: max === min ? 110 : 28 + (max - v) / span * 164,
     period: history[i].period, value: history[i].value!,
   })
-  // Garis menghubungkan observasi berurutan apa adanya; jeda kalender
-  // (bulan hilang) tidak memutus garis. Jarak horizontal antar titik
-  // tetap merata mengikuti urutan, bukan proporsional terhadap waktu.
+  const cadenceMonths: Record<string, number> = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 }
   const segments: string[] = []; let current: string[] = []
-  for (const point of points) {
-    if (!point && current.length) { segments.push(current.join(' ')); current = [] }
-    if (point) current.push(`${point.x},${point.y}`)
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i]
+    if (!point) { if (current.length) segments.push(current.join(' ')); current = []; continue }
+    if (current.length && i > 0) {
+      const frequency = history[i].frequency
+      const cadence = cadenceMonths[frequency ?? '']
+      const previousDate = history[i - 1].observationDate
+      const currentDate = history[i].observationDate
+      if (cadence && frequency === history[i - 1].frequency && previousDate && currentDate && validDate(previousDate) && validDate(currentDate)) {
+        const delta = (Number(currentDate.slice(0, 4)) - Number(previousDate.slice(0, 4))) * 12 + Number(currentDate.slice(5, 7)) - Number(previousDate.slice(5, 7))
+        if (delta > cadence) { segments.push(current.join(' ')); current = [] }
+      } else if (frequency === 'monthly' && history[i - 1].frequency === 'monthly') {
+        const aggregateMonth = (row: HistoryPoint) => {
+          if (row.observationDate) return null
+          const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(row.period)
+          if (!match || Number(match[1]) < 1 || row.year !== Number(match[1])) return null
+          return Number(match[1]) * 12 + Number(match[2])
+        }
+        const previousMonth = aggregateMonth(history[i - 1]), currentMonth = aggregateMonth(history[i])
+        if (previousMonth !== null && currentMonth !== null && currentMonth - previousMonth > 1) { segments.push(current.join(' ')); current = [] }
+      } else if (frequency === 'annual' && history[i - 1].frequency === 'annual') {
+        const yearOf=(row:HistoryPoint)=>row.observationDate&&validDate(row.observationDate)?Number(row.observationDate.slice(0,4)):row.year
+        const previousYear=yearOf(history[i-1]), currentYear=yearOf(history[i])
+        if(typeof previousYear==='number'&&typeof currentYear==='number'&&currentYear-previousYear>1){segments.push(current.join(' '));current=[]}
+      }
+    }
+    current.push(`${point.x},${point.y}`)
   }
   if (current.length) segments.push(current.join(' '))
   return { segments, points: points.filter(p => p !== null), ticks }
