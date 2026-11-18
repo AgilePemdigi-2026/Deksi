@@ -7,6 +7,7 @@ from indicators import (
     feedback_views,
     monitoring_views,
     resync_views,
+    schedule_views,
     source_admin_views,
     sync_history_views,
     threshold_views,
@@ -116,6 +117,10 @@ urlpatterns = [
         threshold_views.threshold_update,
         name="admin-threshold-update",
     ),
+    # ── Feature 23: Konfigurasi Jadwal Pembaruan ──────────────────────────
+    path("admin/schedules/", schedule_views.schedule_list, name="admin-schedule-list"),
+    path("admin/schedules/next/", schedule_views.schedule_next, name="admin-schedule-next"),
+    path("admin/schedules/<str:source_id>/", schedule_views.schedule_update, name="admin-schedule-update"),
     # ── Feature 19: Dashboard Monitoring Admin ──────────────────────────
     path("admin/monitoring/summary/", monitoring_views.admin_monitoring_summary, name="admin-monitoring-summary"),
     path("admin/monitoring/sources/", monitoring_views.admin_monitoring_sources, name="admin-monitoring-sources"),

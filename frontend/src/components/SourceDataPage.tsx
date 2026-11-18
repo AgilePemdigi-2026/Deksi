@@ -6,6 +6,7 @@ import {
   type SourceDetail,
   type SourceEntry,
 } from "../api";
+import { FeatureShell } from "../features/indicators/DetailPage";
 import { SourceTracePanel } from "./SourceTracePanel";
 
 export interface SourcePageSelection {
@@ -197,8 +198,13 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
   }, [totalPages, safePage]);
 
   return (
-    <section className="sources-page catalog" id="sumber-data-page" aria-labelledby="sources-title">
-      <p className="catalog-crumb">Dashboard &gt; Sumber Data</p>
+    <FeatureShell>
+      <main className="sources-page catalog" id="sumber-data-page" aria-labelledby="sources-title" tabIndex={-1}>
+      <nav className="fd-breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Dashboard</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Sumber Data</span>
+      </nav>
       <div className="catalog-hero">
         <div>
           <p className="catalog-kicker">KATALOG SUMBER RESMI</p>
@@ -368,6 +374,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
       {activeIndicator && detail && detail.sourceId === activeSource && (
         <SourceTracePanel key={`${activeSource}:${activeIndicator}`} code={activeIndicator} period={activePeriod} />
       )}
-    </section>
+      </main>
+    </FeatureShell>
   );
 }
