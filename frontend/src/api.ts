@@ -1037,6 +1037,42 @@ export async function restoreDefaults(domains?: string[]): Promise<{ results: Re
 }
 
 // ---------------------------------------------------------------------------
+// Feature 23 – Jadwal Pembaruan
+// ---------------------------------------------------------------------------
+
+export interface ScheduleEntry {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  intervalDays: number;
+  runTime: string | null;
+  enabled: boolean;
+  nextRun: string | null;
+  version: number;
+  configured: boolean;
+  currentScheduleText: string;
+  updatedAt: string | null;
+}
+
+export async function fetchSchedules(): Promise<ScheduleEntry[]> {
+  const res = await adminFetch("/admin/schedules/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.schedules ?? []) as ScheduleEntry[];
+}
+
+export async function updateSchedule(sourceId: string, payload: { intervalDays: number; runTime: string | null; enabled: boolean }): Promise<ScheduleEntry> {
+  const res = await adminFetch(`/admin/schedules/${encodeURIComponent(sourceId)}/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return (body as { schedule: ScheduleEntry }).schedule;
+}
+
+// ---------------------------------------------------------------------------
 // Feature 19 – Dashboard Monitoring Admin
 // ---------------------------------------------------------------------------
 
