@@ -1,6 +1,6 @@
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback' | 'monitoring' | 'analysis';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'monitoring' | 'analysis' | 'thresholds';
 
 export function AdminNavigation({ active, busy = false }: { active: AdminPage; busy?: boolean }) {
   const links = [
@@ -9,6 +9,7 @@ export function AdminNavigation({ active, busy = false }: { active: AdminPage; b
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
     { href: '/admin/analisis', label: 'Peninjauan Analisis', page: 'analysis' },
+    { href: '/admin/konfigurasi', label: 'Konfigurasi', page: 'thresholds' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },
   ];
   return <>
