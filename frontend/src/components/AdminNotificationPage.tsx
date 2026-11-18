@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { AdminNavigation } from "./AdminNavigation";
 import { fetchNotifications, restoreDefaults, updateNotification, type NotificationEntry } from "../api";
+import "./admin-source-card.css";
 
 export function AdminNotificationPage() {
   const [items, setItems] = useState<NotificationEntry[]>([]);
   const [events, setEvents] = useState<{ kind: string; sourceId: string | null; notified: boolean; message: string; createdAt: string | null }[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
@@ -12,12 +14,16 @@ export function AdminNotificationPage() {
   const [restoring, setRestoring] = useState(false);
 
   async function load() {
+    setLoading(true);
     try {
       const data = await fetchNotifications();
       setItems(data.notifications);
+      setEvents(data.events ?? []);
       setError(null);
     } catch {
       setError("Tidak dapat memuat preferensi. Pastikan login Admin.");
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => { void load(); }, []);
@@ -55,63 +61,127 @@ export function AdminNotificationPage() {
     }
   }
 
-  if (error) return <><AdminNavigation active="notifications" /><p className="summary-error">{error}</p></>;
-
   return (
-    <>
+    <section className="sources-page" aria-labelledby="notif-title">
+      <div className="section-head">
+        <div>
+          <h2 className="section-title" id="notif-title">Konfigurasi Notifikasi</h2>
+          <p className="section-sub">
+            Area Admin. Mekanisme didukung: pencatatan event. Kanal email/Telegram belum tersedia di backend.
+          </p>
+        </div>
+        <span className="section-badge">Admin DEKSI</span>
+      </div>
+
       <AdminNavigation active="notifications" />
-      <section aria-labelledby="notif-title">
-        <p className="catalog-crumb">Admin &gt; Notifikasi</p>
-        <h2 id="notif-title">Konfigurasi Notifikasi</h2>
-        <p className="catalog-note">Mekanisme didukung: pencatatan event. Kanal email/Telegram belum tersedia di backend.</p>
-        {msg && <p role="status">{msg}</p>}
-        {Object.keys(dirty).length > 0 && <p role="status">Ada perubahan belum disimpan.</p>}
-        <div className="catalog-table-wrap" role="region" aria-label="Preferensi notifikasi" tabIndex={0}>
-          <table className="catalog-table">
-            <thead><tr><th>NOTIFIKASI</th><th>PEMICU</th><th>STATUS</th><th>AKSI</th></tr></thead>
-            <tbody>
+
+      {loading && <p className="summary-loading">Memuat preferensi notifikasi…</p>}
+      {!loading && error && <p className="summary-error">{error}</p>}
+
+      {!loading && !error && (
+        <>
+          {msg && <p className="summary-loading" role="status">{msg}</p>}
+          {Object.keys(dirty).length > 0 && <p className="summary-loading" role="status">Ada perubahan belum disimpan.</p>}
+          {items.length === 0 ? (
+            <p className="summary-empty">Belum ada preferensi notifikasi.</p>
+          ) : (
+            <div className="sources-grid admin-sources-grid">
               {items.map((n) => (
-                <tr key={n.kind}>
-                  <td><strong>{n.label}</strong><span className="catalog-sub">v{n.version}{n.updatedAt ? ` · ${n.updatedAt}` : ""}</span></td>
-                  <td><span className="catalog-sub">{n.description}</span></td>
-                  <td>{n.enabled ? "Aktif" : "Nonaktif"}</td>
-                  <td><button type="button" onClick={() => void toggle(n)} aria-pressed={n.enabled}>{n.enabled ? "Nonaktifkan" : "Aktifkan"}</button></td>
-                </tr>
+                <article key={n.kind} className="source-card admin-source-card">
+                  <div className="admin-source-card__heading">
+                    <p className="source-institution">NOTIFIKASI · {n.configured ? "TERKONFIGURASI" : "BAWAAN"}</p>
+                    <p className="source-name">{n.label}</p>
+                    <p className="source-desc">{n.description}</p>
+                  </div>
+                  <div className="admin-source-card__meta">
+                    <p className="source-meta">Status: {n.enabled ? "Aktif" : "Nonaktif"}</p>
+                    <p className="source-meta">Versi: v{n.version}{n.updatedAt ? ` · ${n.updatedAt}` : ""}</p>
+                    {n.updatedBy && <p className="source-meta">Diubah oleh: {n.updatedBy}</p>}
+                  </div>
+                  <div className="admin-source-card__actions">
+                    <button
+                      type="button"
+                      className="source-trace-link admin-source-card__review"
+                      onClick={() => void toggle(n)}
+                      aria-pressed={n.enabled}
+                    >
+                      {n.enabled ? "Nonaktifkan" : "Aktifkan"}
+                    </button>
+                  </div>
+                </article>
               ))}
-              {items.length === 0 && <tr><td colSpan={4}>Memuat…</td></tr>}
-            </tbody>
-          </table>
-        </div>
-        <h3>Event terakhir</h3>
-        <div className="catalog-table-wrap" role="region" aria-label="Event notifikasi" tabIndex={0}>
-          <table className="catalog-table">
-            <thead><tr><th>WAKTU</th><th>JENIS</th><th>SUMBER</th><th>NOTIFIKASI</th><th>PESAN</th></tr></thead>
-            <tbody>
-              {events.map((e, i) => (
-                <tr key={i}>
-                  <td>{e.createdAt ?? "—"}</td>
-                  <td>{e.kind}</td>
-                  <td>{e.sourceId ?? "—"}</td>
-                  <td>{e.notified ? "Aktif" : "Tercatat saja"}</td>
-                  <td><span className="catalog-sub">{e.message}</span></td>
-                </tr>
-              ))}
-              {events.length === 0 && <tr><td colSpan={5}>Belum ada event.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-        <h3>Pemulihan konfigurasi</h3>
-        <p className="catalog-note">Mengembalikan preferensi notifikasi (dan domain terjadwal bila tersedia) ke nilai bawaan. Formula inti, data, dan riwayat tidak diubah.</p>
-        {!confirming && <button type="button" onClick={() => setConfirming(true)}>Kembalikan ke Default</button>}
-        {confirming && (
-          <div role="dialog" aria-modal="true" aria-labelledby="restore-title">
-            <h4 id="restore-title">Kembalikan ke Default?</h4>
-            <p>Konfigurasi saat ini digantikan nilai bawaan: notifikasi, jadwal, threshold (bila tersedia). Tindakan tercatat di audit log. Batal tidak mengubah apa pun.</p>
-            <button type="button" onClick={() => setConfirming(false)} disabled={restoring}>Batal</button>
-            <button type="button" onClick={() => void confirmRestore()} disabled={restoring}>{restoring ? "Memulihkan…" : "Konfirmasi pemulihan"}</button>
-          </div>
-        )}
-      </section>
-    </>
+            </div>
+          )}
+
+          <article className="trace-panel" aria-label="Event notifikasi terakhir">
+            <div className="trace-head">
+              <div>
+                <p className="trace-kicker">RIWAYAT EVENT</p>
+                <h3 className="trace-title">Event terakhir</h3>
+              </div>
+            </div>
+            {events.length === 0 ? (
+              <p className="trace-note">Belum ada event.</p>
+            ) : (
+              <ul className="trace-history">
+                {events.map((e, i) => (
+                  <li key={i}>
+                    <span>{e.createdAt ?? "—"}</span>
+                    <span className="trace-history-type">{e.kind} · {e.sourceId ?? "—"}</span>
+                    <span>{e.notified ? "Aktif" : "Tercatat saja"}</span>
+                    <span>{e.message}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </article>
+
+          <article className="trace-panel" aria-label="Pemulihan konfigurasi">
+            <div className="trace-head">
+              <div>
+                <p className="trace-kicker">PEMULIHAN</p>
+                <h3 className="trace-title">Kembalikan ke Default</h3>
+              </div>
+            </div>
+            <p className="trace-note">
+              Mengembalikan preferensi notifikasi (dan domain terjadwal bila tersedia) ke nilai bawaan.
+              Formula inti, data, dan riwayat tidak diubah.
+            </p>
+            {!confirming && (
+              <button type="button" className="source-trace-link" onClick={() => setConfirming(true)}>
+                Kembalikan ke Default
+              </button>
+            )}
+            {confirming && (
+              <div role="dialog" aria-modal="true" aria-labelledby="restore-title">
+                <h4 className="trace-title" id="restore-title">Kembalikan ke Default?</h4>
+                <p className="trace-note">
+                  Konfigurasi saat ini digantikan nilai bawaan: notifikasi, jadwal, threshold (bila tersedia).
+                  Tindakan tercatat di audit log. Batal tidak mengubah apa pun.
+                </p>
+                <div className="admin-source-card__actions">
+                  <button
+                    type="button"
+                    className="source-trace-link admin-source-card__review"
+                    onClick={() => setConfirming(false)}
+                    disabled={restoring}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    className="source-trace-link admin-source-card__review"
+                    onClick={() => void confirmRestore()}
+                    disabled={restoring}
+                  >
+                    {restoring ? "Memulihkan…" : "Konfirmasi pemulihan"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </article>
+        </>
+      )}
+    </section>
   );
 }
