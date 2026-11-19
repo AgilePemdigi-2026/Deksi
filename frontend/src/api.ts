@@ -823,6 +823,19 @@ export async function updateAdminSource(
   throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
 }
 
+export async function changeAdminSourceLifecycle(sourceId: string, action: "archive" | "restore" | "delete", expectedRevision: number): Promise<void> {
+  let res: Response;
+  try {
+    res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/${action}/`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision }),
+    });
+  } catch {
+    throw new Error("Hasil tindakan belum dapat dipastikan. Muat ulang daftar sebelum mencoba lagi.");
+  }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+}
+
 // ---------------------------------------------------------------------------
 // Fitur 8 – Umpan Balik
 // ---------------------------------------------------------------------------

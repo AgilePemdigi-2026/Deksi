@@ -76,6 +76,9 @@ urlpatterns = [
         name="admin-acquisition-methods",
     ),
     path("admin/sources/", source_admin_views.admin_source_list, name="admin-source-list"),
+    path("admin/sources/<str:source_id>/archive/", source_admin_views.admin_source_archive, name="admin-source-archive"),
+    path("admin/sources/<str:source_id>/restore/", source_admin_views.admin_source_restore, name="admin-source-restore"),
+    path("admin/sources/<str:source_id>/delete/", source_admin_views.admin_source_delete, name="admin-source-delete"),
     path(
         "admin/sources/create/",
         source_admin_views.admin_source_create,
