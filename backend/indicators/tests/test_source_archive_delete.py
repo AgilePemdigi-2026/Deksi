@@ -106,6 +106,17 @@ class SourceArchiveDeleteTests(TestCase):
         self.assertEqual(self.source.status, "inactive")
         self.assertEqual(self.source.revisions.count(), 3)
 
+    def test_schedule_update_still_saves_for_active_source(self):
+        response = self.client.put(
+            f"/api/admin/schedules/{self.source.source_id}/",
+            json.dumps({"intervalDays": 7, "enabled": True}),
+            content_type="application/json", HTTP_X_CSRFTOKEN=self.csrf,
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        config = ScheduleConfig.objects.get(source=self.source)
+        self.assertEqual(config.interval_days, 7)
+        self.assertTrue(ScheduleAudit.objects.filter(source_id_snapshot=self.source.source_id).exists())
+
     def test_archive_hides_catalogue_but_preserves_public_history(self):
         indicator = Indicator.objects.create(code="SYN_TEST", name="SYN", category="TEST", unit="%")
         observation = Observation.objects.create(

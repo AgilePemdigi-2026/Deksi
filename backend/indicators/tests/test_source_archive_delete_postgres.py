@@ -10,6 +10,8 @@ from django.test import RequestFactory, TransactionTestCase, skipUnlessDBFeature
 from django.utils import timezone
 
 from indicators.models import RawFile, Source
+from indicators.schedule_model import ScheduleAudit, ScheduleConfig
+from indicators.schedule_views import schedule_update
 from indicators.source_admin_views import admin_source_archive, admin_source_delete
 from indicators.source_status import InactiveSourceError
 from indicators.sync_history_model import SyncRun
@@ -102,6 +104,31 @@ class SourceLifecyclePostgresTests(TransactionTestCase):
                 self.assertEqual(self._request(admin_source_archive), 200)
             self.assertEqual(future.result(timeout=10), "blocked")
         self.assertFalse(SyncRun.objects.filter(source=self.source).exists())
+
+    def test_schedule_update_waiting_for_archive_does_not_change_schedule(self):
+        config = ScheduleConfig.objects.create(source=self.source, interval_days=30, enabled=True)
+
+        def update_schedule():
+            request = RequestFactory().put(
+                "/", json.dumps({"intervalDays": 7, "enabled": True}), content_type="application/json"
+            )
+            request.user = self.user
+            return schedule_update(request, self.source.source_id).status_code
+
+        started, pid, worker = self._blocked_worker(update_schedule)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            with transaction.atomic():
+                Source.objects.select_for_update().get(pk=self.source.pk)
+                future = pool.submit(worker)
+                self._assert_blocked(started, pid)
+                self.assertEqual(self._request(admin_source_archive), 200)
+            self.assertEqual(future.result(timeout=10), 400)
+        config.refresh_from_db()
+        self.source.refresh_from_db()
+        self.assertEqual(self.source.status, "archived")
+        self.assertEqual(config.interval_days, 30)
+        self.assertEqual(self.source.update_schedule, "")
+        self.assertFalse(ScheduleAudit.objects.filter(source_id_snapshot=self.source.source_id).exists())
 
 
 @skipUnlessDBFeature("has_select_for_update")
