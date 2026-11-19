@@ -68,4 +68,12 @@ def finalize_sync_run(run_or_id, *, success: bool, item_count=None, finished_at=
         if not success and failure_stage in _SAFE_FAILURE_STAGES:
             run.safe_message = _SAFE_FAILURE_STAGES[failure_stage]
         run.save(update_fields=["status", "finished_at", "item_count", "safe_message"])
+    if not success:
+        from indicators.notification_model import NotificationPreference
+        from indicators.notification_service import record_event
+        record_event(
+            kind=NotificationPreference.Kind.SYNC_FAILED,
+            source_id=run.source_id_snapshot or "",
+            message=run.safe_message or "",
+        )
     return run
