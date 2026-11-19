@@ -6,6 +6,7 @@ from indicators import (
     dashboard_views,
     feedback_views,
     monitoring_views,
+    notification_views,
     resync_views,
     schedule_views,
     source_admin_views,
@@ -120,4 +121,9 @@ urlpatterns = [
         feedback_views.admin_feedback_update_status,
         name="admin-feedback-status",
     ),
+
+    # ── Feature 26: Konfigurasi Notifikasi ──────────────────────────────────
+    path("admin/notifications/", notification_views.notification_list, name="admin-notification-list"),
+    path("admin/notifications/events/", notification_views.notification_events, name="admin-notification-events"),
+    path("admin/notifications/<str:kind>/", notification_views.notification_update, name="admin-notification-update"),
 ]
