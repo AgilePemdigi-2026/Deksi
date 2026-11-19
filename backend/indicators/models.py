@@ -314,3 +314,4 @@ from indicators.feedback_model import Feedback, FeedbackAuditLog  # noqa: E402, 
 from indicators.resync_model import ResyncJob  # noqa: E402, F401
 from indicators.schedule_model import ScheduleAudit, ScheduleConfig  # noqa: E402, F401
 from indicators.sync_history_model import SyncRun  # noqa: E402, F401
+from indicators.threshold_model import DiagnosticThreshold, DiagnosticThresholdAudit  # noqa: E402, F401

@@ -1071,3 +1071,106 @@ export async function fetchMonitoringHistory(params?: { page?: number; pageSize?
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as { items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number };
 }
+
+// ---------------------------------------------------------------------------
+// Feature 24 – Konfigurasi Threshold Diagnostik
+// ---------------------------------------------------------------------------
+
+export interface ThresholdEntry {
+  indicatorCode: string;
+  indicatorName: string;
+  category: string;
+  paramKey: string;
+  label: string;
+  value: string;
+  unit: string;
+  minAllowed: string;
+  maxAllowed: string;
+  description: string;
+  status: string;
+  configured: boolean;
+  version: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  latestValue: string | null;
+}
+
+export interface ThresholdEvaluation {
+  threshold: string;
+  unit: string;
+  observed: string | null;
+  exceeded: boolean;
+  status: string;
+  impact: string;
+}
+
+export interface ThresholdHistoryItem {
+  oldValue: Record<string, string>;
+  newValue: Record<string, string>;
+  actor: string | null;
+  reason: string;
+  createdAt: string | null;
+}
+
+export async function fetchThresholds(): Promise<ThresholdEntry[]> {
+  const res = await adminFetch("/admin/thresholds/");
+  if (!res.ok) {
+    if (res.status === 401) throw new Error("Sesi admin diperlukan. Silakan login.");
+    if (res.status === 403) throw new Error("Hak akses admin diperlukan.");
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const body = await res.json();
+  return (body?.thresholds ?? []) as ThresholdEntry[];
+}
+
+export async function fetchThresholdDetail(
+  code: string,
+  param: string,
+): Promise<{ threshold: ThresholdEntry; evaluation: ThresholdEvaluation; latestPeriod: string | null; latestUnit: string | null }> {
+  const res = await adminFetch(`/admin/thresholds/${encodeURIComponent(code)}/${encodeURIComponent(param)}/`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  }
+  return (await res.json()) as {
+    threshold: ThresholdEntry;
+    evaluation: ThresholdEvaluation;
+    latestPeriod: string | null;
+    latestUnit: string | null;
+  };
+}
+
+export async function updateThreshold(
+  code: string,
+  param: string,
+  payload: { value: string; status?: string; reason?: string },
+): Promise<{ threshold: ThresholdEntry; evaluation: ThresholdEvaluation; message: string }> {
+  const res = await adminFetch(`/admin/thresholds/${encodeURIComponent(code)}/${encodeURIComponent(param)}/update/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return body as { threshold: ThresholdEntry; evaluation: ThresholdEvaluation; message: string };
+}
+
+export async function fetchThresholdHistory(code: string, param: string): Promise<ThresholdHistoryItem[]> {
+  const res = await adminFetch(`/admin/thresholds/${encodeURIComponent(code)}/${encodeURIComponent(param)}/history/`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.history ?? []) as ThresholdHistoryItem[];
+}
+
+/** Validasi sisi klien sebelum request. Kembalikan pesan error atau null bila valid. */
+export function validateThresholdInput(value: string, minAllowed: string, maxAllowed: string, unit: string, expectedUnit: string): string | null {
+  if (!value.trim()) return "Nilai threshold wajib diisi.";
+  if (!/^-?\d+(?:\.\d+)?$/.test(value.trim())) return "Nilai threshold harus berupa angka.";
+  if (unit !== expectedUnit) return `Satuan harus '${expectedUnit}' sesuai definisi parameter.`;
+  const v = Number(value);
+  if (Number.isNaN(v)) return "Nilai threshold harus berupa angka.";
+  if (v < Number(minAllowed) || v > Number(maxAllowed)) {
+    return `Nilai threshold berada di luar rentang yang diperbolehkan (${minAllowed}-${maxAllowed} ${expectedUnit}). Periksa kembali nilai dan satuan yang digunakan.`;
+  }
+  return null;
+}
