@@ -23,6 +23,7 @@ class Source(models.Model):
     class SourceStatus(models.TextChoices):
         ACTIVE = "active", "Aktif"
         INACTIVE = "inactive", "Nonaktif"
+        ARCHIVED = "archived", "Diarsipkan"
 
     source_id = models.CharField(max_length=32, unique=True)
     source_name = models.CharField(max_length=200)

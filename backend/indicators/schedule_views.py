@@ -46,7 +46,7 @@ def schedule_list(request):
     if denied is not None:
         return denied
     items = []
-    for s in Source.objects.order_by("source_id"):
+    for s in Source.objects.exclude(status=Source.SourceStatus.ARCHIVED).order_by("source_id"):
         cfg = getattr(s, "schedule_config", None)
         # OneToOne reverse raises DoesNotExist bila belum ada; normalisasi ke None.
         if cfg is not None and not isinstance(cfg, ScheduleConfig):
@@ -129,7 +129,7 @@ def schedule_next(request):
     denied = _require_staff(request)
     if denied is not None:
         return denied
-    cfgs = ScheduleConfig.objects.filter(enabled=True).select_related("source").order_by("next_run")
+    cfgs = ScheduleConfig.objects.filter(enabled=True, source__status=Source.SourceStatus.ACTIVE).select_related("source").order_by("next_run")
     items = [{
         "sourceId": c.source.source_id,
         "nextRun": c.next_run.isoformat() if c.next_run else None,

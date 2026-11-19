@@ -6,6 +6,7 @@ import "./admin-source-card.css";
 import {
   adminLogin,
   adminLogout,
+  changeAdminSourceLifecycle,
   createAdminSource,
   displayOrUnavailable,
   fetchAcquisitionMethods,
@@ -259,6 +260,28 @@ export function AdminSourcesPage() {
     resetForm();
   };
 
+  const changeLifecycle = async (action: "archive" | "restore" | "delete") => {
+    if (!editingId || initialRevision === null || saving || detailLoading) return;
+    const messages = {
+      archive: `Arsipkan ${editingId}? Data dan riwayat tetap disimpan; akuisisi baru dihentikan.`,
+      restore: `Pulihkan ${editingId}? Sumber akan berstatus nonaktif sampai diaktifkan kembali.`,
+      delete: `Hapus permanen ${editingId}? Hanya sumber tanpa data terkait yang dapat dihapus. Riwayat revisinya ikut terhapus.`,
+    };
+    if (!window.confirm(`${messages[action]}${dirty ? " Perubahan form yang belum disimpan akan hilang." : ""}`)) return;
+    setSaving(true);
+    setFormError(null);
+    try {
+      await changeAdminSourceLifecycle(editingId, action, initialRevision);
+      setSuccess(`Sumber ${editingId} berhasil ${action === "archive" ? "diarsipkan" : action === "restore" ? "dipulihkan" : "dihapus"}.`);
+      resetForm();
+      await reload();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Tindakan gagal. Muat ulang sebelum mencoba lagi.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const startAdd = () => {
     resetForm();
     setShowForm(true);
@@ -392,7 +415,7 @@ export function AdminSourcesPage() {
               {sources.map((s) => (
                 <article key={s.sourceId} className="source-card admin-source-card">
                   <div className="admin-source-card__heading">
-                    <p className="source-institution">{s.institution} · {s.status}</p>
+                    <p className="source-institution">{s.institution} · {s.status === "archived" ? "Diarsipkan" : s.status}</p>
                     <p className="source-name">{s.sourceName}</p>
                     <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
                   </div>
@@ -403,13 +426,13 @@ export function AdminSourcesPage() {
                   {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
                   <div className="admin-source-card__actions">
                     {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
-                    <button type="button" className="source-trace-link" disabled={toggling || reviewBusy} onClick={() => startEdit(s.sourceId)}>
+                    <button type="button" className="source-trace-link" disabled={toggling || saving || reviewBusy} onClick={() => startEdit(s.sourceId)}>
                       Edit ↗
                     </button>
                     <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
                       aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
                       onClick={() => void toggleSource(s)}>
-                      {s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                      {s.status === "archived" ? "Diarsipkan" : s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
                     </button>
                   </div>
                 </article>
@@ -426,7 +449,7 @@ export function AdminSourcesPage() {
                 <p className="summary-loading">Memuat detail sumber…</p>
               ) : (
               <>
-              <div className="trace-grid">
+              <fieldset className="trace-grid" disabled={initialForm?.status === "archived" || saving} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
                 <label className="trace-row">Source ID *<input value={form.sourceId} onChange={(e) => set("sourceId", e.target.value.toUpperCase())} placeholder="CONTOH_ID" disabled={mode === "edit"} title={mode === "edit" ? "Identitas tidak dapat diubah" : undefined} /></label>
                 <label className="trace-row">Nama sumber *<input value={form.sourceName} onChange={(e) => set("sourceName", e.target.value)} /></label>
                 <label className="trace-row">Institusi *<input value={form.institution} onChange={(e) => set("institution", e.target.value)} /></label>
@@ -449,19 +472,24 @@ export function AdminSourcesPage() {
                 <label className="trace-row">Status<select value={form.status} onChange={(e) => set("status", e.target.value)}>
                   <option value="active">Aktif</option>
                   <option value="inactive">Nonaktif</option>
+                  {initialForm?.status === "archived" && <option value="archived">Diarsipkan</option>}
                 </select></label>
-              </div>
+              </fieldset>
               {activeMethod && <p className="trace-note">Handler: {activeMethod.handler}. {activeMethod.description}</p>}
               {formError && <p className="summary-error">{formError}</p>}
               <footer className="trace-foot">
-                <button type="button" className="tab tab-active" onClick={submit} disabled={saving || detailLoading}>{saving ? "Menyimpan…" : mode === "edit" ? "Simpan Perubahan" : "Simpan"}</button>
+                <button type="button" className="tab tab-active" onClick={submit} disabled={saving || detailLoading || initialForm?.status === "archived"}>{saving ? "Memproses…" : mode === "edit" ? "Simpan Perubahan" : "Simpan"}</button>
                 <button type="button" className="tab" onClick={cancelForm} disabled={saving}>Batal</button>
+                {mode === "edit" && <>
+                  <button type="button" className="tab" disabled={saving || initialRevision === null} onClick={() => void changeLifecycle(initialForm?.status === "archived" ? "restore" : "archive")}>{initialForm?.status === "archived" ? "Pulihkan Sumber" : "Arsipkan Sumber"}</button>
+                  <button type="button" className="tab" disabled={saving || initialRevision === null} onClick={() => void changeLifecycle("delete")}>Hapus Permanen</button>
+                </>}
               </footer>
               </>
               )}
               {mode === "edit" && editingId && (
                 <details className="trace-raw">
-                  <summary>Riwayat revisi {editingId} (tidak pernah dihapus)</summary>
+                  <summary>Riwayat revisi {editingId} (ikut terhapus jika sumber dihapus permanen)</summary>
                   {revisionsLoading ? (
                     <p className="summary-loading">Memuat riwayat…</p>
                   ) : revisions.length === 0 ? (

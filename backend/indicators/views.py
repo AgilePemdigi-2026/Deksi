@@ -627,7 +627,7 @@ def serialize_source_entry(source: Source) -> dict:
 
 
 def ordered_sources():
-    sources = list(Source.objects.all())
+    sources = list(Source.objects.exclude(status=Source.SourceStatus.ARCHIVED))
     rank = {sid: i for i, sid in enumerate(SOURCE_ORDER)}
     return sorted(sources, key=lambda s: (rank.get(s.source_id, 99), s.source_id))
 
