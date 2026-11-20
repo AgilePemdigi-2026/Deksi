@@ -67,6 +67,8 @@ services:
       BPS_API_KEY: ${BPS_API_KEY:-}
       BPS_API_BASE_URL: https://webapi.bps.go.id/v1
     command: ["python", "manage.py", "process_resync"]
+    volumes:
+      - backend_data:/data
     depends_on:
       backend:
         condition: service_healthy

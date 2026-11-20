@@ -268,6 +268,8 @@ NATIVE_NOTE = {
 
 
 def year_aggregation_note(indicator: Indicator) -> str:
+    if indicator.code in bps.BPS_ECONOMIC_SERIES:
+        return "Ket: Agregasi tahunan menjumlahkan data sumber; tahun dengan periode tidak lengkap tidak ditampilkan."
     if indicator.aggregation_kind == "sum":
         return "Ket: Agregasi tahunan dihitung sebagai jumlah nilai asal sejak sumber mentah (deterministik)."
     if indicator.aggregation_kind == "end":
@@ -308,6 +310,15 @@ def aggregate_trend(observations, term: str, indicator: Indicator) -> list[dict]
         buckets.setdefault(key, []).append(observation)
     result = []
     for key, rows in sorted(buckets.items()):
+        if term == "Tahunan" and indicator.code in bps.BPS_ECONOMIC_SERIES:
+            expected = bps.BPS_ECONOMIC_SERIES[indicator.code]
+            expected_frequency = expected["frequency"]
+            if (rows[0].frequency != expected_frequency or rows[0].source.source_id != "BPS"
+                    or rows[0].unit != expected["unit"] or rows[0].data_type != "level" or kind != "sum"):
+                raise ValueError("Agregasi ditolak: metadata tidak cocok untuk indikator.")
+            required = {3, 6, 9, 12} if expected_frequency == "quarterly" else set(range(1, 13))
+            if len(rows) != len(required) or {row.observation_date.month for row in rows} != required:
+                continue
         with localcontext() as context:
             context.prec = 60
             total = sum((row.value for row in rows), Decimal(0))
