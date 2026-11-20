@@ -106,6 +106,40 @@
 .admin-source-card button:focus-visible,
 .admin-source-card input:focus-visible { outline: 2px solid #111; outline-offset: 3px; }
 
+.admin-source-dialog {
+  box-sizing: border-box;
+  width: min(720px, calc(100% - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 0;
+  border: 1px solid #aaa;
+  border-radius: 12px;
+  background: #f7f7f7;
+  color: #171717;
+  box-shadow: 0 18px 55px #0004;
+}
+
+.admin-source-dialog--wide { width: min(1040px, calc(100% - 32px)); }
+.admin-source-dialog::backdrop { background: #0008; backdrop-filter: blur(4px); }
+.admin-source-dialog > .trace-panel { position: relative; margin: 0; border: 0; }
+.admin-source-dialog__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid #888;
+  border-radius: 6px;
+  background: #f7f7f7;
+  color: #171717;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-source-dialog__close:focus-visible { outline: 2px solid #111; outline-offset: 3px; }
+.admin-source-dialog > .trace-panel > .trace-title { padding-right: 50px; }
+
 @media (max-width: 420px) {
   .source-card.admin-source-card { padding: 18px; }
   .admin-source-card .resync-action { padding: 14px; }
