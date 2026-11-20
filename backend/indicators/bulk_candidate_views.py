@@ -14,9 +14,11 @@ from indicators.models import (
     BulkCandidateReview,
     BulkCandidateReviewItem,
     ObservationCandidate,
+    RawFile,
     Source,
 )
 from indicators.source_admin_views import _parse_json_body
+from indicators.storage import verified_raw_bytes
 from indicators.views import json_error
 
 MAX_PREVIEW_ITEMS = 500
@@ -28,16 +30,43 @@ def _eligibility(candidate):
     raw_id = payload.get("raw_file_id")
     if not isinstance(raw_id, int) or isinstance(raw_id, bool) or raw_id <= 0:
         return False, "missing_raw_file"
-    if not isinstance(payload.get("publication_date"), str):
+    if candidate.source.source_id == "BPS":
+        observation_date = payload.get("observation_date")
+        if not isinstance(observation_date, str):
+            return False, "invalid_observation_date"
+        try:
+            date.fromisoformat(observation_date)
+        except ValueError:
+            return False, "invalid_observation_date"
+        if not isinstance(payload.get("period_label"), str) or not payload["period_label"].strip():
+            return False, "missing_period_label"
+    publication_date = payload.get("publication_date")
+    if publication_date is None and candidate.source.source_id == "BPS":
+        pass  # BPS observations may lack an independently established release date.
+    elif not isinstance(publication_date, str):
         return False, "missing_publication_date"
-    try:
-        date.fromisoformat(payload["publication_date"])
-    except ValueError:
-        return False, "invalid_publication_date"
+    else:
+        try:
+            date.fromisoformat(publication_date)
+        except ValueError:
+            return False, "invalid_publication_date"
     snapshot = candidate.base_snapshot if isinstance(candidate.base_snapshot, dict) else {}
     raw = snapshot.get("candidate_raw")
     if not isinstance(raw, dict) or raw.get("id") != raw_id or raw.get("source_id") != candidate.source_id:
         return False, "raw_snapshot_source_mismatch"
+    if candidate.source.source_id == "BPS":
+        raw_file = RawFile.objects.filter(pk=raw_id, source_id=candidate.source_id).first()
+        if raw_file is None:
+            return False, "raw_file_unavailable"
+        if (raw.get("checksum_sha256") != raw_file.checksum_sha256
+                or raw.get("file_size_bytes") != raw_file.file_size_bytes):
+            return False, "raw_file_invalid"
+        try:
+            verified_raw_bytes(raw_file)
+        except OSError:
+            return False, "raw_file_unavailable"
+        except ValueError:
+            return False, "raw_file_invalid"
     return True, None
 
 
@@ -171,9 +200,12 @@ def bulk_candidate_confirm(request, source_id, batch_id):
                 # The individual lifecycle checks internal integrity, not the fingerprint shown in preview.
                 if candidate.fingerprint != item.candidate_snapshot["fingerprint"]:
                     raise ValidationError("Kandidat berubah setelah preview.")
-                eligible, _ = _eligibility(candidate)
+                eligible, reason = _eligibility(candidate)
                 if not eligible:
-                    raise ValidationError("Metadata kandidat tidak lagi memenuhi syarat bulk.")
+                    item.status = BulkCandidateReviewItem.Status.SKIPPED
+                    item.reason = reason
+                    item.save(update_fields=["status", "reason"])
+                    continue
                 review_candidate(item.candidate_id, request.user, publish=True)
                 item.status = BulkCandidateReviewItem.Status.PUBLISHED
                 item.reason = None

@@ -11,7 +11,7 @@ const profile = await mkdtemp(path.join(scratch, 'deksi-bulk-browser-'))
 const batchId = 'a0000000-0000-4000-8000-000000000001'
 const candidate = id => ({ id, fingerprint: 'a'.repeat(64), indicator: 'uji', indicatorName: 'Indikator Uji',
   sourceId: 'BPS', sourceName: 'BPS sintetis', sourceUrl: 'https://example.test/', period: `Periode ${id}`,
-  observationDate: '2024-01-01', publicationDate: id === 21 ? '2024-01-31' : null,
+  observationDate: '2024-01-01', publicationDate: null,
   frequency: 'monthly', dataType: 'level', value: `${id}.000000`, unit: '%', rawFileId: id === 21 ? 9 : null,
   previousValue: null, previousUnit: null, previousPeriod: null, status: 'pending', createdAt: '2024-02-01T00:00:00Z',
   reviewedAt: null, reviewedBy: null, reviewNotes: '', rawEvidence: id === 21 ? {
@@ -19,7 +19,7 @@ const candidate = id => ({ id, fingerprint: 'a'.repeat(64), indicator: 'uji', in
     checksumSha256: 'c'.repeat(64) } : null })
 const preview = { id: batchId, status: 'preview', expiresAt: '2099-01-01T00:00:00Z', total: 21, eligible: 1, excluded: 20,
   items: Array.from({ length: 21 }, (_, i) => ({ ...candidate(i + 1), eligible: i === 20,
-    exclusionReason: i === 20 ? null : 'RAW dan tanggal rilis tidak tersedia' })) }
+    exclusionReason: i === 20 ? null : 'raw_file_unavailable' })) }
 const counts = { total: 21, eligible: 1, excluded: 20, published: 1, skipped: 0, pending: 0, unknown: 0 }
 const result = { id: batchId, status: 'completed', counts, items: preview.items.map(item => ({ id: item.id,
   status: item.eligible ? 'published' : 'excluded', reason: item.exclusionReason })) }
@@ -121,8 +121,11 @@ try {
   await wait("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Total pending: 21')")
   assert.equal(await evaluate("document.querySelectorAll('.candidate-review__bulk-preview li').length"), 21)
   assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Dokumen Uji')"), true)
-  assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Tanggal rilis: 2024-01-31')"), true)
+  assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Tanggal rilis: Tidak tersedia')"), true)
+  assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Tanggal observasi: 2024-01-01')"), true)
+  assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview [role=alert]')?.textContent.includes('Tanggal observasi bukan tanggal rilis')"), true)
   assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Dikecualikan: 20')"), true)
+  assert.equal(await evaluate("document.querySelector('.candidate-review__bulk-preview')?.textContent.includes('Berkas bukti tidak tersedia')"), true)
   assert.equal(await evaluate(`${button('Setujui semua kandidat yang memenuhi syarat')}.disabled`), true)
   await evaluate("document.querySelector('.candidate-review__bulk-preview input[type=checkbox]').click()")
   await evaluate(`${button('Setujui semua kandidat yang memenuhi syarat')}.click()`)

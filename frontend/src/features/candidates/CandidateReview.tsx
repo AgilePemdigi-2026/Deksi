@@ -11,6 +11,12 @@ const decisionLabels: Record<Decision, string> = {
   reject: 'Ditolak',
 }
 
+const bulkReasons: Record<string, string> = {
+  raw_file_unavailable: 'Berkas bukti tidak tersedia',
+  raw_file_invalid: 'Ukuran atau checksum bukti tidak cocok',
+}
+const bulkReason = (reason: string | null | undefined) => bulkReasons[reason ?? ''] ?? reason ?? 'metadata tidak tersedia'
+
 // Only candidate IDs are retained; the marker is not an authorization or a server lock.
 const transientUncertain = new Map<string, number[]>()
 
@@ -284,22 +290,24 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       {result && <p className="candidate-review__count">{result.total} kandidat · Halaman {result.page}</p>}
     </div>
     <div className="candidate-review__bulk">
-      <p>Persetujuan massal berlaku untuk semua halaman kandidat pending sumber ini yang memiliki dokumen RAW dan tanggal rilis. Kandidat yang tidak lengkap tetap dapat direview satu per satu.</p>
+      <p>Persetujuan massal memerlukan bukti RAW. Kandidat BPS boleh tanpa tanggal rilis; sumber lain tetap memerlukan tanggal rilis. Kandidat yang tidak lengkap tetap dapat direview satu per satu.</p>
       <button type="button" className="tab" disabled={busy || bulkBusy || batchBlocksDecisions || !initialReadOk || uncertain.length > 0 || status !== 'pending'} onClick={() => void previewBulk()}>Pratinjau kandidat yang memenuhi syarat</button>
       {bulkLoading && <p role="status">Memeriksa operasi massal sebelumnya…</p>}
       {bulkError && <p role="alert">{bulkError}</p>}
       {bulkPreview && <div className="candidate-review__bulk-preview" aria-label="Pratinjau persetujuan massal">
         <p role="status">Total pending: {bulkPreview.total}. Memenuhi syarat: {bulkPreview.eligible}. Dikecualikan: {bulkPreview.excluded}. Pratinjau berlaku hingga {bulkPreview.expiresAt}.</p>
         <p>Periksa setiap nilai, periode, satuan, sumber dan perubahan observasi sebelum konfirmasi. Pratinjau tidak mempublikasikan data.</p>
+        {bulkPreview.items.some(item => item.eligible && item.sourceId === 'BPS' && item.publicationDate == null) && <p role="alert">Pengingat: sebagian kandidat BPS tidak memiliki tanggal rilis. Tanggal observasi bukan tanggal rilis; waktu data tersedia dan riwayat revisinya belum dipastikan. Periksa sumber sebelum menyetujui.</p>}
         <ol tabIndex={0} aria-label="Semua kandidat dalam snapshot">{bulkPreview.items.map(item => <li key={item.id}>
           #{item.id} · {unavailable(item.indicatorName)} · {unavailable(item.period)} · {unavailable(item.value)} {unavailable(item.unit)}
           {' · '}Sumber: {unavailable(item.sourceName)}
+          {' · '}Tanggal observasi: {unavailable(item.observationDate)}
           {safeExternalUrl(item.sourceUrl) && <> · <a href={safeExternalUrl(item.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">Buka portal sumber</a></>}
           {' · '}Tanggal rilis: {unavailable(item.publicationDate)}
           {' · '}Dokumen RAW: {unavailable(item.rawEvidence?.documentName)} (ID {unavailable(item.rawFileId?.toString())})
           {' · '}Checksum RAW: {unavailable(item.rawEvidence?.checksumSha256)}
           {item.previousValue != null && <> · Revisi dari {item.previousValue} {unavailable(item.previousUnit)}</>}
-          {' · '}{item.eligible ? 'Memenuhi syarat' : `Dikecualikan: ${item.exclusionReason ?? 'metadata tidak tersedia'}`}
+          {' · '}{item.eligible ? 'Memenuhi syarat' : `Dikecualikan: ${bulkReason(item.exclusionReason)}`}
         </li>)}</ol>
         {bulkPreview.eligible > 0 && <label><input type="checkbox" checked={bulkChecked} disabled={bulkBusy || batchBlocksDecisions} onChange={event => setBulkChecked(event.target.checked)} /> Saya telah membandingkan seluruh kandidat yang memenuhi syarat dengan sumber resmi dan memahami bahwa konfirmasi mempublikasikannya.</label>}
         <div className="candidate-review__decision-actions">
@@ -311,7 +319,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <p role="status">Operasi {bulkResult.status}: berhasil {bulkResult.counts.published}, dilewati {bulkResult.counts.skipped}, dikecualikan {bulkResult.counts.excluded}, belum diproses {bulkResult.counts.pending}, belum pasti {bulkResult.counts.unknown}.</p>
         {bulkResult.resolvedAt ? <p role="status">Ditinjau {bulkResult.resolvedBy} · {bulkResult.resolvedAt} · {bulkResult.resolutionReason}. Hasil yang belum pasti tetap perlu diperiksa per kandidat.</p> :
           bulkResult.status !== 'completed' && <p role="alert">Proses dapat masih berjalan atau terputus. Jangan memulai operasi lain sampai statusnya jelas.</p>}
-        <ol>{bulkResult.items.map(item => <li key={item.id}>#{item.id} · {item.status}{item.reason ? ` · ${item.reason}` : ''}</li>)}</ol>
+        <ol>{bulkResult.items.map(item => <li key={item.id}>#{item.id} · {item.status}{item.reason ? ` · ${bulkReason(item.reason)}` : ''}</li>)}</ol>
         <button type="button" className="tab" disabled={bulkBusy} onClick={() => void readBulk(bulkResult.id)}>Periksa status operasi</button>
         {bulkResult.status !== 'completed' && !bulkResult.resolvedAt && <div className="candidate-review__bulk-reconcile">
           <p>Periksa hasil setiap kandidat dan pastikan tidak ada proses lama yang perlu ditunggu. Penutupan tidak mengulang publikasi; item belum pasti tetap ditandai belum pasti. Proses yang masih berjalan dibatasi sebelum item berikutnya, bukan dibatalkan di tengah item.</p>

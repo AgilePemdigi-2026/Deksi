@@ -1,15 +1,19 @@
 import json
+import os
+import tempfile
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.test import Client
+from django.test import Client, override_settings
 from django.utils import timezone
 
 from indicators.lifecycle import _digest, stage_observation
-from indicators.models import BulkCandidateReview, Observation, ObservationCandidate, RawFile
+from indicators.models import BulkCandidateReview, Observation, ObservationCandidate, RawFile, Source
+from indicators.storage import save_raw
 from indicators.tests.support import IndicatorCase
 
 _DEFAULT_PUBLICATION_DATE = object()
@@ -22,16 +26,24 @@ class BulkCandidateReviewApiTests(IndicatorCase):
         self.reviewer.save(update_fields=["is_superuser"])
         self.client.force_login(self.reviewer)
         self.base = "/api/admin/sources/TEST_ONLY/candidates/"
+        self.raw_dir = tempfile.TemporaryDirectory(dir=os.environ.get("HERMES_TEST_SCRATCH"))
+        self.addCleanup(self.raw_dir.cleanup)
+        settings_override = override_settings(DEKSI_RAW_DIR=self.raw_dir.name)
+        settings_override.enable()
+        self.addCleanup(settings_override.disable)
 
     def stage(self, *, day, raw=True, publication_date=_DEFAULT_PUBLICATION_DATE):
         if publication_date is _DEFAULT_PUBLICATION_DATE:
             publication_date = date(2024, 1, 1)
         raw_file = None
         if raw:
-            raw_file = RawFile.objects.create(
-                source=self.source, document_name=f"Evidence {day}",
-                checksum_sha256=f"{day:064x}", file_size_bytes=1,
-            )
+            if self.source.source_id == "BPS":
+                raw_file, _ = save_raw(self.source, f"BPS synthetic {day}".encode(), f"Evidence {day}")
+            else:
+                raw_file = RawFile.objects.create(
+                    source=self.source, document_name=f"Evidence {day}",
+                    checksum_sha256=f"{day:064x}", file_size_bytes=1,
+                )
         candidate = stage_observation(
             indicator_id=self.indicator.pk, source_id=self.source.pk,
             observation_date=date(2024, 1, day), period_label=f"UJI {day}",
@@ -43,6 +55,65 @@ class BulkCandidateReviewApiTests(IndicatorCase):
 
     def preview(self):
         return self.client.post(self.base + "bulk-preview/", data="{}", content_type="application/json")
+
+    def test_bps_missing_release_is_eligible_with_explicit_warning_and_confirmed_review(self):
+        self.source = Source.objects.get(source_id="BPS")
+        self.base = "/api/admin/sources/BPS/candidates/"
+        candidate = self.stage(day=1, publication_date=None)
+        preview = self.preview().json()
+        self.assertEqual((preview["eligible"], preview["excluded"]), (1, 0))
+        self.assertIsNone(preview["items"][0]["publicationDate"])
+        self.assertEqual(preview["items"][0]["observationDate"], "2024-01-01")
+        self.assertFalse(Observation.objects.exists())
+        response = self.client.post(self.base + f"bulk-review/{preview['id']}/confirm/",
+                                    data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["counts"]["published"], 1)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, "published")
+        self.assertIsNone(Observation.objects.get().publication_date)
+
+    def test_bps_missing_raw_or_invalid_observation_period_is_excluded(self):
+        self.source = Source.objects.get(source_id="BPS")
+        self.base = "/api/admin/sources/BPS/candidates/"
+        no_raw = self.stage(day=1, raw=False, publication_date=None)
+        invalid_date = self.stage(day=2, publication_date=None)
+        invalid_date.payload["observation_date"] = "2024-99-99"
+        invalid_date.save(update_fields=["payload"])
+        missing_period = self.stage(day=3, publication_date=None)
+        missing_period.payload["period_label"] = ""
+        missing_period.save(update_fields=["payload"])
+        items = {item["id"]: item for item in self.preview().json()["items"]}
+        self.assertEqual(items[no_raw.pk]["exclusionReason"], "missing_raw_file")
+        self.assertEqual(items[invalid_date.pk]["exclusionReason"], "invalid_observation_date")
+        self.assertEqual(items[missing_period.pk]["exclusionReason"], "missing_period_label")
+
+    def test_bps_missing_and_corrupt_raw_are_excluded_before_preview(self):
+        self.source = Source.objects.get(source_id="BPS")
+        self.base = "/api/admin/sources/BPS/candidates/"
+        missing = self.stage(day=1, publication_date=None)
+        corrupt = self.stage(day=2, publication_date=None)
+        Path(RawFile.objects.get(pk=missing.payload["raw_file_id"]).stored_path).unlink()
+        Path(RawFile.objects.get(pk=corrupt.payload["raw_file_id"]).stored_path).write_bytes(b"tampered")
+        items = {item["id"]: item for item in self.preview().json()["items"]}
+        self.assertEqual(items[missing.pk]["exclusionReason"], "raw_file_unavailable")
+        self.assertEqual(items[corrupt.pk]["exclusionReason"], "raw_file_invalid")
+        self.assertFalse(Observation.objects.exists())
+
+    def test_bps_raw_corrupted_after_preview_is_not_published(self):
+        self.source = Source.objects.get(source_id="BPS")
+        self.base = "/api/admin/sources/BPS/candidates/"
+        candidate = self.stage(day=1, publication_date=None)
+        preview = self.preview().json()
+        self.assertEqual(preview["eligible"], 1)
+        Path(RawFile.objects.get(pk=candidate.payload["raw_file_id"]).stored_path).write_bytes(b"tampered")
+        response = self.client.post(self.base + f"bulk-review/{preview['id']}/confirm/",
+                                    data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(response.json()["counts"]["published"], 0)
+        self.assertEqual(response.json()["items"][0]["status"], "skipped")
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, "pending")
+        self.assertFalse(Observation.objects.exists())
 
     def test_preview_freezes_eligible_and_excluded_candidate_metadata(self):
         eligible = self.stage(day=1)
