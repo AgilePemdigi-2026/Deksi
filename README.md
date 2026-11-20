@@ -104,6 +104,8 @@ POSTGRES_PORT=5432
 
 ## Pemeriksaan Kode
 
+Tes popup Kelola Sumber dijalankan terpisah dari `npm test` dengan `npm run test:source-dialog` dari folder `frontend`. Tes ini memerlukan Chrome; jika lokasinya tidak standar, atur `CHROME_PATH` ke executable Chrome. Tes menggunakan respons API sintetis, bukan backend atau data produksi.
+
 ```
 cd frontend
 npm run lint

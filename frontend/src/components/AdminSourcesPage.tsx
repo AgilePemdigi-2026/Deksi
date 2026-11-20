@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import ResyncAction from "../features/resync/ResyncAction";
 import CandidateReview from "../features/candidates/CandidateReview";
 import { AdminNavigation } from "./AdminNavigation";
@@ -43,7 +43,42 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
+function SourceDialog({ label, wide, onClose, returnFocus, children }: {
+  label: string; wide?: boolean; onClose: () => void; returnFocus: HTMLElement | null; children: ReactNode;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const closeHandler = useRef(onClose);
+  useLayoutEffect(() => { closeHandler.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const element = dialog.current;
+    const cancel = (event: Event) => { event.preventDefault(); closeHandler.current(); };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeHandler.current();
+    };
+    element?.addEventListener("cancel", cancel);
+    document.addEventListener("keydown", onKeyDown, true);
+    element?.showModal();
+    return () => {
+      element?.removeEventListener("cancel", cancel);
+      document.removeEventListener("keydown", onKeyDown, true);
+      if (element?.open) element.close();
+      if (returnFocus?.isConnected) returnFocus.focus();
+      if (!returnFocus?.isConnected || document.activeElement !== returnFocus) {
+        document.getElementById("admin-sources-title")?.focus();
+      }
+    };
+  }, [returnFocus]);
+  return <dialog ref={dialog} className={`admin-source-dialog${wide ? " admin-source-dialog--wide" : ""}`}
+    aria-label={label}>
+    {children}
+  </dialog>;
+}
+
 export function AdminSourcesPage() {
+  const [dialogOpener, setDialogOpener] = useState<HTMLElement | null>(null);
   const [reviewSource, setReviewSource] = useState<string | null>(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const editRequest = useRef(0);
@@ -256,6 +291,7 @@ export function AdminSourcesPage() {
   };
 
   const cancelForm = () => {
+    if (saving) return;
     if (dirty && !window.confirm("Batalkan? Perubahan form akan hilang.")) return;
     resetForm();
   };
@@ -361,7 +397,7 @@ export function AdminSourcesPage() {
     <section className="sources-page" aria-labelledby="admin-sources-title">
       <div className="section-head">
         <div>
-          <h2 className="section-title" id="admin-sources-title">Kelola Sumber Data</h2>
+          <h2 className="section-title" id="admin-sources-title" tabIndex={-1}>Kelola Sumber Data</h2>
           <p className="section-sub">
             Area Admin. Penambahan sumber tercatat di audit log dan berlaku pada siklus
             akuisisi berikutnya. Tanpa sinkronisasi otomatis.
@@ -394,7 +430,7 @@ export function AdminSourcesPage() {
           <div className="source-detail-head">
             <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
             <span>
-              <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
+              <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>{" "}
               <button type="button" className="tab" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>Keluar</button>
             </span>
           </div>
@@ -425,8 +461,8 @@ export function AdminSourcesPage() {
                   </div>
                   {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
                   <div className="admin-source-card__actions">
-                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={() => setReviewSource(s.sourceId)}>Lihat Kandidat</button>}
-                    <button type="button" className="source-trace-link" disabled={toggling || saving || reviewBusy} onClick={() => startEdit(s.sourceId)}>
+                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={(event) => { setDialogOpener(event.currentTarget); setReviewSource(s.sourceId); }}>Lihat Kandidat</button>}
+                    <button type="button" className="source-trace-link" disabled={toggling || saving || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); void startEdit(s.sourceId); }}>
                       Edit ↗
                     </button>
                     <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
@@ -440,11 +476,15 @@ export function AdminSourcesPage() {
             </div>
           )}
 
-          {reviewSource && <CandidateReview key={reviewSource} sourceId={reviewSource} onClose={() => setReviewSource(null)} onBusyChange={setReviewBusy} />}
+          {reviewSource && <SourceDialog label={`Kandidat ${reviewSource}`} wide returnFocus={dialogOpener} onClose={() => { if (!reviewBusy) setReviewSource(null); }}>
+            <CandidateReview key={reviewSource} sourceId={reviewSource} onClose={() => { if (!reviewBusy) setReviewSource(null); }} onBusyChange={setReviewBusy} />
+          </SourceDialog>}
 
           {showForm && (
+            <SourceDialog label={mode === "edit" ? `Edit sumber ${editingId}` : "Tambah sumber data"} returnFocus={dialogOpener} onClose={cancelForm}>
             <article className="trace-panel" aria-label={mode === "edit" ? "Form edit sumber" : "Form tambah sumber"}>
               <h3 className="trace-title">{mode === "edit" ? `Edit Sumber ${editingId}` : "Tambah Sumber Data"} * wajib</h3>
+              <button type="button" className="admin-source-dialog__close" aria-label="Tutup form sumber" onClick={cancelForm} disabled={saving}>×</button>
               {detailLoading ? (
                 <p className="summary-loading">Memuat detail sumber…</p>
               ) : (
@@ -508,6 +548,7 @@ export function AdminSourcesPage() {
                 </details>
               )}
             </article>
+            </SourceDialog>
           )}
         </>
       )}
