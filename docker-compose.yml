@@ -1,4 +1,18 @@
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: deksi
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: deksi
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d deksi"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend:
     build:
       context: .
@@ -10,7 +24,8 @@ services:
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1,backend
       DATABASE_URL: ""
-      POSTGRES_HOST: host.docker.internal
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: deksi
       CORS_ALLOWED_ORIGINS: http://localhost:5174,http://127.0.0.1:5174
       CSRF_TRUSTED_ORIGINS: http://localhost:5174,http://127.0.0.1:5174
     command:
@@ -21,6 +36,11 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - backend_data:/data
+      # Folder Scrapping read-only untuk ingest_datasets / fetch_kemenkeu --from-dir.
+      - ../Folder Scrapping:/scraping:ro
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
@@ -36,3 +56,4 @@ services:
 
 volumes:
   backend_data:
+  pgdata:
