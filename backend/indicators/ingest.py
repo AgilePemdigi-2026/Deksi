@@ -92,7 +92,9 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
 
     input_paths = {
         "BI": sorted(scraping_dir.glob("*.xlsx")),
-        "BKPM": sorted(scraping_dir.glob("*.zip")),
+        # Pola nama BKPM resmi; bundle zip lain (mis. arsip gabungan) diabaikan.
+        "BKPM": sorted(scraping_dir.glob("data-realisasi-investasi-*.zip"))
+        + sorted(scraping_dir.glob("data-realisasi-investasi-*.csv")),
     }
     created_bi = 0
     created_bkpm = 0
@@ -162,7 +164,10 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
                 period_label=period_label,
             )
             failure_stage = "read_file"
-            total = sum_bkpm_zip_csv(path)
+            if path.suffix.lower() == ".csv":
+                total = sum_bkpm_csv_file(path)
+            else:
+                total = sum_bkpm_zip_csv(path)
             failure_stage = "process_data"
             indicator = get_or_create_indicator(
                 "investasi",
@@ -367,38 +372,49 @@ def bkpm_period_label_from_filename(filename: str) -> str | None:
     return f"Triwulan {roman_labels[match.group(1)]} {match.group(2)}"
 
 
-def sum_bkpm_zip_csv(zip_path: Path) -> Decimal:
+def _sum_bkpm_csv_text(text: str, label: str) -> Decimal:
+    import csv
+
+    dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;")
+    reader = csv.reader(text.splitlines(), dialect)
+    header = next(reader)
+    if "investasi_rp_juta" not in header:
+        raise ValueError(f"investasi_rp_juta column missing in {label}")
+    col_index = header.index("investasi_rp_juta")
     total = Decimal(0)
     row_count = 0
+    for row in reader:
+        if len(row) <= col_index:
+            continue
+        raw = row[col_index].strip()
+        if raw == "":
+            continue
+        value = parsing.parse_bkpm_rp_juta(raw)
+        if value is None:
+            raise ValueError(f"unparseable BKPM value: {raw!r}")
+        total += value
+        row_count += 1
+    if row_count == 0:
+        raise ValueError("BKPM csv has no data rows")
+    return total
+
+
+def sum_bkpm_zip_csv(zip_path: Path) -> Decimal:
     with zipfile.ZipFile(zip_path) as archive:
         csv_names = [n for n in archive.namelist() if n.lower().endswith(".csv")]
         if not csv_names:
             raise ValueError("no csv inside BKPM zip")
         with archive.open(csv_names[0]) as fh:
-            import csv
             import io
 
             text = io.TextIOWrapper(fh, encoding="utf-8-sig").read()
-            dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;")
-            reader = csv.reader(text.splitlines(), dialect)
-            header = next(reader)
-            if "investasi_rp_juta" not in header:
-                raise ValueError(f"investasi_rp_juta column missing in {csv_names[0]}")
-            col_index = header.index("investasi_rp_juta")
-            for row in reader:
-                if len(row) <= col_index:
-                    continue
-                raw = row[col_index].strip()
-                if raw == "":
-                    continue
-                value = parsing.parse_bkpm_rp_juta(raw)
-                if value is None:
-                    raise ValueError(f"unparseable BKPM value: {raw!r}")
-                total += value
-                row_count += 1
-    if row_count == 0:
-        raise ValueError("BKPM csv has no data rows")
-    return total
+            return _sum_bkpm_csv_text(text, csv_names[0])
+
+
+def sum_bkpm_csv_file(csv_path: Path) -> Decimal:
+    """Jumlahkan CSV BKPM lepas (tanpa zip), format kolom sama."""
+    text = csv_path.read_text(encoding="utf-8-sig")
+    return _sum_bkpm_csv_text(text, csv_path.name)
 
 
 def normalize_none(value) -> str | None:
