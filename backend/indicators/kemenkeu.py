@@ -153,11 +153,40 @@ def build_period_label(cumulative_until: date) -> str:
 
 
 def find_period_info(text: str) -> tuple[date | None, date | None]:
-    period_match = PERIOD_PATTERN.search(text)
-    if period_match is None:
+    matches = list(PERIOD_PATTERN.finditer(text))
+    if not matches:
         return None, None
-    day, month_name, year = period_match.groups()
-    month = INDONESIAN_MONTHS[month_name.lower()]
+    # Perilaku lama (cocokan pertama) dipertahankan: terbukti tepat pada
+    # 19 arsip lama. Pengecualian terdokumentasi: edisi Juni 2025 menyebut
+    # "s.d. 31 Juli 2025" lebih dulu untuk jendela paket stimulus, padahal
+    # periode datanya "s.d. 31 Mei 2025" yang muncul berulang. Bila tanggal
+    # pertama berbeda dari tanggal tersering dalam konteks 'REALISASI APBN',
+    # pakai yang tersering; bila tak ada konteks itu, pakai yang pertama.
+    first = matches[0]
+    first_key = (first.group(1), first.group(2).lower(), first.group(3))
+
+    def _in_realisasi_apbn(match: re.Match) -> bool:
+        before = text[max(0, match.start() - 80) : match.start()]
+        if re.search(r"SEMENTARA", before, re.IGNORECASE) is not None:
+            return False
+        return re.search(r"REALISASI.{0,40}?APBN", before, re.IGNORECASE) is not None
+
+    contextual = [match for match in matches if _in_realisasi_apbn(match)]
+    counts: dict[tuple[str, str, str], int] = {}
+    first_pos: dict[tuple[str, str, str], int] = {}
+    for match in contextual:
+        key = (match.group(1), match.group(2).lower(), match.group(3))
+        counts[key] = counts.get(key, 0) + 1
+        first_pos.setdefault(key, match.start())
+    best_key = first_key
+    if counts:
+        top = max(counts, key=lambda key: (counts[key], -first_pos[key]))
+        if top != first_key and counts[top] > 1:
+            best_key = top
+    day, month_name, year = best_key[0], best_key[1], best_key[2]
+    month = INDONESIAN_MONTHS.get(month_name)
+    if month is None:
+        return None, None
     try:
         cumulative_until = date(int(year), month, int(day))
     except ValueError:
@@ -480,12 +509,130 @@ def _extract_narrative_metrics(normalized: str) -> dict[str, KitaMetric]:
     return metrics
 
 
+def _parse_t_value(raw: str) -> Decimal | None:
+    """Angka gaya 'Rp316,9 T' / 'Rp1.863,3 T' edisi 2025 (T = triliun)."""
+    from indicators.parsing import parse_bkpm_number
+
+    try:
+        value = parse_bkpm_number(raw)
+    except Exception:
+        return None
+    if value is None or not (Decimal(1) <= abs(value) <= Decimal(50000)):
+        return None
+    return value
+
+
+def _t_value_near(label_match: re.Match, source: str) -> Decimal | None:
+    """Nilai 'RpX T' pertama setelah label (label 2025 kadang terbelah
+    kolom: 'Pendapatan Rp1.863,3 T | Negara')."""
+    window = source[label_match.end() : label_match.end() + 150]
+    value_match = re.search(r"Rp\s*([0-9][0-9.,]*)\s*T\b", window, re.IGNORECASE)
+    if value_match is None:
+        return None
+    return _parse_t_value(value_match.group(1))
+
+
+def _extract_t_block_metrics(normalized: str) -> dict[str, KitaMetric]:
+    """Blok ringkasan edisi 2025: PENDAPATAN [NEGARA] RpP T ... BELANJA
+    [NEGARA] RpB T ... DEFISIT RpD T ... R% PDB, berurutan dalam satu jendela.
+
+    Label boleh terbelah kolom pdftotext ('Pendapatan Rp1.863,3 T | Negara').
+    Dipakai hanya bila pola lama tak menghasilkan P/B/D. Setiap kandidat
+    jendela wajib lolos identitas akuntansi D = B - P (toleransi 5%,
+    min Rp1 T) agar komponen (pajak, K/L, transfer) tak terbaca sebagai total.
+    """
+    metrics: dict[str, KitaMetric] = {}
+    anchor = re.compile(r"(DEFISIT|SURPLUS)\s+Rp\s*(?P<dfs>[0-9][0-9.,]*)\s*T\b", re.IGNORECASE)
+    for anchor_match in anchor.finditer(normalized):
+        head_start = max(0, anchor_match.start() - 900)
+        head = normalized[head_start : anchor_match.start()]
+        # Tolak bila 'Keseimbangan Primer' menyela antara DEFISIT dan angka
+        # (angka primer bukan defisit APBN).
+        parts = re.split(r"DEFISIT", anchor_match.group(0), maxsplit=1, flags=re.IGNORECASE)
+        tail_before_num = parts[1] if len(parts) > 1 else ""
+        if "PRIMER" in tail_before_num.upper().split("Rp")[0]:
+            continue
+        pend_match = None
+        for candidate in re.finditer(r"PENDAPATAN", head, re.IGNORECASE):
+            after = head[candidate.end() : candidate.end() + 150]
+            if "NEGARA" not in after.upper():
+                continue
+            pend_match = candidate
+        if pend_match is None:
+            continue
+        belanja_pos = head.upper().find("BELANJA", pend_match.end())
+        if belanja_pos < 0:
+            continue
+        after_belanja = head[belanja_pos : belanja_pos + 150]
+        if "NEGARA" not in after_belanja.upper():
+            continue
+        pendapatan = _t_value_near(pend_match, head)
+        belanja = _t_value_near(
+            re.compile(r"BELANJA", re.IGNORECASE).search(head, belanja_pos), head
+        )
+        raw_defisit = _parse_t_value(anchor_match.group("dfs"))
+        if pendapatan is None or belanja is None or raw_defisit is None:
+            continue
+        # Surplus disimpan negatif (konvensi: defisit positif, surplus negatif).
+        sign = -1 if anchor_match.group(1).upper() == "SURPLUS" else 1
+        defisit = sign * raw_defisit
+        gap = abs(defisit - (belanja - pendapatan))
+        tolerance = max(Decimal("1"), abs(defisit) * Decimal("0.05"))
+        if gap > tolerance:
+            continue
+        tail = normalized[anchor_match.end() : anchor_match.end() + 200]
+        ratio_match = re.search(
+            r"\(?([0-9]+[.,][0-9]+)\s*(?:%|persen)(?:\s*\w+){0,3}\s*PDB\)?",
+            tail,
+            re.IGNORECASE,
+        )
+        ratio = None
+        if ratio_match is not None:
+            try:
+                ratio = Decimal(ratio_match.group(1).replace(".", "").replace(",", "."))
+            except InvalidOperation:
+                ratio = None
+            if ratio is not None and not (Decimal(0) <= abs(ratio) <= Decimal(10)):
+                ratio = None
+        label = normalized[head_start : anchor_match.end() + 40].strip()[-120:]
+        metrics["pendapatan_negara"] = KitaMetric(
+            identifier="pendapatan_negara",
+            value=pendapatan,
+            unit="Rp Triliun",
+            matched_label=label,
+        )
+        metrics["belanja_negara"] = KitaMetric(
+            identifier="belanja_negara",
+            value=belanja,
+            unit="Rp Triliun",
+            matched_label=label,
+        )
+        metrics["defisit_apbn"] = KitaMetric(
+            identifier="defisit_apbn",
+            value=defisit,
+            unit="Rp Triliun",
+            matched_label=label,
+        )
+        if ratio is not None:
+            metrics["defisit_pdb"] = KitaMetric(
+                identifier="defisit_pdb",
+                value=sign * abs(ratio),
+                unit="% PDB",
+                matched_label=ratio_match.group(0).strip(),
+            )
+        break
+    return metrics
+
+
 def extract_kita_metrics(text: str) -> dict[str, KitaMetric]:
     # Ringkasan 3 kolom (pendapatan/belanja/defisit) bergantung pada spasi
     # kolom hasil pdftotext, jadi harus diproses dari teks mentah SEBELUM
     # normalisasi spasi.
     metrics = _extract_summary_metrics(text)
     normalized = re.sub(r"[ \t]+", " ", text)
+    # Blok 'RpT' edisi 2025, hanya mengisi yang belum ada.
+    for identifier, metric in _extract_t_block_metrics(normalized).items():
+        metrics.setdefault(identifier, metric)
     # Fallback keyword HANYA untuk pembiayaan (total tak terambigu).
     # P/B/D dari keyword lepas terbukti mengambil komponen sebagai total
     # pada edisi lama, sehingga dinonaktifkan di sini.
