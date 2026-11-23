@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import './App.css'
 import Dashboard from './features/dashboard/Dashboard'
 import LoginPage from './features/admin/LoginPage'
@@ -6,6 +7,7 @@ import ResetPasswordPage from './features/admin/ResetPasswordPage'
 import type { RecoveryService } from './features/admin/recovery'
 import { createRecoveryClient } from './features/admin/recoveryClient'
 import { authOrigin } from './features/admin/auth'
+import { shouldReloadRestoredAdminPage } from './features/admin/history'
 import { parseRoute } from './features/indicators/data'
 import { DetailScreen, FeatureUnavailable } from './features/indicators/DetailPage'
 import { SourceTraceScreen } from './features/indicators/SourceTracePage'
@@ -46,6 +48,16 @@ function isAdminFeedbackHashRoute(): boolean {
 }
 
 export default function App({ pathname = typeof window === 'undefined' ? '/' : window.location.pathname, search = typeof window === 'undefined' ? '' : window.location.search, resetService = recoveryClient }: { pathname?: string; search?: string; resetService?: RecoveryService } = {}) {
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (shouldReloadRestoredAdminPage(event.persisted, window.location.pathname, window.location.hash)) {
+        window.location.reload()
+      }
+    }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
+  }, [])
+
   const sourceSelection = parseSourceHash()
   if (sourceSelection) return <SourceDataPage selection={sourceSelection} />
   if (isAdminFeedbackHashRoute()) return <AdminFeedbackPage />

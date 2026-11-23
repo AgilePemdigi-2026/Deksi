@@ -7,6 +7,7 @@ import {renderToStaticMarkup} from 'react-dom/server'
 const vite=await createServer({configFile:false,plugins:[react()],cacheDir:'.artifacts/routes-unit',server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'})
 after(()=>vite.close())
 const {default:App}=await vite.ssrLoadModule('/src/App.tsx')
+const {shouldReloadRestoredAdminPage}=await vite.ssrLoadModule('/src/features/admin/history.ts')
 const source=await vite.ssrLoadModule('/src/features/indicators/source.ts')
 const transport=await vite.ssrLoadModule('/src/api.ts')
 test('all Sprint1 routes coexist, public root has full donor sections and no invented data',()=>{
@@ -28,4 +29,10 @@ test('public API and RAW stay same origin, no hardcoded shared test port',()=>{
  assert.equal(transport.API_BASE,'/api')
  assert.equal(source.rawDownloadHref('/api/indicators/pdb/raw-file/4/','pdb'),'/api/indicators/pdb/raw-file/4/')
  assert.equal(source.rawDownloadHref('https://example.test/raw','pdb'),null)
+})
+test('back-forward cache restoration reloads admin routes but not public or fresh pages',()=>{
+ assert.equal(shouldReloadRestoredAdminPage(true,'/admin/analisis',''),true)
+ assert.equal(shouldReloadRestoredAdminPage(true,'/','#/admin/sumber'),true)
+ assert.equal(shouldReloadRestoredAdminPage(true,'/',''),false)
+ assert.equal(shouldReloadRestoredAdminPage(false,'/admin/analisis',''),false)
 })
