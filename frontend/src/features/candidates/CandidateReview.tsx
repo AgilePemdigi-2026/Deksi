@@ -290,7 +290,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
       {result && <p className="candidate-review__count">{result.total} kandidat · Halaman {result.page}</p>}
     </div>
     <div className="candidate-review__bulk">
-      <p>Persetujuan massal memerlukan bukti RAW. Kandidat BPS dan BKPM boleh tanpa tanggal rilis; sumber lain tetap memerlukan tanggal rilis. Kandidat yang tidak lengkap tetap dapat direview satu per satu.</p>
+      <p>Persetujuan massal memerlukan bukti RAW. Kandidat BPS, BKPM, dan BI boleh tanpa tanggal rilis; sumber lain tetap memerlukan tanggal rilis. Kandidat yang tidak lengkap tetap dapat direview satu per satu.</p>
       <button type="button" className="tab" disabled={busy || bulkBusy || batchBlocksDecisions || !initialReadOk || uncertain.length > 0 || status !== 'pending'} onClick={() => void previewBulk()}>Pratinjau kandidat yang memenuhi syarat</button>
       {bulkLoading && <p role="status">Memeriksa operasi massal sebelumnya…</p>}
       {bulkError && <p role="alert">{bulkError}</p>}
@@ -298,7 +298,7 @@ export default function CandidateReview({ sourceId, onClose, onBusyChange }: { s
         <p role="status">Batch ini: {bulkPreview.total} dari {bulkPreview.totalPending ?? bulkPreview.total} pending. Memenuhi syarat: {bulkPreview.eligible}. Dikecualikan: {bulkPreview.excluded}. Pratinjau berlaku hingga {bulkPreview.expiresAt}.</p>
         {bulkPreview.hasMore && <p role="status">Masih ada sisa antrean. Selesaikan batch ini, lalu buat pratinjau lagi untuk 500 berikutnya.</p>}
         <p>Periksa setiap nilai, periode, satuan, sumber dan perubahan observasi sebelum konfirmasi. Pratinjau tidak mempublikasikan data.</p>
-        {bulkPreview.items.some(item => item.eligible && (item.sourceId === 'BPS' || item.sourceId === 'BKPM') && item.publicationDate == null) && <p role="alert">Pengingat: sebagian kandidat BPS/BKPM tidak memiliki tanggal rilis. Tanggal observasi bukan tanggal rilis; waktu data tersedia dan riwayat revisinya belum dipastikan. Periksa sumber sebelum menyetujui.</p>}
+        {bulkPreview.items.some(item => item.eligible && (item.sourceId === 'BPS' || item.sourceId === 'BKPM' || item.sourceId === 'BI') && item.publicationDate == null) && <p role="alert">Pengingat: sebagian kandidat BPS/BKPM/BI tidak memiliki tanggal rilis. Tanggal observasi bukan tanggal rilis; waktu data tersedia dan riwayat revisinya belum dipastikan. Periksa sumber sebelum menyetujui.</p>}
         <ol tabIndex={0} aria-label="Semua kandidat dalam snapshot">{bulkPreview.items.map(item => <li key={item.id}>
           #{item.id} · {unavailable(item.indicatorName)} · {unavailable(item.period)} · {unavailable(item.value)} {unavailable(item.unit)}
           {' · '}Sumber: {unavailable(item.sourceName)}
