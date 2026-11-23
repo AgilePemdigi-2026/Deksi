@@ -288,9 +288,6 @@ export function AdminFeedbackPage() {
           <a href={statusUpdating ? undefined : "/admin/sumber"} aria-disabled={statusUpdating || undefined} className="admin-fb-btn secondary">
             Kelola Sumber Data
           </a>
-          <a href={statusUpdating ? undefined : "/"} aria-disabled={statusUpdating || undefined} className="admin-fb-btn secondary">
-            Lihat Dashboard Publik
-          </a>
           <button onClick={handleLogout} disabled={logoutLoading || statusUpdating} className="admin-fb-btn outline danger">
             Keluar ({adminUsername || "Admin"})
           </button>
