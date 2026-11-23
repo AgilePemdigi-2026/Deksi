@@ -380,6 +380,7 @@ export interface AdminSourceEntry {
   updateSchedule: string;
   status: string;
   lastFetch: { retrievedAt: string | null; documentName: string | null; parseStatus: string | null };
+  resyncAvailable?: boolean;
 }
 
 export interface SourceCreatePayload {
@@ -787,11 +788,15 @@ export async function requestAdminBpsResync(sourceId: string, requestId: string)
   return body;
 }
 
-export async function fetchAdminResyncJob(id: string): Promise<AdminResyncJob> {
+export async function fetchAdminResyncJob(id: string, sourceId?: string): Promise<AdminResyncJob> {
   const res = await adminFetch(`/admin/resync-jobs/${encodeURIComponent(id)}/`);
   if (res.status === 401) throw new Error("Sesi admin telah berakhir. Silakan masuk kembali.");
   if (!res.ok) throw new Error(`Status sinkronisasi tidak dapat dimuat (HTTP ${res.status}).`);
-  return await res.json() as AdminResyncJob;
+  const body = await res.json() as AdminResyncJob;
+  if (body?.id !== id || (sourceId !== undefined && body.sourceId !== sourceId)) {
+    throw new Error("Status pekerjaan tidak sesuai dengan sumber yang diminta.");
+  }
+  return body;
 }
 
 export async function fetchActiveAdminResync(sourceId: string): Promise<AdminResyncJob | null> {
@@ -799,7 +804,7 @@ export async function fetchActiveAdminResync(sourceId: string): Promise<AdminRes
   if (!res.ok) throw new Error("Status antrean tidak dapat diperiksa. Muat ulang sebelum melanjutkan.");
   const body = await res.json() as { job: AdminResyncJob | null };
   if (!body || !(body.job === null || (typeof body.job?.id === "string" &&
-      ["queued", "running"].includes(body.job.status)))) {
+      body.job.sourceId === sourceId && ["queued", "running"].includes(body.job.status)))) {
     throw new Error("Status antrean tidak dapat dipastikan. Muat ulang sebelum melanjutkan.");
   }
   return body.job;

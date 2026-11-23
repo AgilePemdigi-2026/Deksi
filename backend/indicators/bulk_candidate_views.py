@@ -30,7 +30,7 @@ def _eligibility(candidate):
     raw_id = payload.get("raw_file_id")
     if not isinstance(raw_id, int) or isinstance(raw_id, bool) or raw_id <= 0:
         return False, "missing_raw_file"
-    if candidate.source.source_id == "BPS":
+    if candidate.source.source_id in ("BPS", "BKPM", "BI"):
         observation_date = payload.get("observation_date")
         if not isinstance(observation_date, str):
             return False, "invalid_observation_date"
@@ -54,7 +54,7 @@ def _eligibility(candidate):
     raw = snapshot.get("candidate_raw")
     if not isinstance(raw, dict) or raw.get("id") != raw_id or raw.get("source_id") != candidate.source_id:
         return False, "raw_snapshot_source_mismatch"
-    if candidate.source.source_id == "BPS":
+    if candidate.source.source_id in ("BPS", "BKPM", "BI"):
         raw_file = RawFile.objects.filter(pk=raw_id, source_id=candidate.source_id).first()
         if raw_file is None:
             return False, "raw_file_unavailable"
@@ -119,14 +119,20 @@ def bulk_candidate_preview(request, source_id):
             source = Source.objects.filter(source_id=source_id).first()
             if source is None:
                 return json_error("Sumber tidak ditemukan.", status=404)
-            # Chunked snapshot: freeze the oldest MAX pending rows per batch.
-            # Later batches pick up the remainder; rows arriving after this
-            # snapshot are never added silently.
+            # Advance only after this reviewer's completed batch. Wrap around so
+            # excluded candidates can be reconsidered without starving later rows.
             pending_qs = (ObservationCandidate.objects.filter(source=source, status="pending")
                           .select_related("indicator", "source", "reviewed_by")
                           .order_by("pk"))
             total_pending = pending_qs.count()
-            candidates = list(pending_qs[:MAX_PREVIEW_ITEMS])
+            previous = BulkCandidateReview.objects.filter(
+                source=source, reviewer=reviewer, status=BulkCandidateReview.Status.COMPLETED,
+            ).order_by("-confirmed_at", "-created_at", "-id").first()
+            cursor = (previous.items.order_by("-candidate_id").values_list("candidate_id", flat=True).first()
+                      if previous else None)
+            candidates = list(pending_qs.filter(pk__gt=cursor)[:MAX_PREVIEW_ITEMS]) if cursor else []
+            if not candidates:
+                candidates = list(pending_qs[:MAX_PREVIEW_ITEMS])
             batch = BulkCandidateReview.objects.create(
                 source=source, reviewer=reviewer, expires_at=timezone.now() + PREVIEW_TTL,
             )

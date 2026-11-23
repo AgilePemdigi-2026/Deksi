@@ -8,10 +8,15 @@ export default function DashboardTrend({ year, allowedCodes }: {year:string;allo
   const [requested,setRequested]=useState('pdb')
   const code=allowedCodes.includes(requested)?requested:allowedCodes[0]??'pdb'
   const [granularity,setGranularity]=useState('native')
+  const [previousYear,setPreviousYear]=useState(year)
+  if (previousYear !== year) {
+    setPreviousYear(year)
+    if (code === 'birate') setGranularity('native')
+  }
   const [range,setRange]=useState('5')
   const [selection,setSelection]=useState<{key:string;index:number}|null>(null)
   const [exportStatus,setExportStatus]=useState('')
-  const history=useHistory(code,granularity)
+  const history=useHistory(code,granularity,year)
   const trace=useTraceOptions(code)
   // Opsi rentang mengikuti tahun yang benar-benar ada pada indikator aktif.
   const rangeOptions=useMemo(()=>availableRanges(history.data?.points),[history.data])

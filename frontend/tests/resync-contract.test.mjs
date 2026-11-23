@@ -66,3 +66,10 @@ test('active job is discovered after reload without submitting a new request', a
   assert.equal(calls[0].url, '/api/admin/sources/BPS/resync-active/')
   assert.equal(calls[0].init.method ?? 'GET', 'GET')
 })
+
+test('a job response belonging to another source is never accepted', async () => {
+  globalThis.fetch = async () => Response.json({ job: { id: '4', sourceId: 'BKPM', status: 'queued' } })
+  await assert.rejects(() => api.fetchActiveAdminResync('BI'))
+  globalThis.fetch = async () => Response.json({ id: '4', sourceId: 'BKPM', status: 'success' })
+  await assert.rejects(() => api.fetchAdminResyncJob('4', 'BI'))
+})
