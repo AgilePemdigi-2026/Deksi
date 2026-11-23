@@ -23,6 +23,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.http import require_http_methods
 
 from indicators.models import RawFile, Source, SourceRevision, source_config_snapshot
+from indicators.resync_methods import ONLINE_SOURCES, resync_method
 
 from indicators.views import json_error, json_success
 
@@ -31,6 +32,34 @@ logger = logging.getLogger(__name__)
 # Metode yang benar-benar memiliki handler di codebase.
 # Jangan tambah opsi di sini tanpa implementasi handler-nya.
 SUPPORTED_METHODS = {
+    "web_kemenkeu": {
+        "label": "Sinkronisasi online (arsip APBN KiTa)",
+        "formats": ["pdf"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "PDF edisi terbaru yang dikenali di arsip APBN KiTa; tetap memerlukan review Admin.",
+    },
+    "api_bis": {
+        "label": "API BIS (suku bunga Indonesia)",
+        "formats": ["xml"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "Data Bank Indonesia melalui BIS; pembaruan dapat terlambat.",
+    },
+    "web_bi": {
+        "label": "Sinkronisasi online (tabel resmi BI)",
+        "formats": ["html"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "Tabel BI-Rate, JISDOR dan cadangan devisa; gagal eksplisit bila sumber tidak terjangkau.",
+    },
+    "web_bkpm": {
+        "label": "Sinkronisasi online (pratinjau publik BKPM)",
+        "formats": ["json"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "Pratinjau publik triwulan nasional terakhir yang lengkap; bukan impor ZIP lokal.",
+    },
     "api_bps": {
         "label": "API resmi (WebAPI BPS)",
         "formats": ["json"],
@@ -178,7 +207,7 @@ def _resolve_field(data: dict, existing: str, *names: str) -> str:
     return existing
 
 
-def _validate_values(values: dict, source_pk=None) -> str | None:
+def _validate_values(values: dict, source_pk=None, source_id=None) -> str | None:
     """Validasi aturan konfigurasi. Kembalikan pesan error atau None."""
     if not values["source_name"]:
         return "Field 'sourceName' wajib diisi."
@@ -195,6 +224,14 @@ def _validate_values(values: dict, source_pk=None) -> str | None:
         return (
             f"Metode '{method}' belum didukung. Pilihan: {sorted(SUPPORTED_METHODS)}."
         )
+    if method in ONLINE_SOURCES:
+        expected_id, endpoint, _ = ONLINE_SOURCES[method]
+        if source_id != expected_id or values['endpoint_url'] != endpoint:
+            return f"Metode ini khusus sumber {expected_id} dengan endpoint {endpoint}."
+    if method == 'api_bis' and (values['source_name'] != 'BIS - Suku bunga Indonesia'
+            or values['institution'] != 'Bank for International Settlements'
+            or values['primary_url'] != 'https://data.bis.org/'):
+        return 'Identitas dan atribusi BIS harus sesuai sumber resmi.'
     if not values["data_format"]:
         return "Field 'dataFormat' wajib diisi."
     if values["data_format"] not in SUPPORTED_METHODS[method]["formats"]:
@@ -298,6 +335,7 @@ def _serialize_admin_entry(source: Source) -> dict:
         "updateSchedule": source.update_schedule or "",
         "status": source.status,
         "lastFetch": _last_fetch_info(source),
+        "resyncAvailable": bool(resync_method(source)),
     }
 
 
@@ -494,7 +532,7 @@ def admin_source_create(request):
         return json_error("Field 'sourceId' maksimal 32 karakter.", status=400)
     if not all(ch.isalnum() or ch == "_" for ch in source_id):
         return json_error("Field 'sourceId' hanya boleh huruf, angka, dan garis bawah.", status=400)
-    problem = _validate_values(values)
+    problem = _validate_values(values, source_id=source_id)
     if problem:
         return json_error(problem, status=400)
 
@@ -601,7 +639,7 @@ def admin_source_update(request, source_id: str):
         if set(data) - {"expectedRevision"} == {"status"}:
             problem = None if data["status"] in ("active", "inactive") else "Field 'status' harus 'active' atau 'inactive'."
         else:
-            problem = _validate_values(values, source_pk=source.pk)
+            problem = _validate_values(values, source_pk=source.pk, source_id=source.source_id)
         if problem:
             return json_error(problem, status=400)
         source.source_name = values["source_name"][:200]

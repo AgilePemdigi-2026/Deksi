@@ -64,6 +64,32 @@ class RawStorageTests(IndicatorCase):
         self.assertEqual(path.read_bytes(), b"TAMPERED")
         self.assertEqual(RawFile.objects.count(), 0)
 
+    def test_missing_legacy_raw_reuses_verified_existing_file(self):
+        raw, _ = save_raw(self.source, b"FIRST", "release.pdf")
+        target = Path(raw.stored_path)
+        raw.stored_path = str(self.root / "missing-legacy.raw")
+        raw.save(update_fields=["stored_path"])
+
+        recovered, created = save_raw(self.source, b"FIRST", "release.pdf")
+        self.assertFalse(created)
+        self.assertEqual(Path(recovered.stored_path), target)
+        self.assertEqual(verified_raw_bytes(recovered), b"FIRST")
+
+    def test_missing_legacy_raw_does_not_repoint_to_corrupt_existing_file(self):
+        raw, _ = save_raw(self.source, b"FIRST", "release.pdf")
+        target = Path(raw.stored_path)
+        target.write_bytes(b"TAMPERED")
+        missing = self.root / "missing-legacy.raw"
+        raw.stored_path = str(missing)
+        raw.save(update_fields=["stored_path"])
+
+        with self.assertRaises(ValueError):
+            save_raw(self.source, b"FIRST", "release.pdf")
+
+        raw.refresh_from_db()
+        self.assertEqual(raw.stored_path, str(missing))
+        self.assertEqual(target.read_bytes(), b"TAMPERED")
+
     def test_open_failure_must_not_delete_a_preexisting_raw(self):
         first, _ = save_raw(self.source, b"FIRST", "release.pdf")
         path = Path(first.stored_path)

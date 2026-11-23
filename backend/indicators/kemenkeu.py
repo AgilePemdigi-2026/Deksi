@@ -191,16 +191,8 @@ def find_period_info(text: str) -> tuple[date | None, date | None]:
         cumulative_until = date(int(year), month, int(day))
     except ValueError:
         return None, None
-    publication_date = cumulative_until
-    for date_match in DATE_PATTERN.finditer(text):
-        if date_match.group(2).lower() != month_name.lower():
-            continue
-        try:
-            publication_date = date(int(date_match.group(3)), month, int(date_match.group(1)))
-            break
-        except ValueError:
-            continue
-    return cumulative_until, publication_date
+    # An observation date or an unlabelled date is not proof of publication.
+    return cumulative_until, None
 
 
 def _rp_values_with_positions(line: str) -> list[tuple[int, Decimal]]:

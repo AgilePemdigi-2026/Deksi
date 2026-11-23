@@ -461,7 +461,7 @@ export function AdminSourcesPage() {
                     <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
                     <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
                   </div>
-                  {s.sourceId === "BPS" && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported />}
+                  {["BPS", "BI", "BKPM", "BIS", "KEMENKEU"].includes(s.sourceId) && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported={s.resyncAvailable === true} />}
                   <div className="admin-source-card__actions">
                     {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={(event) => { setDialogOpener(event.currentTarget); setReviewSource(s.sourceId); }}>Lihat Kandidat</button>}
                     <button type="button" className="source-trace-link" disabled={toggling || saving || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); void startEdit(s.sourceId); }}>

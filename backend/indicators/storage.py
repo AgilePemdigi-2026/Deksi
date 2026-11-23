@@ -57,12 +57,21 @@ def save_raw(
             root = raw_storage_root().resolve()
             stored_dir = root / f"source-{source.pk}"
             stored_dir.mkdir(parents=True, exist_ok=True)
+            if stored_dir.is_symlink() or stored_dir.is_junction() or not stored_dir.resolve().is_relative_to(root):
+                raise ValueError("Penyimpanan RAW tidak aman")
             stored_path = stored_dir / f"{checksum}.raw"
+            created_file = False
             try:
                 with stored_path.open("xb") as handle:
+                    created_file = True
                     handle.write(content)
             except FileExistsError:
-                pass
+                candidate = RawFile(stored_path=str(stored_path), checksum_sha256=checksum, file_size_bytes=len(content))
+                verified_raw_bytes(candidate)
+            except OSError:
+                if created_file:
+                    stored_path.unlink(missing_ok=True)
+                raise
             existing.stored_path = str(stored_path)
             existing.file_size_bytes = len(content)
             existing.save(update_fields=["stored_path", "file_size_bytes"])

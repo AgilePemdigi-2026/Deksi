@@ -37,7 +37,7 @@ class BulkCandidateReviewApiTests(IndicatorCase):
             publication_date = date(2024, 1, 1)
         raw_file = None
         if raw:
-            if self.source.source_id == "BPS":
+            if self.source.source_id in ("BPS", "BKPM", "BI"):
                 raw_file, _ = save_raw(self.source, f"BPS synthetic {day}".encode(), f"Evidence {day}")
             else:
                 raw_file = RawFile.objects.create(
@@ -144,6 +144,116 @@ class BulkCandidateReviewApiTests(IndicatorCase):
         refreshed = self.preview().json()
         self.assertNotEqual(refreshed["id"], body["id"])
         self.assertEqual(body["items"][0]["value"], "2.500000")
+
+    def test_bkpm_missing_raw_after_preview_is_not_published(self):
+        self._assert_missing_raw_after_preview_is_not_published("BKPM")
+
+    def test_bi_missing_raw_after_preview_is_not_published(self):
+        self._assert_missing_raw_after_preview_is_not_published("BI")
+
+    def _assert_missing_raw_after_preview_is_not_published(self, source_id):
+        self.source = Source.objects.get(source_id=source_id)
+        self.base = f"/api/admin/sources/{source_id}/candidates/"
+        raw, _ = save_raw(self.source, b"BKPM SYNTHETIC", "synthetic.json")
+        candidate = stage_observation(indicator_id=self.indicator.pk, source_id=self.source.pk,
+            observation_date=date(2024, 1, 1), period_label="UJI", frequency="monthly",
+            data_type="yoy", value=Decimal("2.5"), unit="%", publication_date=None, raw_file_id=raw.pk)
+        assert candidate is not None
+        preview = self.preview().json()
+        self.assertEqual(preview["eligible"], 1)
+        Path(raw.stored_path).unlink()
+        response = self.client.post(self.base + f"bulk-review/{preview['id']}/confirm/",
+            data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, "pending")
+        self.assertEqual(response.json()["counts"]["published"], 0)
+
+    def test_excluded_first_batch_does_not_starve_later_candidates(self):
+        self.stage(day=1, raw=False)
+        self.stage(day=2, raw=False)
+        later = self.stage(day=3)
+        with patch("indicators.bulk_candidate_views.MAX_PREVIEW_ITEMS", 2):
+            first = self.preview().json()
+            self.assertTrue(first["hasMore"])
+            response = self.client.post(self.base + f"bulk-review/{first['id']}/confirm/",
+                data=json.dumps({"confirmed": True}), content_type="application/json")
+            self.assertEqual(response.status_code, 200)
+            second = self.preview().json()
+        self.assertIn(later.pk, [item["id"] for item in second["items"]])
+
+    def test_bkpm_corrupt_or_missing_raw_is_excluded_before_preview(self):
+        self.source = Source.objects.get(source_id="BKPM")
+        self.base = "/api/admin/sources/BKPM/candidates/"
+        missing = self.stage(day=1, publication_date=None)
+        corrupt = self.stage(day=2, publication_date=None)
+        Path(RawFile.objects.get(pk=missing.payload["raw_file_id"]).stored_path).unlink()
+        Path(RawFile.objects.get(pk=corrupt.payload["raw_file_id"]).stored_path).write_bytes(b"tampered")
+        items = {item["id"]: item for item in self.preview().json()["items"]}
+        self.assertEqual(items[missing.pk]["exclusionReason"], "raw_file_unavailable")
+        self.assertEqual(items[corrupt.pk]["exclusionReason"], "raw_file_invalid")
+
+    def test_bkpm_valid_raw_without_release_can_still_be_bulk_published(self):
+        self._assert_valid_raw_without_release_can_be_published("BKPM")
+
+    def test_bi_valid_raw_without_release_can_still_be_bulk_published(self):
+        self._assert_valid_raw_without_release_can_be_published("BI")
+
+    def _assert_valid_raw_without_release_can_be_published(self, source_id):
+        self.source = Source.objects.get(source_id=source_id)
+        self.base = f"/api/admin/sources/{source_id}/candidates/"
+        candidate = self.stage(day=1, publication_date=None)
+        preview = self.preview().json()
+        self.assertEqual(preview["eligible"], 1)
+        response = self.client.post(self.base + f"bulk-review/{preview['id']}/confirm/",
+            data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(response.json()["counts"]["published"], 1)
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, "published")
+        self.assertIsNone(Observation.objects.get().publication_date)
+
+    def test_bkpm_raw_corrupted_after_preview_is_not_published(self):
+        self.source = Source.objects.get(source_id="BKPM")
+        self.base = "/api/admin/sources/BKPM/candidates/"
+        candidate = self.stage(day=1, publication_date=None)
+        preview = self.preview().json()
+        Path(RawFile.objects.get(pk=candidate.payload["raw_file_id"]).stored_path).write_bytes(b"tampered")
+        response = self.client.post(self.base + f"bulk-review/{preview['id']}/confirm/",
+            data=json.dumps({"confirmed": True}), content_type="application/json")
+        self.assertEqual(response.json()["counts"]["published"], 0)
+        self.assertEqual(response.json()["items"][0]["reason"], "raw_file_invalid")
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.status, "pending")
+
+    def test_batch_progress_wraps_to_excluded_candidates_without_changing_status(self):
+        early = [self.stage(day=day, raw=False) for day in (1, 2)]
+        later = self.stage(day=3)
+        with patch("indicators.bulk_candidate_views.MAX_PREVIEW_ITEMS", 2):
+            first = self.preview().json()
+            self.client.post(self.base + f"bulk-review/{first['id']}/confirm/",
+                data=json.dumps({"confirmed": True}), content_type="application/json")
+            second = self.preview().json()
+            self.assertEqual([item["id"] for item in second["items"]], [later.pk])
+            self.client.post(self.base + f"bulk-review/{second['id']}/confirm/",
+                data=json.dumps({"confirmed": True}), content_type="application/json")
+            third = self.preview().json()
+        self.assertEqual([item["id"] for item in third["items"]], [item.pk for item in early])
+        self.assertEqual(ObservationCandidate.objects.filter(pk__in=[item.pk for item in early],
+            status="pending").count(), 2)
+
+    def test_unconfirmed_preview_does_not_advance_or_share_progress_with_other_reviewers(self):
+        first = self.stage(day=1, raw=False)
+        self.stage(day=2)
+        with patch("indicators.bulk_candidate_views.MAX_PREVIEW_ITEMS", 1):
+            preview = self.preview().json()
+            self.assertEqual(self.preview().json()["items"][0]["id"], first.pk)
+            self.client.post(self.base + f"bulk-review/{preview['id']}/confirm/",
+                data=json.dumps({"confirmed": True}), content_type="application/json")
+            from django.contrib.auth import get_user_model
+            other = get_user_model().objects.create_user(username="other-bulk-reviewer", is_staff=True,
+                is_superuser=True)
+            self.client.force_login(other)
+            self.assertEqual(self.preview().json()["items"][0]["id"], first.pk)
 
     def test_preview_covers_pending_candidates_beyond_first_page(self):
         for day in range(1, 23):
