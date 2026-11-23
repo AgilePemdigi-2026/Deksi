@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { SyncHistoryQuery, SyncHistoryResult } from "./features/sync-history/types";
-import { createAuthClient } from "./features/admin/auth";
+import { authOrigin, createAuthClient } from "./features/admin/auth";
 
 export const API_BASE = "/api";
 
@@ -632,8 +632,8 @@ export async function fetchActiveBulkReview(sourceId: string): Promise<BulkRevie
   });
 }
 
-export async function fetchAdminSession(): Promise<AdminSession> {
-  const res = await adminFetch("/admin/session/");
+export async function fetchAdminSession(signal?: AbortSignal): Promise<AdminSession> {
+  const res = await adminFetch("/admin/session/", { cache: "no-store", signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as AdminSession;
 }
@@ -650,8 +650,14 @@ export async function adminLogin(username: string, password: string): Promise<vo
   }
 }
 
-export async function adminLogout(): Promise<void> {
-  await createAuthClient("").logout();
+export async function adminLogout(signal?: AbortSignal): Promise<void> {
+  const response = await adminFetch("/admin/logout/", { method: "POST", signal });
+  if (!response.ok) throw new Error("Sesi Admin tidak dapat diakhiri.");
+  if ((await fetchAdminSession(signal)).authenticated) {
+    throw new Error("Sesi Admin masih aktif setelah permintaan keluar.");
+  }
+  const configuredOrigin = authOrigin();
+  if (configuredOrigin) await createAuthClient(configuredOrigin).logout(signal);
 }
 
 export async function fetchAcquisitionMethods(): Promise<{ methods: AcquisitionMethod[]; frequencies: string[] }> {
