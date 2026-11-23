@@ -41,7 +41,7 @@ export default function LoginPage() {
       setStatus('Memeriksa akses dashboard Admin…')
       await auth.confirmPortalSession(current, controller.signal)
       if (controller.signal.aborted) return
-      window.location.replace('/admin/sumber')
+      setStatus('Sesi Admin masih aktif. Pilih Lanjutkan untuk membuka dashboard, atau Keluar untuk mengakhiri sesi.')
       return
     }
     clearCredentials()
@@ -160,6 +160,11 @@ export default function LoginPage() {
     }
   }
 
+  function continueToDashboard() {
+    if (!user || checking || pending) return
+    window.location.replace('/admin/sumber')
+  }
+
   const openInfo = () => info.current?.showModal()
   return <div className="login-page">
     <a className="skip-link" href="#login-heading">Lewati ke formulir masuk</a>
@@ -184,7 +189,11 @@ export default function LoginPage() {
             <button type="submit" className="submit-button" id="login-submit" disabled={pending || checking || !ready}><span>{pending ? 'Memproses…' : 'Masuk'}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12" /></svg></button>
             <p id="prototype-note" className="prototype-note"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="M8 7v4m0-7v1" /></svg><span>Autentikasi menggunakan sesi server.<br />Pengunjung publik tetap tidak memerlukan akun.</span></p>
           </form>
-          {user && <section id="admin-session" className="session-panel" aria-label="Sesi Admin"><p>Masuk sebagai <strong id="session-user">{user.username}</strong>.</p><p>Jika akses dashboard belum dapat dipastikan, periksa status sesi sebelum melanjutkan.</p></section>}
+          {user && <section id="admin-session" className="session-panel" aria-label="Sesi Admin">
+            <p>Sesi aktif untuk <strong id="session-user">{user.username}</strong>.</p>
+            <p>Dashboard tidak dibuka otomatis. Pilih lanjutkan, atau keluar untuk mengakhiri sesi.</p>
+            <button id="admin-continue" className="submit-button" type="button" disabled={checking || pending} onClick={continueToDashboard}>Lanjutkan ke dashboard</button>
+          </section>}
           <p id="form-status" className="form-status" role="status" aria-live="polite" aria-atomic="true">{status}</p>
           {(user || authError?.code === 'forbidden') && <button id="auth-logout" className="submit-button" type="button" disabled={checking || pending} onClick={() => void logout()}>{pending ? 'Memproses…' : 'Keluar'}</button>}
           {(authError || user) && <button id="session-refresh" type="button" className="session-refresh" disabled={checking || pending} onClick={() => void refreshSession()}>Periksa status sesi</button>}
