@@ -220,7 +220,7 @@ def parse_bi_rr_xlsx(path: Path, raw_file, source) -> list[dict]:
         wb.close()
     indicator = get_or_create_indicator(
         "birate",
-        "BI-Rate (BI-7Day Repurchase Rate)",
+        "BI-Rate",
         "Kebijakan Moneter",
         "%",
         "avg",
