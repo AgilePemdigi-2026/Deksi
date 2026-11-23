@@ -8,7 +8,7 @@ export function AdminNavigation({ active, busy = false }: { active: AdminPage; b
   const [leaving, setLeaving] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const links = [
-    { href: '/', label: 'Dashboard Publik' },
+    { href: '/admin/login', label: 'Keluar' },
     { href: '/admin/monitoring', label: 'Monitoring', page: 'monitoring' },
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
@@ -23,7 +23,7 @@ export function AdminNavigation({ active, busy = false }: { active: AdminPage; b
     setLogoutError(null);
     try {
       await adminLogout();
-      window.location.replace('/');
+      window.location.replace('/admin/login');
     } catch {
       setLogoutError('Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.');
       setLeaving(false);
@@ -36,8 +36,8 @@ export function AdminNavigation({ active, busy = false }: { active: AdminPage; b
         href={busy || leaving ? undefined : link.href}
         aria-disabled={busy || leaving ? true : undefined}
         aria-current={link.page === active ? 'page' : undefined}
-        onClick={link.href === '/' ? leaveDashboard : undefined}
-      >{link.href === '/' ? 'Keluar ke Dashboard Publik' : link.label}</a>)}
+        onClick={link.href === '/admin/login' ? leaveDashboard : undefined}
+      >{link.label}</a>)}
     </nav>
     {busy && <p id="admin-navigation-busy" role="status">Tunggu hingga proses selesai sebelum berpindah halaman.</p>}
     {leaving && <p role="status">Mengakhiri sesi Admin…</p>}

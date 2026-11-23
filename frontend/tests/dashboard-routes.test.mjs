@@ -7,6 +7,7 @@ import {renderToStaticMarkup} from 'react-dom/server'
 const vite=await createServer({configFile:false,plugins:[react()],cacheDir:'.artifacts/routes-unit',server:{middlewareMode:true,hmr:false,ws:false},appType:'custom'})
 after(()=>vite.close())
 const {default:App}=await vite.ssrLoadModule('/src/App.tsx')
+const {AdminNavigation}=await vite.ssrLoadModule('/src/components/AdminNavigation.tsx')
 const {shouldRedirectRestoredAdminPage}=await vite.ssrLoadModule('/src/features/admin/history.ts')
 const source=await vite.ssrLoadModule('/src/features/indicators/source.ts')
 const transport=await vite.ssrLoadModule('/src/api.ts')
@@ -25,6 +26,14 @@ test('all Sprint1 routes coexist, public root has full donor sections and no inv
  const adminSources=renderToStaticMarkup(createElement(App,{pathname:'/admin/sumber-data'}));assert(adminSources.includes('Kelola Sumber'))
  const adminAnalysis=renderToStaticMarkup(createElement(App,{pathname:'/admin/analisis'}));assert(adminAnalysis.includes('Memeriksa sesi Admin'));assert(!adminAnalysis.includes('Detail Peninjauan Hasil Analisis'))
  const unknown=renderToStaticMarkup(createElement(App,{pathname:'/rute-tidak-ada-xyz'}));assert(unknown.includes('Halaman tidak ditemukan'))
+})
+test('admin login requires credentials and dashboard exit returns to login',()=>{
+ const login=renderToStaticMarkup(createElement(App,{pathname:'/admin/login'}))
+ assert(login.includes('id="login-form"'))
+ assert(!login.includes('admin-continue'))
+ assert(!login.includes('admin-session'))
+ const navigation=renderToStaticMarkup(createElement(AdminNavigation,{active:'sources'}))
+ assert.match(navigation,/<a href="\/admin\/login">Keluar<\/a>/)
 })
 test('public API and RAW stay same origin, no hardcoded shared test port',()=>{
  assert.equal(transport.API_BASE,'/api')
