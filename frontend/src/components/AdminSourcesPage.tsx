@@ -172,6 +172,8 @@ export function AdminSourcesPage() {
       editRequest.current += 1;
       setAuthenticated(false);
       setCanReviewCandidates(null);
+      setUsername("");
+      setPassword("");
       setReviewSource(null);
       setSources([]);
       window.location.replace("/admin/login");
@@ -415,8 +417,8 @@ export function AdminSourcesPage() {
           <h3 className="trace-title">Login Admin</h3>
           <p className="trace-note">Khusus staf pengelola sumber. Publik tidak dapat menambah sumber.</p>
           <div className="trace-grid">
-            <label className="trace-row">Username<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" /></label>
-            <label className="trace-row">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></label>
+            <label className="trace-row">Username<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" /></label>
+            <label className="trace-row">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" /></label>
           </div>
           {loginError && <p className="summary-error">{loginError}</p>}
           <footer className="trace-foot">

@@ -7,7 +7,8 @@ import ResetPasswordPage from './features/admin/ResetPasswordPage'
 import type { RecoveryService } from './features/admin/recovery'
 import { createRecoveryClient } from './features/admin/recoveryClient'
 import { authOrigin } from './features/admin/auth'
-import { shouldReloadRestoredAdminPage } from './features/admin/history'
+import { shouldRedirectRestoredAdminPage } from './features/admin/history'
+import { AdminSessionGuard } from './features/admin/AdminSessionGuard'
 import { parseRoute } from './features/indicators/data'
 import { DetailScreen, FeatureUnavailable } from './features/indicators/DetailPage'
 import { SourceTraceScreen } from './features/indicators/SourceTracePage'
@@ -50,8 +51,8 @@ function isAdminFeedbackHashRoute(): boolean {
 export default function App({ pathname = typeof window === 'undefined' ? '/' : window.location.pathname, search = typeof window === 'undefined' ? '' : window.location.search, resetService = recoveryClient }: { pathname?: string; search?: string; resetService?: RecoveryService } = {}) {
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
-      if (shouldReloadRestoredAdminPage(event.persisted, window.location.pathname, window.location.hash)) {
-        window.location.reload()
+      if (shouldRedirectRestoredAdminPage(event.persisted, window.location.pathname, window.location.hash)) {
+        window.location.replace('/admin/login')
       }
     }
     window.addEventListener('pageshow', handlePageShow)
@@ -73,10 +74,10 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
   }
   if (path === '/admin/sumber' || path === '/admin/sumber-data') return <AdminSourcesPage />
   if (path === '/admin/feedback' || path === '/admin/umpan-balik') return <AdminFeedbackPage />
-  if (path === '/admin/jadwal') return <AdminSchedulePage />
-  if (path === '/admin/monitoring') return <AdminMonitoringPage />
-  if (path === '/admin/analisis') return <AdminAnalysisPage />
-  if (path === '/admin/riwayat-sinkronisasi') return <SyncHistoryPage loadHistory={loadAdminSyncHistory} />
+  if (path === '/admin/jadwal') return <AdminSessionGuard><AdminSchedulePage /></AdminSessionGuard>
+  if (path === '/admin/monitoring') return <AdminSessionGuard><AdminMonitoringPage /></AdminSessionGuard>
+  if (path === '/admin/analisis') return <AdminSessionGuard><AdminAnalysisPage /></AdminSessionGuard>
+  if (path === '/admin/riwayat-sinkronisasi') return <AdminSessionGuard><SyncHistoryPage loadHistory={loadAdminSyncHistory} /></AdminSessionGuard>
   const route = parseRoute(path, search)
   if (route.kind === 'dashboard') return <Dashboard />
   if (route.kind === 'detail') return <DetailScreen route={route} />

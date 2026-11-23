@@ -175,6 +175,9 @@ export function AdminFeedbackPage() {
       feedbackRequestId.current += 1;
       detailRequestId.current += 1;
       setAuthenticated(false);
+      setAdminUsername("");
+      setLoginUser("");
+      setLoginPass("");
       setFeedbacks([]);
       setDetail(null);
       setSelectedFeedbackId(null);
@@ -237,12 +240,13 @@ export function AdminFeedbackPage() {
             <p>Masuk untuk mengelola daftar laporan umpan balik pengguna.</p>
           </div>
           {loginError && <div className="admin-fb-alert error">{loginError}</div>}
-          <form onSubmit={handleLogin} className="admin-fb-form">
+          <form onSubmit={handleLogin} className="admin-fb-form" autoComplete="off">
             <div className="admin-fb-form-group">
               <label htmlFor="admin-user">Username</label>
               <input
                 id="admin-user"
                 type="text"
+                autoComplete="off"
                 value={loginUser}
                 onChange={(e) => setLoginUser(e.target.value)}
                 required
@@ -254,6 +258,7 @@ export function AdminFeedbackPage() {
               <input
                 id="admin-pass"
                 type="password"
+                autoComplete="off"
                 value={loginPass}
                 onChange={(e) => setLoginPass(e.target.value)}
                 required
