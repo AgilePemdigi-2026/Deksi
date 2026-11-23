@@ -530,6 +530,7 @@ export async function fetchReviewCandidate(sourceId: string, id: number, options
 
 export interface BulkPreview {
   id: string; status: 'preview'; expiresAt: string; total: number; eligible: number; excluded: number;
+  totalPending?: number; hasMore?: boolean;
   items: Array<ReviewCandidate & { eligible: boolean; exclusionReason: string | null }>;
 }
 export interface BulkReviewResult {
@@ -539,11 +540,16 @@ export interface BulkReviewResult {
   counts: { total: number; eligible: number; excluded: number; published: number; skipped: number; pending: number; unknown: number };
 }
 const bulkPath = (sourceId: string) => `/admin/sources/${encodeURIComponent(sourceId)}/candidates/`;
-function bulkError(status: number): Error {
-  if (status === 401) return new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
-  if (status === 403) return new CandidateReviewError('forbidden', 'Izin review atau token keamanan ditolak.');
-  if (status === 409) return new CandidateReviewError('conflict', 'Ada konflik pratinjau atau operasi sumber. Periksa status operasi sebelum keputusan baru.');
-  return new Error('Operasi kandidat belum dapat dipastikan. Periksa statusnya sebelum mengambil keputusan baru.');
+async function bulkError(res: Response): Promise<Error> {
+  let detail: string | undefined;
+  try {
+    const body = await res.json() as { error?: unknown };
+    if (typeof body.error === 'string' && body.error.trim()) detail = body.error.trim();
+  } catch { /* abaikan body tidak valid, pakai fallback status */ }
+  if (res.status === 401) return new CandidateReviewError('unauthenticated', detail ?? 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+  if (res.status === 403) return new CandidateReviewError('forbidden', detail ?? 'Izin review atau token keamanan ditolak.');
+  if (res.status === 409) return new CandidateReviewError('conflict', detail ?? 'Ada konflik pratinjau atau operasi sumber. Periksa status operasi sebelum keputusan baru.');
+  return new Error(detail ?? 'Operasi kandidat belum dapat dipastikan. Periksa statusnya sebelum mengambil keputusan baru.');
 }
 const validBulkId = (id: unknown): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id);
 function validBulkResult(body: BulkReviewResult, id: string): boolean {
@@ -559,12 +565,14 @@ export async function createBulkPreview(sourceId: string): Promise<BulkPreview> 
     const res = await adminFetch(`${bulkPath(sourceId)}bulk-preview/`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal,
     });
-    if (!res.ok) throw bulkError(res.status);
+    if (!res.ok) throw await bulkError(res);
     const body = await res.json() as BulkPreview;
     if (!validBulkId(body?.id) || body.status !== 'preview' || !Array.isArray(body.items) ||
         !Number.isSafeInteger(body.total) || body.total !== body.items.length ||
         !Number.isSafeInteger(body.eligible) || !Number.isSafeInteger(body.excluded) ||
         body.total !== body.eligible + body.excluded ||
+        (body.totalPending !== undefined && (!Number.isSafeInteger(body.totalPending) || body.totalPending < body.total)) ||
+        (body.hasMore !== undefined && typeof body.hasMore !== 'boolean') ||
         body.items.some(item => item.sourceId !== sourceId || !Number.isSafeInteger(item.id) ||
           typeof item.fingerprint !== 'string' || typeof item.eligible !== 'boolean')) {
       throw new Error('Pratinjau kandidat tidak valid.');
@@ -579,7 +587,7 @@ export async function confirmBulkReview(sourceId: string, id: string): Promise<B
     const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/confirm/`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmed: true }), signal,
     });
-    if (!res.ok) throw bulkError(res.status);
+    if (!res.ok) throw await bulkError(res);
     const body = await res.json() as BulkReviewResult;
     if (!validBulkResult(body, id)) throw new Error('Hasil operasi belum dapat dipastikan.');
     return body;
@@ -593,7 +601,7 @@ export async function reconcileBulkReview(sourceId: string, id: string, reason: 
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ acknowledged: true, reason: reason.trim() }), signal,
     });
-    if (!res.ok) throw bulkError(res.status);
+    if (!res.ok) throw await bulkError(res);
     const body = await res.json() as BulkReviewResult;
     if (!validBulkResult(body, id) || !body.resolvedAt || !body.resolvedBy || !body.resolutionReason) {
       throw new Error('Hasil pemeriksaan belum dapat dipastikan. Periksa status operasi.');
@@ -606,7 +614,7 @@ export async function fetchBulkReview(sourceId: string, id: string): Promise<Bul
   if (!validBulkId(id)) throw new Error('Identitas operasi tidak valid.');
   return withCandidateDeadline(async signal => {
     const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/`, { signal });
-    if (!res.ok) throw bulkError(res.status);
+    if (!res.ok) throw await bulkError(res);
     const body = await res.json() as BulkReviewResult;
     if (!validBulkResult(body, id)) throw new Error('Status operasi tidak valid.');
     return body;
@@ -616,7 +624,7 @@ export async function fetchBulkReview(sourceId: string, id: string): Promise<Bul
 export async function fetchActiveBulkReview(sourceId: string): Promise<BulkReviewResult | null> {
   return withCandidateDeadline(async signal => {
     const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/active/`, { signal });
-    if (!res.ok) throw bulkError(res.status);
+    if (!res.ok) throw await bulkError(res);
     const body = await res.json() as { batch?: BulkReviewResult | null };
     if (body?.batch == null) return null;
     if (!validBulkId(body.batch.id) || !validBulkResult(body.batch, body.batch.id)) throw new Error('Status operasi tidak valid.');

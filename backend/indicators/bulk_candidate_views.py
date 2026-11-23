@@ -41,8 +41,8 @@ def _eligibility(candidate):
         if not isinstance(payload.get("period_label"), str) or not payload["period_label"].strip():
             return False, "missing_period_label"
     publication_date = payload.get("publication_date")
-    if publication_date is None and candidate.source.source_id == "BPS":
-        pass  # BPS observations may lack an independently established release date.
+    if publication_date is None and candidate.source.source_id in ("BPS", "BKPM"):
+        pass  # BPS and BKPM observations may lack an independently established release date.
     elif not isinstance(publication_date, str):
         return False, "missing_publication_date"
     else:
@@ -119,12 +119,14 @@ def bulk_candidate_preview(request, source_id):
             source = Source.objects.filter(source_id=source_id).first()
             if source is None:
                 return json_error("Sumber tidak ditemukan.", status=404)
-            # One bounded SELECT freezes the complete pending set at one database statement snapshot.
-            candidates = list(ObservationCandidate.objects.filter(source=source, status="pending")
-                              .select_related("indicator", "source", "reviewed_by")
-                              .order_by("pk")[:MAX_PREVIEW_ITEMS + 1])
-            if len(candidates) > MAX_PREVIEW_ITEMS:
-                return json_error("Terlalu banyak kandidat; lakukan review per halaman.", status=409)
+            # Chunked snapshot: freeze the oldest MAX pending rows per batch.
+            # Later batches pick up the remainder; rows arriving after this
+            # snapshot are never added silently.
+            pending_qs = (ObservationCandidate.objects.filter(source=source, status="pending")
+                          .select_related("indicator", "source", "reviewed_by")
+                          .order_by("pk"))
+            total_pending = pending_qs.count()
+            candidates = list(pending_qs[:MAX_PREVIEW_ITEMS])
             batch = BulkCandidateReview.objects.create(
                 source=source, reviewer=reviewer, expires_at=timezone.now() + PREVIEW_TTL,
             )
@@ -145,6 +147,7 @@ def bulk_candidate_preview(request, source_id):
         return _no_store(JsonResponse({
             "id": str(batch.pk), "status": "preview", "expiresAt": batch.expires_at.isoformat(),
             "total": len(items), "eligible": eligible_count, "excluded": len(items) - eligible_count,
+            "totalPending": total_pending, "hasMore": total_pending > len(items),
             "items": items,
         }))
     except PermissionDenied:
