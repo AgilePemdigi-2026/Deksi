@@ -35,7 +35,7 @@ test('admin status update does not submit when CSRF bootstrap fails', async () =
   } finally { globalThis.fetch = original }
 })
 
-test('admin logout fails closed on server failure and never replays the request', async () => {
+test('admin logout fails closed when the Admin session endpoint fails', async () => {
   const original = globalThis.fetch
   const calls = []
   globalThis.fetch = async (url, init) => {
@@ -46,22 +46,33 @@ test('admin logout fails closed on server failure and never replays the request'
   }
   try {
     await assert.rejects(api.adminLogout())
-    assert.deepEqual(calls.map(call => call.url), ['/api/auth/csrf/', '/api/auth/logout/'])
-    assert.equal(calls[1].init.headers['X-CSRFToken'], 'synthetic-csrf')
+    assert.deepEqual(calls.map(call => call.url), ['/api/auth/csrf/', '/api/admin/logout/'])
+    assert.equal(calls[1].init.headers.get('X-CSRFToken'), 'synthetic-csrf')
   } finally { globalThis.fetch = original }
 })
 
-test('admin logout confirms server session before reporting success', async () => {
+test('admin logout confirms the protected Admin session is gone before reporting success', async () => {
   const original = globalThis.fetch
   const calls = []
-  const bodies = [{csrfToken:'synthetic-csrf'}, {authenticated:false,user:null}, {authenticated:true,user:{id:1,username:'synthetic',isAdmin:true}}]
+  const bodies = [{csrfToken:'synthetic-csrf'}, {loggedOut:true}, {authenticated:false,isStaff:false,username:null}]
   globalThis.fetch = async (url, init) => {
     calls.push({url, init})
     return new Response(JSON.stringify(bodies.shift()))
   }
   try {
-    await assert.rejects(api.adminLogout())
-    assert.deepEqual(calls.map(call => call.url), ['/api/auth/csrf/', '/api/auth/logout/', '/api/auth/session/'])
+    await api.adminLogout()
+    assert.deepEqual(calls.map(call => call.url), ['/api/auth/csrf/', '/api/admin/logout/', '/api/admin/session/'])
+    assert.equal(calls[1].init.headers.get('X-CSRFToken'), 'synthetic-csrf')
+    assert.equal(calls[2].init.cache, 'no-store')
+  } finally { globalThis.fetch = original }
+})
+
+test('admin logout never reports success if the protected Admin session remains active', async () => {
+  const original = globalThis.fetch
+  const bodies = [{csrfToken:'synthetic-csrf'}, {loggedOut:true}, {authenticated:true,isStaff:true,username:'synthetic'}]
+  globalThis.fetch = async () => new Response(JSON.stringify(bodies.shift()))
+  try {
+    await assert.rejects(api.adminLogout(), /Sesi Admin masih aktif/)
   } finally { globalThis.fetch = original }
 })
 

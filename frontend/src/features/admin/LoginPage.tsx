@@ -6,6 +6,7 @@ import { validateLogin } from './validation'
 import type { LoginErrors } from './validation'
 import { AuthError, authOrigin, createAuthClient } from './auth'
 import type { AdminUser } from './auth'
+import { adminLogout } from '../../api'
 import './login.css'
 
 export default function LoginPage() {
@@ -139,7 +140,7 @@ export default function LoginPage() {
     setAuthError(null)
     setStatus('Mengakhiri sesi…')
     try {
-      await auth.logout(controller.signal)
+      await adminLogout(controller.signal)
       if (controller.signal.aborted) return
       setUser(null)
       setReady(true)
