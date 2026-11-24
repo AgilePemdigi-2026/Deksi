@@ -104,6 +104,71 @@ POSTGRES_PORT=5432
 
 ## Pemeriksaan Kode
 
+### Kandidat sinkronisasi online BI dan BKPM
+
+Worker `process_resync` dapat memproses permintaan Admin untuk sumber online berikut.
+Metode file lokal tetap tersedia dan **tidak otomatis diubah** oleh migrasi.
+Pilih metode online secara eksplisit melalui Edit Sumber setelah sumber/aksesnya diverifikasi:
+
+| Sumber | Metode | Format | Endpoint konfigurasi |
+|---|---|---|---|
+| BI | `web_bi` | `html` | `https://www.bi.go.id/id/statistik/indikator/BI-Rate.aspx` |
+| BKPM | `web_bkpm` | `json` | `https://data.bkpm.go.id/dataset` |
+
+Tombol Sinkronkan mengikuti capability dari backend, status aktif sumber, pemeriksaan
+antrean dan konfirmasi Admin. Ini pengambilan saat diminta, **bukan penjadwalan berkala**.
+Backend tidak menerima URL unduhan sembarang dan worker tidak mengirim formulir identitas.
+
+- BI membaca tabel resmi BI-Rate, JISDOR dan indikator moneter/cadangan devisa.
+  Parser menolak struktur/tanggal/satuan ambigu. Pembuktian koneksi dan kecocokan
+  tabel asli tetap diperlukan: pengujian sintetis tidak membuktikan BI dapat diakses dari Coolify.
+  Web service XML JISDOR belum dipakai karena pemetaan respons nyata belum terverifikasi.
+- BKPM membaca pratinjau JSON publik untuk triwulan nasional lengkap terakhir,
+  dengan validasi identitas, seluruh halaman, jumlah baris, periode dan angka.
+  Ini bukan API integrasi resmi yang dijamin stabil. Periksa ketentuan pemakaian
+  sebelum pengambilan massal. Sejarah lama dari ZIP Azka tetap jalur impor terpisah.
+- Bukti disimpan sebagai cuplikan tabel BI atau respons pratinjau BKPM yang diberi
+  label jelas, bukan mengaku sebagai XLSX/ZIP asli. Tanggal rilis yang tidak tersedia
+  tetap kosong; periode observasi tidak dipakai untuk mengarang tanggal publikasi.
+- Angka baru masuk kandidat pending. Tidak ada publikasi otomatis atau perubahan
+  nilai publik/BPS lama. Kelayakan bulk review tetap mengikuti kebijakan yang ada;
+  jangan menganggap metadata yang belum lengkap otomatis layak dipublikasikan.
+- Kegagalan sebagian seri BI tercatat gagal dengan jumlah baris yang telah diproses;
+  kandidat yang sudah tersimpan tetap pending. Periksa hasil sebelum meminta sinkronisasi lagi.
+
+Migrasi `0022_source_online_choices` hanya menambah pilihan konfigurasi. Jangan
+menjalankan migrasi/deploy pada production sebelum backup, uji pemulihan, dan izin deploy.
+Backend dan worker perlu menggunakan volume RAW yang sama; konfigurasi Compose
+bukan bukti deployment tersebut sudah diuji.
+
+Tes tambahan (gunakan environment terisolasi dan dependency yang sesuai manifest):
+
+```
+cd backend
+python manage.py test indicators.tests.test_online_sync indicators.tests.test_bi_online indicators.tests.test_bkpm_online indicators.tests.test_online_http
+# PostgreSQL disposable: test_online_postgres dan test_resync_postgres terpisah.
+cd ../frontend
+npm run test:resync
+npm run test:resync:browser
+```
+
+Tes browser memerlukan `HERMES_TEST_SCRATCH` menunjuk direktori scratch absolut,
+Chrome lokal, dan menggunakan API sintetis. Jangan menjalankan tes terhadap database pengguna.
+
+Uji browser dengan **backend Django dan worker nyata, tetapi provider sintetis**:
+`npm run test:resync:integration` dari `frontend/`. Runner ini memerlukan Docker dengan
+image existing `deksi-qa-bab65d906565-backend:latest` dan `postgres:17-alpine`, Node/dependency
+frontend yang sudah ada, Chrome (atau `CHROME_BIN`), Python, serta `HERMES_TEST_SCRATCH`
+yang menunjuk folder absolut existing. Runner tidak memasang dependency atau membangun image.
+Runner memakai PostgreSQL tmpfs baru, port backend loopback acak, akun dengan password
+sintetis yang dibuat saat run, CSRF/session normal, fixture provider offline, dan cleanup
+resource miliknya sendiri. Tidak membaca `.env` aplikasi atau volume database pengguna.
+Kelas `test_online_browser` dilewati oleh runner Django biasa; flag khusus hanya diberikan
+oleh runner disposable ini. Pengujian tersebut bukan pembuktian akses provider nyata,
+review manusia, publikasi angka atau deployment Coolify.
+
+Tes popup Kelola Sumber dijalankan terpisah dari `npm test` dengan `npm run test:source-dialog` dari folder `frontend`. Tes ini memerlukan Chrome; jika lokasinya tidak standar, atur `CHROME_PATH` ke executable Chrome. Tes menggunakan respons API sintetis, bukan backend atau data produksi.
+
 ```
 cd frontend
 npm run lint

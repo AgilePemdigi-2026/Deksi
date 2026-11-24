@@ -46,7 +46,7 @@ def schedule_list(request):
     if denied is not None:
         return denied
     items = []
-    for s in Source.objects.order_by("source_id"):
+    for s in Source.objects.exclude(status=Source.SourceStatus.ARCHIVED).order_by("source_id"):
         cfg = getattr(s, "schedule_config", None)
         # OneToOne reverse raises DoesNotExist bila belum ada; normalisasi ke None.
         if cfg is not None and not isinstance(cfg, ScheduleConfig):
@@ -64,10 +64,6 @@ def schedule_update(request, source_id):
     denied = _require_staff(request)
     if denied is not None:
         return denied
-    try:
-        source = Source.objects.get(source_id=source_id)
-    except Source.DoesNotExist:
-        return json_error(f"Sumber '{source_id}' tidak tersedia.", status=404)
     data, err = _parse_json_body(request)
     if err:
         return json_error(err, status=400)
@@ -87,10 +83,12 @@ def schedule_update(request, source_id):
     enabled = data.get("enabled", True)
     if not isinstance(enabled, bool):
         return json_error("Flag enabled harus boolean.", status=400)
-    if source.status != Source.SourceStatus.ACTIVE:
-        return json_error("Hanya sumber aktif yang dapat dijadwalkan.", status=400)
-
     with transaction.atomic():
+        source = Source.objects.select_for_update().filter(source_id=source_id).first()
+        if source is None:
+            return json_error(f"Sumber '{source_id}' tidak tersedia.", status=404)
+        if source.status != Source.SourceStatus.ACTIVE:
+            return json_error("Hanya sumber aktif yang dapat dijadwalkan.", status=400)
         try:
             cfg = source.schedule_config
         except ScheduleConfig.DoesNotExist:
@@ -129,7 +127,7 @@ def schedule_next(request):
     denied = _require_staff(request)
     if denied is not None:
         return denied
-    cfgs = ScheduleConfig.objects.filter(enabled=True).select_related("source").order_by("next_run")
+    cfgs = ScheduleConfig.objects.filter(enabled=True, source__status=Source.SourceStatus.ACTIVE).select_related("source").order_by("next_run")
     items = [{
         "sourceId": c.source.source_id,
         "nextRun": c.next_run.isoformat() if c.next_run else None,

@@ -7,23 +7,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from indicators.models import Source
+from indicators.resync_methods import RESYNCABLE_METHODS
+from indicators.resync_methods import resync_method as _resync_method
 from indicators.resync_model import ResyncJob
 from indicators.source_admin_views import _parse_json_body, _require_staff
 from indicators.sync_history_model import SyncRun
 from indicators.views import json_error
-
-# Resync eksekusi end-to-end saat ini hanya BPS (api_bps).
-# Metode lain terdaftar di SUPPORTED_METHODS untuk konfigurasi,
-# tetapi belum memiliki worker resync. Jangan antrekan.
-RESYNCABLE_METHODS = frozenset({"api_bps"})
-
-
-def _resync_method(source) -> str:
-    method = (getattr(source, "acquisition_method", "") or "").strip()
-    if not method:
-        legacy = {"BPS": "api_bps"}
-        method = legacy.get(getattr(source, "source_id", ""), "")
-    return method
 
 
 def _job_response(job):

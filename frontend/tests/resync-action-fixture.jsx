@@ -5,6 +5,7 @@ import ResyncAction from '../src/features/resync/ResyncAction'
 const calls = []
 let resolveCall
 let rejectCall
+let lastSource = 'BPS'
 window.confirmCalls = 0
 window.confirm = () => { window.confirmCalls += 1; return true }
 window.fixture = {
@@ -17,10 +18,11 @@ window.fetch = async (url, init = {}) => {
   if (path.endsWith('/resync-active/')) return Response.json({ job: null })
   if (path.endsWith('/auth/csrf/')) return Response.json({ csrfToken: 'synthetic' })
   if (path.endsWith('/resync/')) {
-    calls.push({ path, body: JSON.parse(init.body) })
+    lastSource = decodeURIComponent(path.match(/sources\/([^/]+)\/resync\//)[1])
+    calls.push({ path, body: JSON.parse(init.body), csrf: init.headers.get('X-CSRFToken') })
     return new Promise((resolve, reject) => { resolveCall = resolve; rejectCall = reject })
   }
-  if (path.endsWith('/resync-jobs/1/')) return Response.json({ id: '1', sourceId: 'BPS', status: 'success', requestedAt: '2026-01-01T00:00:00Z', finishedAt: null, runId: '1', message: null })
+  if (path.endsWith('/resync-jobs/1/')) return Response.json({ id: '1', sourceId: lastSource, status: 'success', requestedAt: '2026-01-01T00:00:00Z', finishedAt: null, runId: '1', message: null })
   throw new Error('unexpected fixture path')
 }
 createRoot(document.getElementById('root')).render(
@@ -29,5 +31,7 @@ createRoot(document.getElementById('root')).render(
     <ResyncAction sourceId="BPS" sourceName="Sumber Nonaktif" active={false} supported />
     <ResyncAction sourceId="BI" sourceName="Sumber Tidak Didukung" active supported={false} />
     <ResyncAction sourceId="BPS" sourceName="Sumber Gagal" active supported />
+    <ResyncAction sourceId="BI" sourceName="BI Online Sintetis" active supported />
+    <ResyncAction sourceId="BKPM" sourceName="BKPM Online Sintetis" active supported />
   </>,
 )

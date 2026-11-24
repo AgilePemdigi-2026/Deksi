@@ -1,4 +1,4 @@
-"""One-at-a-time worker for explicitly queued BPS resynchronizations."""
+"""One-at-a-time worker for explicitly queued, source-bound resynchronizations."""
 from contextlib import contextmanager
 
 from django.db import transaction
@@ -6,20 +6,11 @@ from django.utils import timezone
 
 from indicators import bps
 from indicators.models import Source
+from indicators.resync_methods import RESYNCABLE_METHODS
+from indicators.resync_methods import resync_method as _resync_method
 from indicators.resync_model import ResyncJob
 from indicators.sync_history_model import SyncRun
 from indicators.sync_history_service import create_sync_run, finalize_sync_run
-
-# Hanya api_bps yang dapat dijalankan end-to-end.
-# Jangan antrekan/eksekusi metode lain agar tidak menghasilkan riwayat gagal palsu.
-RESYNCABLE_METHODS = frozenset({"api_bps"})
-
-
-def _resync_method(source) -> str:
-    method = (getattr(source, "acquisition_method", "") or "").strip()
-    if not method and getattr(source, "source_id", "") == "BPS":
-        return "api_bps"
-    return method
 
 
 class JobFencedError(Exception):
@@ -71,21 +62,28 @@ def process_one():
     job = claim_next_job()
     if job is None or job.status != ResyncJob.Status.RUNNING:
         return job
+    item_count = None
     try:
         with _job_write_guard(job.pk, job.run_id):
             locked_src = Source.objects.get(pk=job.source_id)
             method = _resync_method(locked_src)
-            if method != "api_bps":
+            if method not in RESYNCABLE_METHODS or locked_src.status != Source.SourceStatus.ACTIVE:
                 raise ValueError("Metode sumber tidak lagi didukung untuk resync.")
-            source = bps._get_or_create_source()
+            source = bps._get_or_create_source() if method == 'api_bps' else locked_src
             if source.pk != job.source_id:
                 raise ValueError("Identitas sumber berubah.")
-        result = bps._sync_bps_started(
-            source, start_year=2016, end_year=None,
-            write_guard=lambda: _job_write_guard(job.pk, job.run_id),
-        )
+        if method == 'api_bps':
+            result = bps._sync_bps_started(
+                source, start_year=2016, end_year=None,
+                write_guard=lambda: _job_write_guard(job.pk, job.run_id),
+            )
+        else:
+            from indicators.online_sync import sync_source
+
+            result = sync_source(source, write_guard=lambda: _job_write_guard(job.pk, job.run_id))
+            item_count = result['observations']
         has_errors = bool(result["errors"])
-        stage = "fetch_series" if has_errors else None
+        stage = ('fetch_series' if method == 'api_bps' else 'multiple_stages') if has_errors else None
     except JobFencedError:
         return ResyncJob.objects.get(pk=job.pk)
     except ValueError:
@@ -112,7 +110,7 @@ def process_one():
         locked = ResyncJob.objects.select_for_update().get(pk=job.pk)
         if locked.status != ResyncJob.Status.RUNNING or locked.run_id != job.run_id:
             return locked
-        run = finalize_sync_run(locked.run, success=not has_errors, failure_stage=stage)
+        run = finalize_sync_run(locked.run, success=not has_errors, failure_stage=stage, item_count=item_count)
         locked.status = ResyncJob.Status.FAILED if has_errors else ResyncJob.Status.SUCCESS
         locked.finished_at = run.finished_at
         locked.safe_message = run.safe_message or ""

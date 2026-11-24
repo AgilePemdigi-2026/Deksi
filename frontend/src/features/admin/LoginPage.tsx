@@ -5,7 +5,7 @@ import heroImage from '../../assets/editorial/login-economic.webp'
 import { validateLogin } from './validation'
 import type { LoginErrors } from './validation'
 import { AuthError, authOrigin, createAuthClient } from './auth'
-import type { AdminUser } from './auth'
+import { adminLogout } from '../../api'
 import './login.css'
 
 export default function LoginPage() {
@@ -16,7 +16,6 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<LoginErrors>({})
   const [status, setStatus] = useState('Memeriksa status sesi…')
   const [auth] = useState(() => createAuthClient(authOrigin()))
-  const [user, setUser] = useState<AdminUser | null>(null)
   const [checking, setChecking] = useState(true)
   const [ready, setReady] = useState(false)
   const [pending, setPending] = useState(false)
@@ -25,31 +24,46 @@ export default function LoginPage() {
   const inFlight = useRef(false)
   useEffect(() => { document.title = 'Masuk Admin · DEKSI' }, [])
 
+  const clearCredentials = useCallback(() => {
+    if (identifier.current) identifier.current.value = ''
+    if (password.current) password.current.value = ''
+  }, [])
+
   const loadSession = useCallback((controller: AbortController) => auth.session(controller.signal).then(async current => {
     if (controller.signal.aborted) return
-    setUser(current)
-    setReady(true)
     if (current) {
-      if (password.current) password.current.value = ''
+      setReady(false)
+      clearCredentials()
       setRevealed(false)
-      setStatus('Memeriksa akses dashboard Admin…')
-      await auth.confirmPortalSession(current, controller.signal)
+      setStatus('Mengakhiri sesi Admin sebelumnya…')
+      try {
+        await adminLogout(controller.signal)
+      } catch {
+        if (controller.signal.aborted) return
+        setAuthError(new AuthError('invalid_response'))
+        setStatus('Sesi sebelumnya belum dapat diakhiri. Periksa koneksi, lalu coba lagi sebelum masuk.')
+        return
+      }
       if (controller.signal.aborted) return
-      window.location.replace('/admin/sumber')
+      setAuthError(null)
+      setReady(true)
+      setStatus('Sesi sebelumnya telah diakhiri. Masukkan nama pengguna dan kata sandi untuk masuk.')
       return
     }
-    setStatus(current ? 'Sesi Admin aktif.' : '')
+    setReady(true)
+    setAuthError(null)
+    clearCredentials()
+    setStatus('')
   }).catch(error => {
     if (controller.signal.aborted) return
     const failure = error instanceof AuthError ? error : new AuthError('invalid_response')
-    setUser(null)
     setAuthError(failure)
     setReady(failure.code === 'forbidden')
     setStatus(failure.message)
   }).finally(() => {
     if (!controller.signal.aborted) setChecking(false)
-  }), [auth])
-  function refreshSession() {
+  }), [auth, clearCredentials])
+  const refreshSession = useCallback(() => {
     if (inFlight.current) return
     request.current?.abort()
     const controller = new AbortController()
@@ -59,13 +73,24 @@ export default function LoginPage() {
     setAuthError(null)
     setStatus('Memeriksa status sesi…')
     void loadSession(controller)
-  }
+  }, [loadSession])
   useEffect(() => {
     const controller = new AbortController()
     request.current = controller
     void loadSession(controller)
     return () => request.current?.abort()
   }, [loadSession])
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return
+      clearCredentials()
+      setErrors({})
+      setRevealed(false)
+      refreshSession()
+    }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
+  }, [clearCredentials, refreshSession])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -85,9 +110,8 @@ export default function LoginPage() {
       try {
         const current = await auth.login(identifier.current?.value ?? '', password.current?.value ?? '', controller.signal)
         if (controller.signal.aborted) return
-        if (password.current) password.current.value = ''
+        clearCredentials()
         setRevealed(false)
-        setUser(current)
         setStatus('Sesi login berhasil. Memeriksa akses dashboard Admin…')
         await auth.confirmPortalSession(current, controller.signal)
         if (controller.signal.aborted) return
@@ -122,12 +146,11 @@ export default function LoginPage() {
     setAuthError(null)
     setStatus('Mengakhiri sesi…')
     try {
-      await auth.logout(controller.signal)
+      await adminLogout(controller.signal)
       if (controller.signal.aborted) return
-      setUser(null)
       setReady(true)
       setErrors({})
-      if (password.current) password.current.value = ''
+      clearCredentials()
       setRevealed(false)
       setStatus('Anda telah keluar.')
       requestAnimationFrame(() => identifier.current?.focus())
@@ -148,28 +171,26 @@ export default function LoginPage() {
     <div className="page">
       <header className="login-header">
         <a className="wordmark" href="/" aria-label="DEKSI, kembali ke dashboard publik"><BrandMark /><span>DEKSI</span></a>
-        <a className="return-link" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M18 18 6 6m0 12V6h12" /></svg><span>Dashboard publik</span></a>
       </header>
       <main className="login-main">
         <section className="visual-panel" aria-label="Ilustrasi DEKSI">
           <div className="visual-photo"><img className="hero-photo" src={heroImage} alt="" fetchPriority="high" decoding="async" /></div>
           <p className="art-title" aria-hidden="true"><span>DATA</span><span>DEKSI</span></p>
-          <div className="brand-plate"><BrandMark /><span className="brand-name">DEKSI</span><button type="button" className="plate-menu" onClick={openInfo} aria-label="Tentang DEKSI"><span /><span /></button></div>
+          <a className="brand-plate" href="/" aria-label="DEKSI, kembali ke dashboard publik"><BrandMark /><span className="brand-name">DEKSI</span></a>
         </section>
         <section className="login-form-panel" aria-labelledby="login-heading">
           <p className="eyebrow">AREA PENGELOLA</p><h1 id="login-heading" tabIndex={-1}>Masuk Admin.</h1>
           <p className="form-intro">Untuk tim pengelola DEKSI.<br />Pengunjung dapat membaca data tanpa masuk.</p>
-          <form id="login-form" action="#" method="post" noValidate onSubmit={submit} aria-describedby="prototype-note" hidden={user !== null} aria-busy={pending}>
-            <div className="field"><label htmlFor="identifier">Email atau nama pengguna</label><div className="input-wrap"><input ref={identifier} id="identifier" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="nama.pengelola" required aria-invalid={errors.identifier ? true : undefined} aria-describedby="identifier-error" onInput={() => edit('identifier')} /></div><span className="field-error" id="identifier-error" aria-live="polite">{errors.identifier}</span></div>
-            <div className="field"><label htmlFor="password">Kata sandi</label><div className="input-wrap password-wrap"><input ref={password} id="password" type={revealed ? 'text' : 'password'} autoComplete="current-password" placeholder="Masukkan kata sandi" required aria-invalid={errors.password ? true : undefined} aria-describedby="password-error" onInput={() => edit('password')} /><button className="password-toggle" id="password-toggle" type="button" aria-controls="password" aria-pressed={revealed} aria-label={revealed ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'} onClick={() => setRevealed(value => !value)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" /><circle cx="12" cy="12" r="2.8" />{revealed && <path d="m4 3 16 18" />}</svg><span>{revealed ? 'Sembunyikan' : 'Tampilkan'}</span></button></div><span className="field-error" id="password-error" aria-live="polite">{errors.password}</span></div>
+          <form id="login-form" action="#" method="post" autoComplete="off" noValidate onSubmit={submit} aria-describedby="prototype-note" aria-busy={pending}>
+            <div className="field"><label htmlFor="identifier">Email atau nama pengguna</label><div className="input-wrap"><input ref={identifier} id="identifier" type="text" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="nama.pengelola" required disabled={checking || pending} aria-invalid={errors.identifier ? true : undefined} aria-describedby="identifier-error" onInput={() => edit('identifier')} /></div><span className="field-error" id="identifier-error" aria-live="polite">{errors.identifier}</span></div>
+            <div className="field"><label htmlFor="password">Kata sandi</label><div className="input-wrap password-wrap"><input ref={password} id="password" type={revealed ? 'text' : 'password'} autoComplete="off" placeholder="Masukkan kata sandi" required disabled={checking || pending} aria-invalid={errors.password ? true : undefined} aria-describedby="password-error" onInput={() => edit('password')} /><button className="password-toggle" id="password-toggle" type="button" aria-controls="password" aria-pressed={revealed} aria-label={revealed ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'} disabled={checking || pending} onClick={() => setRevealed(value => !value)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" /><circle cx="12" cy="12" r="2.8" />{revealed && <path d="m4 3 16 18" />}</svg><span>{revealed ? 'Sembunyikan' : 'Tampilkan'}</span></button></div><span className="field-error" id="password-error" aria-live="polite">{errors.password}</span></div>
             <div className="form-assistance"><a id="recovery-help" href="/admin/forgot-password">Lupa kata sandi?</a></div>
             <button type="submit" className="submit-button" id="login-submit" disabled={pending || checking || !ready}><span>{pending ? 'Memproses…' : 'Masuk'}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12" /></svg></button>
             <p id="prototype-note" className="prototype-note"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="M8 7v4m0-7v1" /></svg><span>Autentikasi menggunakan sesi server.<br />Pengunjung publik tetap tidak memerlukan akun.</span></p>
           </form>
-          {user && <section id="admin-session" className="session-panel" aria-label="Sesi Admin"><p>Masuk sebagai <strong id="session-user">{user.username}</strong>.</p><p>Jika akses dashboard belum dapat dipastikan, periksa status sesi sebelum melanjutkan.</p></section>}
           <p id="form-status" className="form-status" role="status" aria-live="polite" aria-atomic="true">{status}</p>
-          {(user || authError?.code === 'forbidden') && <button id="auth-logout" className="submit-button" type="button" disabled={checking || pending} onClick={() => void logout()}>{pending ? 'Memproses…' : 'Keluar'}</button>}
-          {(authError || user) && <button id="session-refresh" type="button" className="session-refresh" disabled={checking || pending} onClick={() => void refreshSession()}>Periksa status sesi</button>}
+          {authError && <button id="auth-logout" className="submit-button" type="button" disabled={checking || pending} onClick={() => void logout()}>{pending ? 'Memproses…' : 'Akhiri sesi'}</button>}
+          {authError && <button id="session-refresh" type="button" className="session-refresh" disabled={checking || pending} onClick={() => void refreshSession()}>Periksa status sesi</button>}
         </section>
       </main>
       <footer className="login-footer"><p className="footer-name">DEKSI · Deteksi Ekonomi Indonesia</p><div className="footer-links"><a href="/">Publik tanpa akun ↗</a><button type="button" onClick={openInfo}>Tentang Login Admin</button></div></footer>

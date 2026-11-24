@@ -19,7 +19,7 @@ test('requires manual history review before enabling a semantic BPS action', () 
   assert.doesNotMatch(html, /Berhasil|Sukses/)
 })
 
-test('inactive, unsupported, and non-BPS sources cannot trigger the action', () => {
+test('inactive, unsupported, and unknown source identities cannot trigger the action', () => {
   for (const props of [{ active: false }, { supported: false }, { sourceId: 'OTHER' }]) {
     const html = render({ sourceId: 'BPS', ...props })
     assert.match(html, /<button[^>]*disabled/)

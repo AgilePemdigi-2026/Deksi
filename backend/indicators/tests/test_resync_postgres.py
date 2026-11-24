@@ -25,7 +25,8 @@ class ResyncPostgresConcurrencyTests(TransactionTestCase):
     def setUp(self):
         self.assertEqual(connection.vendor, "postgresql")
         self.user = get_user_model().objects.create_user(username="race-admin", is_staff=True)
-        self.source = Source.objects.get(source_id="BPS")
+        # TransactionTestCase flush removes migration-seeded sources after each case.
+        self.source, _ = Source.objects.get_or_create(source_id="BPS", defaults=bps.BPS_SOURCE_DEFAULTS)
 
     def race(self, left, right):
         barrier = threading.Barrier(2, timeout=10)

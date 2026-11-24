@@ -26,8 +26,11 @@ export function useDashboard(filters: DashboardFilters) {
   return useResource(path,async signal=>parseDashboard(await requestJson(path,{},signal)))
 }
 export function useCategories() {return useResource('categories',async signal=>parseCategories(await requestJson('/api/indicators/categories/',{},signal)))}
-export function useHistory(code: string, granularity: string) {
-  const path=`/api/indicators/${encodeURIComponent(code)}/trend/`+(granularity==='native'?'':'?'+new URLSearchParams({granularity}))
+export function useHistory(code: string, granularity: string, year = '') {
+  const query = new URLSearchParams()
+  if (granularity !== 'native') query.set('granularity', granularity)
+  if (code === 'birate' && year) query.set('year', year)
+  const path=`/api/indicators/${encodeURIComponent(code)}/trend/`+(query.size?'?'+query:'')
   return useResource(path,async signal=>{
     try { return {...parseHistory(await requestJson(path,{},signal),code),missingIndicator:false} }
     catch(error) {
