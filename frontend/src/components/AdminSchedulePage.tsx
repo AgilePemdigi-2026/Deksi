@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AdminNavigation } from "./AdminNavigation";
 import { fetchSchedules, updateSchedule, type ScheduleEntry } from "../api";
+import "./admin-operations.css";
 
 export function AdminSchedulePage() {
   const [items, setItems] = useState<ScheduleEntry[]>([]);
@@ -34,10 +35,10 @@ export function AdminSchedulePage() {
     }
   }
 
-  if (error) return <><AdminNavigation active="schedules" /><p className="summary-error">{error}</p></>;
+  if (error) return <main className="admin-operations"><AdminNavigation active="schedules" /><p className="admin-operations__state" role="alert">{error}</p></main>;
 
   return (
-    <>
+    <main className="admin-operations">
       <AdminNavigation active="schedules" />
       <section aria-labelledby="sched-title">
         <p className="catalog-crumb">Admin &gt; Jadwal Pembaruan</p>
@@ -66,6 +67,6 @@ export function AdminSchedulePage() {
           </table>
         </div>
       </section>
-    </>
+    </main>
   );
 }

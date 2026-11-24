@@ -3,6 +3,7 @@ from decimal import Decimal, localcontext
 from io import BytesIO
 from pathlib import Path
 
+from django.db.models import Case, IntegerField, Value, When
 from django.http import FileResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
@@ -45,9 +46,14 @@ def published_observations(indicator: Indicator):
     )
 
 
-def latest_published(indicator: Indicator) -> Observation | None:
+def latest_published(indicator: Indicator, *, year: int | None = None) -> Observation | None:
     observations = published_observations(indicator)
-    return observations.last() if observations.exists() else None
+    if year is not None:
+        observations = observations.filter(observation_date__year=year)
+    if indicator.code == 'birate':
+        observations = observations.order_by('observation_date', Case(
+            When(source__source_id='BI', then=Value(1)), default=Value(0), output_field=IntegerField()), 'id')
+    return observations.last()
 
 
 def previous_published(latest: Observation) -> Observation | None:
@@ -100,10 +106,7 @@ def delta_summary(latest: Observation, previous: Observation | None) -> dict:
 
 
 def serialize_summary_card(indicator: Indicator, *, year: int | None = None) -> dict:
-    latest = (
-        latest_published(indicator) if year is None
-        else published_observations(indicator).filter(observation_date__year=year).last()
-    )
+    latest = latest_published(indicator, year=year)
     current_year = timezone.localdate().year
     if latest is None:
         return {
@@ -268,6 +271,8 @@ NATIVE_NOTE = {
 
 
 def year_aggregation_note(indicator: Indicator) -> str:
+    if indicator.code in bps.BPS_ECONOMIC_SERIES:
+        return "Ket: Agregasi tahunan menjumlahkan data sumber; tahun dengan periode tidak lengkap tidak ditampilkan."
     if indicator.aggregation_kind == "sum":
         return "Ket: Agregasi tahunan dihitung sebagai jumlah nilai asal sejak sumber mentah (deterministik)."
     if indicator.aggregation_kind == "end":
@@ -308,6 +313,15 @@ def aggregate_trend(observations, term: str, indicator: Indicator) -> list[dict]
         buckets.setdefault(key, []).append(observation)
     result = []
     for key, rows in sorted(buckets.items()):
+        if term == "Tahunan" and indicator.code in bps.BPS_ECONOMIC_SERIES:
+            expected = bps.BPS_ECONOMIC_SERIES[indicator.code]
+            expected_frequency = expected["frequency"]
+            if (rows[0].frequency != expected_frequency or rows[0].source.source_id != "BPS"
+                    or rows[0].unit != expected["unit"] or rows[0].data_type != "level" or kind != "sum"):
+                raise ValueError("Agregasi ditolak: metadata tidak cocok untuk indikator.")
+            required = {3, 6, 9, 12} if expected_frequency == "quarterly" else set(range(1, 13))
+            if len(rows) != len(required) or {row.observation_date.month for row in rows} != required:
+                continue
         with localcontext() as context:
             context.prec = 60
             total = sum((row.value for row in rows), Decimal(0))
@@ -326,7 +340,16 @@ def indicator_trend(request, code: str):
     indicator = get_indicator(code)
     if indicator is None:
         return json_error(f"Indikator '{code}' tidak ditemukan", status=404)
+    raw_year = request.GET.get('year', '').strip()
+    if raw_year and (not re.fullmatch(r'[0-9]{4}', raw_year) or int(raw_year) < 1):
+        return json_error('Tahun tidak valid.', status=400)
+    year = int(raw_year) if raw_year else None
     observations = list(published_observations(indicator))
+    if indicator.code == 'birate':
+        selected = latest_published(indicator, year=year)
+        observations = list(comparable_observations(selected)) if selected else []
+        if year is not None:
+            observations = [row for row in observations if row.observation_date.year == year]
     if not observations:
         return json_success(
             {
@@ -356,7 +379,8 @@ def indicator_trend(request, code: str):
         term = requested
     if term == GRANULARITY_LABELS.get(native_frequency):
         points = trend_points(observations)
-        note = NATIVE_NOTE.get(native_frequency, "")
+        note = (f"Sumber: {observations[-1].source.source_name}; tanggal adalah tanggal observasi."
+                if indicator.code == 'birate' else NATIVE_NOTE.get(native_frequency, ""))
     else:
         try:
             points = aggregate_trend(observations, term, indicator)
@@ -416,7 +440,7 @@ DERIVED_DATA_TYPES = {"derived_sum"}
 
 DERIVED_FORMULAS = {
     "investasi": (
-        "Total = SUM(investasi_rp_juta per baris CSV dalam ZIP triwulan) / 1.000.000 "
+        "Total = SUM(investasi_rp_juta per baris sumber BKPM) / 1.000.000 "
         "→ Rp Triliun (agregat nasional PMA + PMDN per triwulan)"
     ),
 }
@@ -542,7 +566,7 @@ def indicator_source_trace(request, code: str):
             return json_error("Konteks observasi ambigu.", status=409)
         latest = matches[0]
     else:
-        latest = rows.last()
+        latest = latest_published(indicator)
     if latest is None:
         return json_success(
             {
@@ -627,7 +651,7 @@ def serialize_source_entry(source: Source) -> dict:
 
 
 def ordered_sources():
-    sources = list(Source.objects.all())
+    sources = list(Source.objects.exclude(status=Source.SourceStatus.ARCHIVED))
     rank = {sid: i for i, sid in enumerate(SOURCE_ORDER)}
     return sorted(sources, key=lambda s: (rank.get(s.source_id, 99), s.source_id))
 

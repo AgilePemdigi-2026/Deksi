@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AdminNavigation } from "./AdminNavigation";
 import { fetchMonitoringHistory, fetchMonitoringSources, fetchMonitoringSummary, type MonitoringSource, type MonitoringSummary } from "../api";
+import "./admin-operations.css";
 
 export function AdminMonitoringPage() {
   const [summary, setSummary] = useState<MonitoringSummary | null>(null);
@@ -28,8 +29,8 @@ export function AdminMonitoringPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (error) return <><AdminNavigation active="monitoring" /><p className="summary-error">{error}</p></>;
-  if (!summary) return <><AdminNavigation active="monitoring" /><p className="summary-loading">Memuat monitoring…</p></>;
+  if (error) return <main className="admin-operations"><AdminNavigation active="monitoring" /><p className="admin-operations__state" role="alert">{error}</p></main>;
+  if (!summary) return <main className="admin-operations"><AdminNavigation active="monitoring" /><p className="admin-operations__state" role="status">Memuat monitoring…</p></main>;
 
   const q = filter.trim().toLowerCase();
   const rows = sources.filter((s) => {
@@ -39,7 +40,7 @@ export function AdminMonitoringPage() {
   });
 
   return (
-    <>
+    <main className="admin-operations">
       <AdminNavigation active="monitoring" />
       <section aria-labelledby="monitoring-title">
         <p className="catalog-crumb">Admin &gt; Monitoring</p>
@@ -101,6 +102,6 @@ export function AdminMonitoringPage() {
           </table>
         </div>
       </section>
-    </>
+    </main>
   );
 }

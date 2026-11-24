@@ -34,7 +34,7 @@ class ImportWriterLifecycleTests(IndicatorCase):
     def test_bkpm_import_stages_and_preserves_public_observation(self):
         with tempfile.TemporaryDirectory(dir=os.environ["HERMES_TEST_SCRATCH"], prefix="deksi-f6-bkpm-") as tmp:
             root = Path(tmp)
-            archive_path = root / "realisasi-triwulan-i-tahun-2020.zip"
+            archive_path = root / "data-realisasi-investasi-triwulan-i-tahun-2020.zip"
             with zipfile.ZipFile(archive_path, "w") as archive:
                 archive.writestr("data.csv", "investasi_rp_juta,catatan\n5000000,a\n1000000,b\n")
             indicator = ingest.get_or_create_indicator("investasi", "Realisasi Investasi", "Rencana Modal",

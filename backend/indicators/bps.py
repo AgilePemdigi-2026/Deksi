@@ -1,4 +1,5 @@
 import calendar
+import json
 import logging
 import time
 from contextlib import nullcontext
@@ -68,7 +69,52 @@ BPS_SERIES = [
         "national_label": "INDONESIA",
         "subperiods": {189: 2, 190: 8},
     },
+    {
+        "code": "pdb_nominal", "var_id": 1955,
+        "name": "PDB nominal", "category": "Aktivitas Riil", "unit": "Rp miliar",
+        "aggregation_kind": "sum", "sort_order": 10, "frequency": "quarterly", "data_type": "level",
+        "component_id": 800, "component_label": "8. PRODUK DOMESTIK BRUTO",
+        "turvar_keyword": None, "subperiods": {31: 1, 32: 2, 33: 3, 34: 4},
+    },
+    {
+        "code": "pmtb_nominal", "var_id": 1955,
+        "name": "Pembentukan modal tetap bruto nominal", "category": "Aktivitas Riil", "unit": "Rp miliar",
+        "aggregation_kind": "sum", "sort_order": 11, "frequency": "quarterly", "data_type": "level",
+        "component_id": 400, "component_label": "4. Pembentukan Modal Tetap Domestik Bruto",
+        "turvar_keyword": None, "subperiods": {31: 1, 32: 2, 33: 3, 34: 4},
+    },
+    {
+        "code": "konsumsi_rumah_tangga", "var_id": 1955,
+        "name": "Konsumsi rumah tangga nominal", "category": "Aktivitas Riil", "unit": "Rp miliar",
+        "aggregation_kind": "sum", "sort_order": 12, "frequency": "quarterly", "data_type": "level",
+        "component_id": 100, "component_label": "1. Pengeluaran Konsumsi Rumahtangga",
+        "turvar_keyword": None, "subperiods": {31: 1, 32: 2, 33: 3, 34: 4},
+    },
+    {
+        "code": "ekspor_barang", "var_id": 1753,
+        "name": "Nilai ekspor barang", "category": "Perdagangan", "unit": "US$ juta",
+        "aggregation_kind": "sum", "sort_order": 13, "frequency": "monthly", "data_type": "level",
+        "component_id": 3, "component_label": "Jumlah",
+        "turvar_keyword": None, "subperiods": {month: month for month in range(1, 13)},
+    },
+    {
+        "code": "impor_barang", "var_id": 1754,
+        "name": "Nilai impor barang", "category": "Perdagangan", "unit": "US$ juta",
+        "aggregation_kind": "sum", "sort_order": 14, "frequency": "monthly", "data_type": "level",
+        "component_id": 3, "component_label": "Jumlah",
+        "turvar_keyword": None, "subperiods": {month: month for month in range(1, 13)},
+    },
 ]
+
+BPS_ECONOMIC_SERIES = {
+    series["code"]: series for series in BPS_SERIES if "component_id" in series
+}
+
+BPS_VARIABLE_METADATA = {
+    1955: ("PDB Triwulanan Atas Dasar Harga Berlaku menurut Pengeluaran", "Milyar Rupiah"),
+    1753: ("Nilai Ekspor Migas-NonMigas", "Juta US$"),
+    1754: ("Nilai Impor Migas-NonMigas", "Juta US$"),
+}
 
 
 class BpsError(Exception):
@@ -213,6 +259,12 @@ def _paged_rows(path: str, params: dict | None = None) -> list[dict]:
 
 def _resolve_national_vervar(series: dict) -> int:
     rows = _paged_rows("/api/list/model/vervar/domain/0000", {"var": series["var_id"]})
+    if "component_id" in series:
+        matches = [row for row in rows if str(row.get("kode_ver_id")) == str(series["component_id"])]
+        if (len(matches) != 1 or str(matches[0].get("var_id")) != str(series["var_id"])
+                or str(matches[0].get("vervar") or "").strip() != series["component_label"]):
+            raise BpsError(f"Komponen variabel BPS {series['var_id']} tidak cocok atau ambigu.")
+        return series["component_id"]
     wanted = series["national_label"].lower()
     for row in rows:
         label = str(row.get("vervar") or "").lower()
@@ -222,6 +274,14 @@ def _resolve_national_vervar(series: dict) -> int:
         if str(row.get("vervar") or "").strip().lower() == "indonesia":
             return int(row["kode_ver_id"])
     raise BpsError(f"Baris nasional untuk variabel BPS {series['var_id']} tidak ditemukan.")
+
+
+def _validate_variable_unit(series: dict) -> None:
+    keyword, expected_unit = BPS_VARIABLE_METADATA[series["var_id"]]
+    rows = _paged_rows("/api/list/model/var/domain/0000", {"keyword": keyword})
+    matches = [row for row in rows if str(row.get("var_id")) == str(series["var_id"])]
+    if len(matches) != 1 or str(matches[0].get("unit") or "").strip() != expected_unit:
+        raise BpsError(f"Satuan metadata variabel BPS {series['var_id']} tidak cocok atau ambigu.")
 
 
 def _resolve_turvar(series: dict) -> int:
@@ -258,17 +318,20 @@ def _decimal(value) -> Decimal | None:
     if value is None or value == "":
         return None
     try:
-        return Decimal(str(value))
+        result = Decimal(str(value))
+        return result if result.is_finite() else None
     except (InvalidOperation, ValueError):
         return None
 
 
 def fetch_series(series: dict, start_year: int = 2016, end_year: int | None = None) -> list[dict]:
     end_year = end_year or timezone.localdate().year
+    if "component_id" in series:
+        _validate_variable_unit(series)
     period_ids = _year_period_ids(series)
     years = [year for year in range(start_year, end_year + 1) if year in period_ids]
     if not years:
-        return []
+        raise BpsError(f"Tidak ada periode BPS {series['var_id']} untuk rentang tahun yang diminta.")
     vervar = _resolve_national_vervar(series)
     turvar = _resolve_turvar(series)
     turth_values = list(series["subperiods"])
@@ -285,9 +348,9 @@ def fetch_series(series: dict, start_year: int = 2016, end_year: int | None = No
             f"/api/list/model/data/domain/0000/var/{series['var_id']}/th/{th_param}",
             params=params,
         )
-        data_content = body.get("datacontent") or {}
-        if not isinstance(data_content, dict):
-            continue
+        data_content = body.get("datacontent")
+        if not isinstance(data_content, dict) or not data_content:
+            raise BpsError(f"Respons data BPS {series['var_id']} kosong atau tidak valid.")
         for year in chunk:
             th_id = period_ids[year]
             for turth_id, subperiod_value in series["subperiods"].items():
@@ -296,6 +359,11 @@ def fetch_series(series: dict, start_year: int = 2016, end_year: int | None = No
                 if value is None:
                     continue
                 month = subperiod_value if series["frequency"] != "quarterly" else subperiod_value * 3
+                # Selected numeric source value only: never persist API keys or untrusted metadata.
+                excerpt = json.dumps({"kind": "bps_selected_datacontent_excerpt", "var_id": series["var_id"],
+                                      "vervar": vervar, "turvar": turvar, "th_id": th_id, "year": year,
+                                      "turth_id": turth_id, "datacontent": {key: str(data_content[key])}},
+                                     sort_keys=True, ensure_ascii=True).encode("utf-8")
                 points.append(
                     {
                         "observation_date": _last_day(year, month),
@@ -304,9 +372,12 @@ def fetch_series(series: dict, start_year: int = 2016, end_year: int | None = No
                         "frequency": series["frequency"],
                         "data_type": series["data_type"],
                         "unit": series["unit"],
+                        "raw_excerpt": excerpt,
                     }
                 )
         time.sleep(0.25)
+    if not points:
+        raise BpsError(f"Tidak ada nilai yang dapat dibaca untuk variabel BPS {series['var_id']} pada periode diminta.")
     return points
 
 
@@ -326,6 +397,7 @@ def sync_bps_indicators(start_year: int = 2016, end_year: int | None = None) -> 
 
 def _sync_bps_started(source, start_year, end_year, *, write_guard=None):
     from .lifecycle import stage_observation
+    from .storage import save_raw
 
     total = 0
     errors: list[str] = []
@@ -339,12 +411,20 @@ def _sync_bps_started(source, start_year, end_year, *, write_guard=None):
         except BpsError as exc:
             errors.append(f"{series['code']}: {exc}")
             continue
+        raw_ids = {}
         for point in points:
             with guard():
+                excerpt = point.get("raw_excerpt")
+                raw_id = None
+                if excerpt is not None:
+                    if excerpt not in raw_ids:
+                        raw, _ = save_raw(source, excerpt, f"bps-{series['var_id']}-selected-excerpt.json")
+                        raw_ids[excerpt] = raw.pk
+                    raw_id = raw_ids[excerpt]
                 stage_observation(indicator_id=indicator.pk, source_id=source.pk,
                     observation_date=point["observation_date"], data_type=point["data_type"],
                     period_label=point["period_label"], frequency=point["frequency"],
-                    value=point["value"], unit=point["unit"])
+                    value=point["value"], unit=point["unit"], raw_file_id=raw_id)
             total += 1
         if points:
             latest[series["code"]] = max(points, key=lambda point: point["observation_date"])["period_label"]

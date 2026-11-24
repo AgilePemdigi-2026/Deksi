@@ -10,12 +10,18 @@ from indicators.fields import ObservationDecimalField
 class Source(models.Model):
     class AcquisitionMethod(models.TextChoices):
         API_BPS = "api_bps", "API resmi (WebAPI BPS)"
+        API_BIS = "api_bis", "API BIS (suku bunga Indonesia)"
         PDF_KITA = "pdf_kita", "PDF resmi (APBN KiTa Kemenkeu)"
         FILE_XLSX = "file_xlsx", "File resmi (XLSX dataset)"
         FILE_ZIP_CSV = "file_zip_csv", "File resmi (ZIP berisi CSV)"
+        WEB_BI = "web_bi", "Sinkronisasi online (tabel resmi BI)"
+        WEB_BKPM = "web_bkpm", "Sinkronisasi online (pratinjau publik BKPM)"
+        WEB_KEMENKEU = "web_kemenkeu", "Sinkronisasi online (arsip APBN KiTa)"
 
     class DataFormat(models.TextChoices):
         JSON = "json", "JSON"
+        XML = "xml", "XML"
+        HTML = "html", "HTML"
         PDF = "pdf", "PDF"
         XLSX = "xlsx", "XLSX"
         ZIP_CSV = "zip_csv", "ZIP-CSV"
@@ -23,6 +29,7 @@ class Source(models.Model):
     class SourceStatus(models.TextChoices):
         ACTIVE = "active", "Aktif"
         INACTIVE = "inactive", "Nonaktif"
+        ARCHIVED = "archived", "Diarsipkan"
 
     source_id = models.CharField(max_length=32, unique=True)
     source_name = models.CharField(max_length=200)

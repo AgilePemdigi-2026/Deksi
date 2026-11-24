@@ -16,12 +16,14 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import IntegrityError, transaction
+from django.db.models.deletion import ProtectedError, RestrictedError
 
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.http import require_http_methods
 
 from indicators.models import RawFile, Source, SourceRevision, source_config_snapshot
+from indicators.resync_methods import ONLINE_SOURCES, resync_method
 
 from indicators.views import json_error, json_success
 
@@ -30,6 +32,34 @@ logger = logging.getLogger(__name__)
 # Metode yang benar-benar memiliki handler di codebase.
 # Jangan tambah opsi di sini tanpa implementasi handler-nya.
 SUPPORTED_METHODS = {
+    "web_kemenkeu": {
+        "label": "Sinkronisasi online (arsip APBN KiTa)",
+        "formats": ["pdf"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "PDF edisi terbaru yang dikenali di arsip APBN KiTa; tetap memerlukan review Admin.",
+    },
+    "api_bis": {
+        "label": "API BIS (suku bunga Indonesia)",
+        "formats": ["xml"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "Data Bank Indonesia melalui BIS; pembaruan dapat terlambat.",
+    },
+    "web_bi": {
+        "label": "Sinkronisasi online (tabel resmi BI)",
+        "formats": ["html"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "Tabel BI-Rate, JISDOR dan cadangan devisa; gagal eksplisit bila sumber tidak terjangkau.",
+    },
+    "web_bkpm": {
+        "label": "Sinkronisasi online (pratinjau publik BKPM)",
+        "formats": ["json"],
+        "handler": "indicators.online_sync.sync_source",
+        "endpointRequired": True,
+        "description": "Pratinjau publik triwulan nasional terakhir yang lengkap; bukan impor ZIP lokal.",
+    },
     "api_bps": {
         "label": "API resmi (WebAPI BPS)",
         "formats": ["json"],
@@ -177,7 +207,7 @@ def _resolve_field(data: dict, existing: str, *names: str) -> str:
     return existing
 
 
-def _validate_values(values: dict, source_pk=None) -> str | None:
+def _validate_values(values: dict, source_pk=None, source_id=None) -> str | None:
     """Validasi aturan konfigurasi. Kembalikan pesan error atau None."""
     if not values["source_name"]:
         return "Field 'sourceName' wajib diisi."
@@ -194,6 +224,14 @@ def _validate_values(values: dict, source_pk=None) -> str | None:
         return (
             f"Metode '{method}' belum didukung. Pilihan: {sorted(SUPPORTED_METHODS)}."
         )
+    if method in ONLINE_SOURCES:
+        expected_id, endpoint, _ = ONLINE_SOURCES[method]
+        if source_id != expected_id or values['endpoint_url'] != endpoint:
+            return f"Metode ini khusus sumber {expected_id} dengan endpoint {endpoint}."
+    if method == 'api_bis' and (values['source_name'] != 'BIS - Suku bunga Indonesia'
+            or values['institution'] != 'Bank for International Settlements'
+            or values['primary_url'] != 'https://data.bis.org/'):
+        return 'Identitas dan atribusi BIS harus sesuai sumber resmi.'
     if not values["data_format"]:
         return "Field 'dataFormat' wajib diisi."
     if values["data_format"] not in SUPPORTED_METHODS[method]["formats"]:
@@ -297,6 +335,7 @@ def _serialize_admin_entry(source: Source) -> dict:
         "updateSchedule": source.update_schedule or "",
         "status": source.status,
         "lastFetch": _last_fetch_info(source),
+        "resyncAvailable": bool(resync_method(source)),
     }
 
 
@@ -378,6 +417,91 @@ def admin_source_list(request):
     )
 
 
+def _locked_source_action(request, source_id, action):
+    denied = _require_staff(request)
+    if denied is not None:
+        return denied
+    data, error = _parse_json_body(request)
+    if error:
+        return json_error(error, status=400)
+    expected = data.get("expectedRevision")
+    if type(expected) is not int or expected < 0:
+        return json_error("Versi revisi wajib diisi dengan benar.", status=400)
+    from indicators.models import DataUpdateLog
+    from indicators.resync_model import ResyncJob
+    from indicators.schedule_model import ScheduleAudit
+    from indicators.sync_history_model import SyncRun
+
+    try:
+        with transaction.atomic():
+            source = Source.objects.select_for_update().filter(source_id__iexact=source_id).first()
+            if source is None:
+                return json_error("Sumber tidak tersedia.", status=404)
+            latest = source.revisions.order_by("-version").values_list("version", flat=True).first() or 0
+            if expected != latest:
+                return json_error("Sumber telah diubah. Buka kembali sebelum melanjutkan.", status=409)
+            if action == "delete":
+                # Known importer identities may be recreated automatically.
+                if source.source_id.upper() in {"BPS", "BI", "BKPM", "KEMENKEU"}:
+                    return json_error("Sumber bawaan tidak dapat dihapus. Gunakan arsip.", status=409)
+                related = [
+                    relation for relation in Source._meta.related_objects
+                    if relation.related_model is not SourceRevision
+                ]
+                has_related = any(
+                    relation.related_model._base_manager.filter(**{relation.field.name: source}).exists()
+                    for relation in related
+                )
+                legacy_names = {source.source_id, source.source_name, source.institution} - {""}
+                has_history = (
+                    SyncRun.objects.filter(source_id_snapshot__iexact=source.source_id).exists()
+                    or ScheduleAudit.objects.filter(source_id_snapshot__iexact=source.source_id).exists()
+                    or any(DataUpdateLog.objects.filter(source__iexact=name).exists() for name in legacy_names)
+                )
+                if has_related or has_history:
+                    return json_error(
+                        "Sumber memiliki data atau riwayat terkait dan tidak dapat dihapus. Gunakan arsip.", status=409
+                    )
+                source.delete()
+                return json_success({"deleted": True, "sourceId": source_id})
+            if action == "archive":
+                if (SyncRun.objects.filter(source=source, status=SyncRun.Status.RUNNING).exists()
+                        or ResyncJob.objects.filter(source=source, status__in=["queued", "running"]).exists()):
+                    return json_error(
+                        "Sumber memiliki sinkronisasi aktif atau antrean. Tunggu sebelum mengarsipkan.", status=409
+                    )
+                target = Source.SourceStatus.ARCHIVED
+            else:
+                if source.status != Source.SourceStatus.ARCHIVED:
+                    return json_error("Sumber tidak diarsipkan.", status=409)
+                target = Source.SourceStatus.INACTIVE
+            before = source_config_snapshot(source)
+            if source.status != target:
+                source.status = target
+                source.save(update_fields=["status"])
+                _record_revision(source, SourceRevision.Action.UPDATE, before, request.user)
+            return json_success({"source": _serialize_admin_entry(source)})
+    except (IntegrityError, ProtectedError, RestrictedError):
+        return json_error(
+            "Sumber memiliki data terkait atau sedang berubah. Muat ulang dan periksa kembali.", status=409
+        )
+
+
+@require_POST
+def admin_source_archive(request, source_id):
+    return _locked_source_action(request, source_id, "archive")
+
+
+@require_POST
+def admin_source_restore(request, source_id):
+    return _locked_source_action(request, source_id, "restore")
+
+
+@require_POST
+def admin_source_delete(request, source_id):
+    return _locked_source_action(request, source_id, "delete")
+
+
 @require_POST
 def admin_source_create(request):
     denied = _require_staff(request)
@@ -408,7 +532,7 @@ def admin_source_create(request):
         return json_error("Field 'sourceId' maksimal 32 karakter.", status=400)
     if not all(ch.isalnum() or ch == "_" for ch in source_id):
         return json_error("Field 'sourceId' hanya boleh huruf, angka, dan garis bawah.", status=400)
-    problem = _validate_values(values)
+    problem = _validate_values(values, source_id=source_id)
     if problem:
         return json_error(problem, status=400)
 
@@ -491,6 +615,8 @@ def admin_source_update(request, source_id: str):
 
     with transaction.atomic():
         source = Source.objects.select_for_update().get(pk=source.pk)
+        if source.status == Source.SourceStatus.ARCHIVED:
+            return json_error("Pulihkan sumber yang diarsipkan sebelum mengubahnya.", status=409)
         expected = data.get("expectedRevision")
         if type(expected) is not int or expected < 0:
             return json_error("Versi revisi wajib diisi dengan benar. Buka kembali sebelum menyimpan.", status=400)
@@ -513,7 +639,7 @@ def admin_source_update(request, source_id: str):
         if set(data) - {"expectedRevision"} == {"status"}:
             problem = None if data["status"] in ("active", "inactive") else "Field 'status' harus 'active' atau 'inactive'."
         else:
-            problem = _validate_values(values, source_pk=source.pk)
+            problem = _validate_values(values, source_pk=source.pk, source_id=source.source_id)
         if problem:
             return json_error(problem, status=400)
         source.source_name = values["source_name"][:200]
