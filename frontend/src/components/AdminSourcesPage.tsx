@@ -408,7 +408,13 @@ export function AdminSourcesPage() {
         <span className="section-badge">Admin DEKSI</span>
       </div>
 
-      <AdminNavigation active="sources" busy={reviewBusy} />
+      <div className="admin-nav-row">
+        <AdminNavigation active="sources" busy={reviewBusy} hideLogout />
+        <span className="admin-nav-actions">
+          <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>{" "}
+          <button type="button" className="tab" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>Keluar</button>
+        </span>
+      </div>
 
       {!sessionChecked || (loading && !authenticated) ? (
         <p className="summary-loading">Memeriksa sesi admin…</p>
@@ -429,13 +435,7 @@ export function AdminSourcesPage() {
         </article>
       ) : (
         <>
-          <div className="source-detail-head">
-            <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
-            <span>
-              <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>{" "}
-              <button type="button" className="tab" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>Keluar</button>
-            </span>
-          </div>
+          <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
 
           {logoutError && <p className="summary-error" role="alert">{logoutError}</p>}
           {success && <p className="summary-loading">{success}</p>}

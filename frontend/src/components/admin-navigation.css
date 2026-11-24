@@ -45,3 +45,23 @@
     outline: 2px solid #111;
     outline-offset: 3px;
 }
+
+.admin-nav-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 28px;
+}
+
+.admin-nav-row .admin-navigation {
+    flex: 1 1 auto;
+    margin: 0;
+}
+
+.admin-nav-actions {
+    margin-left: auto;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}

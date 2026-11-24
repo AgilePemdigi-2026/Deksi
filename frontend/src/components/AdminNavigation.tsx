@@ -4,11 +4,11 @@ import './admin-navigation.css';
 
 type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis';
 
-export function AdminNavigation({ active, busy = false }: { active: AdminPage; busy?: boolean }) {
+export function AdminNavigation({ active, busy = false, hideLogout = false }: { active: AdminPage; busy?: boolean; hideLogout?: boolean }) {
   const [leaving, setLeaving] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const links = [
-    { href: '/admin/login', label: 'Keluar' },
+    ...(hideLogout ? [] : [{ href: '/admin/login', label: 'Keluar' }]),
     { href: '/admin/monitoring', label: 'Monitoring', page: 'monitoring' },
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
