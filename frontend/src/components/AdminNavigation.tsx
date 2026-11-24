@@ -2,8 +2,7 @@ import { useState, type MouseEvent } from 'react';
 import { adminLogout } from '../api';
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'notifications';
-type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'thresholds';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'thresholds' | 'notifications';
 
 export function AdminNavigation({ active, busy = false, hideLogout = false }: { active: AdminPage; busy?: boolean; hideLogout?: boolean }) {
   const [leaving, setLeaving] = useState(false);

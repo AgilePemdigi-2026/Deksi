@@ -3,6 +3,7 @@ from django.urls import path
 from indicators import (
     bulk_candidate_views,
     candidate_views,
+    config_restore_views,
     dashboard_views,
     feedback_views,
     monitoring_views,
@@ -145,8 +146,12 @@ urlpatterns = [
         name="admin-feedback-status",
     ),
 
-    # ── Feature 26: Konfigurasi Notifikasi ──────────────────────────────────
+       # ── Feature 26: Konfigurasi Notifikasi ──────────────────────────────────
     path("admin/notifications/", notification_views.notification_list, name="admin-notification-list"),
     path("admin/notifications/events/", notification_views.notification_events, name="admin-notification-events"),
     path("admin/notifications/<str:kind>/", notification_views.notification_update, name="admin-notification-update"),
+
+    # ── Feature 27: Kembalikan Konfigurasi ke Default ───────────────────────
+    path("admin/config/restore/", config_restore_views.config_restore, name="admin-config-restore"),
+]
 ]

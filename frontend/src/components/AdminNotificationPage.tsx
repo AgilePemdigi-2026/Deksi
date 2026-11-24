@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AdminNavigation } from "./AdminNavigation";
-import { fetchNotifications, updateNotification, type NotificationEntry } from "../api";
+import { fetchNotifications, restoreDefaults, updateNotification, type NotificationEntry } from "../api";
 import "./admin-source-card.css";
 
 export function AdminNotificationPage() {
@@ -10,12 +10,15 @@ export function AdminNotificationPage() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
+  const [confirming, setConfirming] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
       const data = await fetchNotifications();
       setItems(data.notifications);
+      setEvents(data.events ?? []);
       setError(null);
     } catch {
       setError("Tidak dapat memuat preferensi. Pastikan login Admin.");
@@ -40,6 +43,21 @@ export function AdminNotificationPage() {
       setEvents(data.events ?? []);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Gagal menyimpan");
+    }
+  }
+
+  async function confirmRestore() {
+    setRestoring(true);
+    setMsg(null);
+    try {
+      const out = await restoreDefaults();
+      setMsg(out.message || "Konfigurasi dikembalikan ke pengaturan awal");
+      setConfirming(false);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Pemulihan gagal; konfigurasi sebelumnya dipertahankan");
+    } finally {
+      setRestoring(false);
     }
   }
 
@@ -115,6 +133,51 @@ export function AdminNotificationPage() {
                   </li>
                 ))}
               </ul>
+            )}
+          </article>
+
+          <article className="trace-panel" aria-label="Pemulihan konfigurasi">
+            <div className="trace-head">
+              <div>
+                <p className="trace-kicker">PEMULIHAN</p>
+                <h3 className="trace-title">Kembalikan ke Default</h3>
+              </div>
+            </div>
+            <p className="trace-note">
+              Mengembalikan preferensi notifikasi (dan domain terjadwal bila tersedia) ke nilai bawaan.
+              Formula inti, data, dan riwayat tidak diubah.
+            </p>
+            {!confirming && (
+              <button type="button" className="source-trace-link" onClick={() => setConfirming(true)}>
+                Kembalikan ke Default
+              </button>
+            )}
+            {confirming && (
+              <div role="dialog" aria-modal="true" aria-labelledby="restore-title">
+                <h4 className="trace-title" id="restore-title">Kembalikan ke Default?</h4>
+                <p className="trace-note">
+                  Konfigurasi saat ini digantikan nilai bawaan: notifikasi, jadwal, threshold (bila tersedia).
+                  Tindakan tercatat di audit log. Batal tidak mengubah apa pun.
+                </p>
+                <div className="admin-source-card__actions">
+                  <button
+                    type="button"
+                    className="source-trace-link admin-source-card__review"
+                    onClick={() => setConfirming(false)}
+                    disabled={restoring}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    className="source-trace-link admin-source-card__review"
+                    onClick={() => void confirmRestore()}
+                    disabled={restoring}
+                  >
+                    {restoring ? "Memulihkan…" : "Konfirmasi pemulihan"}
+                  </button>
+                </div>
+              </div>
             )}
           </article>
         </>
