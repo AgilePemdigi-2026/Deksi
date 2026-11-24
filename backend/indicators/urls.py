@@ -154,4 +154,3 @@ urlpatterns = [
     # ── Feature 27: Kembalikan Konfigurasi ke Default ───────────────────────
     path("admin/config/restore/", config_restore_views.config_restore, name="admin-config-restore"),
 ]
-]
