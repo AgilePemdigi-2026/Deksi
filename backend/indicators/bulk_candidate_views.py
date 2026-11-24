@@ -14,9 +14,11 @@ from indicators.models import (
     BulkCandidateReview,
     BulkCandidateReviewItem,
     ObservationCandidate,
+    RawFile,
     Source,
 )
 from indicators.source_admin_views import _parse_json_body
+from indicators.storage import verified_raw_bytes
 from indicators.views import json_error
 
 MAX_PREVIEW_ITEMS = 500
@@ -28,16 +30,43 @@ def _eligibility(candidate):
     raw_id = payload.get("raw_file_id")
     if not isinstance(raw_id, int) or isinstance(raw_id, bool) or raw_id <= 0:
         return False, "missing_raw_file"
-    if not isinstance(payload.get("publication_date"), str):
+    if candidate.source.source_id in ("BPS", "BKPM", "BI"):
+        observation_date = payload.get("observation_date")
+        if not isinstance(observation_date, str):
+            return False, "invalid_observation_date"
+        try:
+            date.fromisoformat(observation_date)
+        except ValueError:
+            return False, "invalid_observation_date"
+        if not isinstance(payload.get("period_label"), str) or not payload["period_label"].strip():
+            return False, "missing_period_label"
+    publication_date = payload.get("publication_date")
+    if publication_date is None and candidate.source.source_id in ("BPS", "BKPM", "BI"):
+        pass  # BPS, BKPM, BI observations may lack an independently established release date.
+    elif not isinstance(publication_date, str):
         return False, "missing_publication_date"
-    try:
-        date.fromisoformat(payload["publication_date"])
-    except ValueError:
-        return False, "invalid_publication_date"
+    else:
+        try:
+            date.fromisoformat(publication_date)
+        except ValueError:
+            return False, "invalid_publication_date"
     snapshot = candidate.base_snapshot if isinstance(candidate.base_snapshot, dict) else {}
     raw = snapshot.get("candidate_raw")
     if not isinstance(raw, dict) or raw.get("id") != raw_id or raw.get("source_id") != candidate.source_id:
         return False, "raw_snapshot_source_mismatch"
+    if candidate.source.source_id in ("BPS", "BKPM", "BI"):
+        raw_file = RawFile.objects.filter(pk=raw_id, source_id=candidate.source_id).first()
+        if raw_file is None:
+            return False, "raw_file_unavailable"
+        if (raw.get("checksum_sha256") != raw_file.checksum_sha256
+                or raw.get("file_size_bytes") != raw_file.file_size_bytes):
+            return False, "raw_file_invalid"
+        try:
+            verified_raw_bytes(raw_file)
+        except OSError:
+            return False, "raw_file_unavailable"
+        except ValueError:
+            return False, "raw_file_invalid"
     return True, None
 
 
@@ -90,12 +119,20 @@ def bulk_candidate_preview(request, source_id):
             source = Source.objects.filter(source_id=source_id).first()
             if source is None:
                 return json_error("Sumber tidak ditemukan.", status=404)
-            # One bounded SELECT freezes the complete pending set at one database statement snapshot.
-            candidates = list(ObservationCandidate.objects.filter(source=source, status="pending")
-                              .select_related("indicator", "source", "reviewed_by")
-                              .order_by("pk")[:MAX_PREVIEW_ITEMS + 1])
-            if len(candidates) > MAX_PREVIEW_ITEMS:
-                return json_error("Terlalu banyak kandidat; lakukan review per halaman.", status=409)
+            # Advance only after this reviewer's completed batch. Wrap around so
+            # excluded candidates can be reconsidered without starving later rows.
+            pending_qs = (ObservationCandidate.objects.filter(source=source, status="pending")
+                          .select_related("indicator", "source", "reviewed_by")
+                          .order_by("pk"))
+            total_pending = pending_qs.count()
+            previous = BulkCandidateReview.objects.filter(
+                source=source, reviewer=reviewer, status=BulkCandidateReview.Status.COMPLETED,
+            ).order_by("-confirmed_at", "-created_at", "-id").first()
+            cursor = (previous.items.order_by("-candidate_id").values_list("candidate_id", flat=True).first()
+                      if previous else None)
+            candidates = list(pending_qs.filter(pk__gt=cursor)[:MAX_PREVIEW_ITEMS]) if cursor else []
+            if not candidates:
+                candidates = list(pending_qs[:MAX_PREVIEW_ITEMS])
             batch = BulkCandidateReview.objects.create(
                 source=source, reviewer=reviewer, expires_at=timezone.now() + PREVIEW_TTL,
             )
@@ -116,6 +153,7 @@ def bulk_candidate_preview(request, source_id):
         return _no_store(JsonResponse({
             "id": str(batch.pk), "status": "preview", "expiresAt": batch.expires_at.isoformat(),
             "total": len(items), "eligible": eligible_count, "excluded": len(items) - eligible_count,
+            "totalPending": total_pending, "hasMore": total_pending > len(items),
             "items": items,
         }))
     except PermissionDenied:
@@ -171,9 +209,12 @@ def bulk_candidate_confirm(request, source_id, batch_id):
                 # The individual lifecycle checks internal integrity, not the fingerprint shown in preview.
                 if candidate.fingerprint != item.candidate_snapshot["fingerprint"]:
                     raise ValidationError("Kandidat berubah setelah preview.")
-                eligible, _ = _eligibility(candidate)
+                eligible, reason = _eligibility(candidate)
                 if not eligible:
-                    raise ValidationError("Metadata kandidat tidak lagi memenuhi syarat bulk.")
+                    item.status = BulkCandidateReviewItem.Status.SKIPPED
+                    item.reason = reason
+                    item.save(update_fields=["status", "reason"])
+                    continue
                 review_candidate(item.candidate_id, request.user, publish=True)
                 item.status = BulkCandidateReviewItem.Status.PUBLISHED
                 item.reason = None

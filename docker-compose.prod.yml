@@ -40,6 +40,9 @@ services:
       - "8000"
     volumes:
       - backend_data:/data
+      # Folder Scrapping (di-upload ke ./scraping di server, read-only).
+      # Tanpa folder ini backend tetap jalan; ingest via exec ke DB yang sama.
+      - ./scraping:/scraping:ro
     depends_on:
       db:
         condition: service_healthy
@@ -67,6 +70,8 @@ services:
       BPS_API_KEY: ${BPS_API_KEY:-}
       BPS_API_BASE_URL: https://webapi.bps.go.id/v1
     command: ["python", "manage.py", "process_resync"]
+    volumes:
+      - backend_data:/data
     depends_on:
       backend:
         condition: service_healthy

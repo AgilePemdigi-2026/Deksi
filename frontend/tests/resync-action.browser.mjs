@@ -10,13 +10,17 @@ const scratch = process.env.HERMES_TEST_SCRATCH
 assert(scratch && path.isAbsolute(scratch), 'Set HERMES_TEST_SCRATCH to the permitted scratch directory')
 const chromePath = process.env.CHROME_BIN || 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 const profile = await mkdtemp(path.join(scratch, 'deksi-resync-ui-'))
-const vite = await createServer({ root, configFile: false, cacheDir: process.env.DEKSI_TEST_CACHE, server: { host: '127.0.0.1', port: 0, strictPort: true } })
+const denyAPI = { name: 'deny-real-api', configureServer(server) { server.middlewares.use((req, res, next) => {
+  if (req.url.startsWith('/api/')) { res.writeHead(403); res.end('Blocked by synthetic test'); return }
+  next()
+}) } }
+const vite = await createServer({ root, configFile: false, envDir: profile, cacheDir: path.join(profile, 'vite'), plugins: [denyAPI], server: { host: '127.0.0.1', port: 0, strictPort: true } })
 let chrome, ws
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 try {
   await vite.listen()
   const origin = `http://127.0.0.1:${vite.httpServer.address().port}`
-  chrome = spawn(chromePath, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' })
+  chrome = spawn(chromePath, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' })
   let port
   for (let i = 0; i < 120; i++) {
     try { port = Number((await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); if (port) break } catch {}
@@ -58,10 +62,10 @@ try {
   }
   await send('Page.enable'); await send('Runtime.enable')
   await send('Page.navigate', { url: `${origin}/tests/resync-action-fixture.html` })
-  await wait('document.querySelectorAll(".resync-action button").length === 4')
+  await wait('document.querySelectorAll(".resync-action button").length === 6')
   await wait('!document.body.innerText.includes("Memeriksa antrean")')
   assert.equal(await evaluate('[...document.querySelectorAll(".resync-action button")].every(button => button.disabled)'), true)
-  assert.match(await evaluate('document.querySelectorAll(".resync-action")[2].textContent'), /hanya tersedia untuk sumber BPS/i)
+  assert.match(await evaluate('document.querySelectorAll(".resync-action")[2].textContent'), /belum tersedia untuk konfigurasi/i)
   await evaluate('document.querySelectorAll(".resync-action")[0].querySelector("input").click()')
   await evaluate('document.querySelectorAll(".resync-action button")[0].focus()')
   assert.equal(await evaluate('document.activeElement === document.querySelector(".resync-action button")'), true)
@@ -84,7 +88,20 @@ try {
   const error = await evaluate('document.querySelectorAll(".resync-action")[3].querySelector("[role=alert]").textContent')
   assert.match(error, /tidak diketahui|belum dapat dipastikan/i)
   assert.doesNotMatch(error, /private transport detail/)
-  console.log('PASS semantic disabled/disconnected states; keyboard confirmation; duplicate suppression; loading, safe success and safe failure')
+  for (const [index, sourceId] of [[4, 'BI'], [5, 'BKPM']]) {
+    const count = await evaluate('window.fixture.calls.length')
+    await evaluate(`document.querySelectorAll('.resync-action')[${index}].querySelector('input').click()`)
+    await evaluate(`document.querySelectorAll('.resync-action')[${index}].querySelector('button').focus()`)
+    await key('Enter', 13)
+    await wait(`window.fixture.calls.length === ${count + 1}`)
+    assert.equal(await evaluate(`window.fixture.calls[${count}].path`), `/api/admin/sources/${sourceId}/resync/`)
+    assert.equal(await evaluate(`window.fixture.calls[${count}].csrf`), 'synthetic')
+    await key('Enter', 13)
+    assert.equal(await evaluate('window.fixture.calls.length'), count + 1)
+    await evaluate('window.fixture.succeed()')
+    await wait(`document.querySelectorAll('.resync-action')[${index}].textContent.includes('Berhasil')`)
+  }
+  console.log('PASS synthetic browser: BPS/BI/BKPM keyboard sync, source routes, CSRF, duplicate suppression, failure and unsupported states')
 } finally {
   ws?.close()
   chrome?.kill()
