@@ -19,6 +19,7 @@ import { AdminFeedbackPage } from './components/AdminFeedbackPage'
 import { AdminSchedulePage } from './components/AdminSchedulePage'
 import { AdminMonitoringPage } from './components/AdminMonitoringPage'
 import { AdminAnalysisPage } from './components/AdminAnalysisPage'
+import { AdminThresholdPage } from './components/AdminThresholdPage'
 import SyncHistoryPage from './features/sync-history/SyncHistoryPage'
 import { loadAdminSyncHistory } from './api'
 
@@ -74,6 +75,11 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
   }
   if (path === '/admin/sumber' || path === '/admin/sumber-data') return <AdminSourcesPage />
   if (path === '/admin/feedback' || path === '/admin/umpan-balik') return <AdminFeedbackPage />
+  if (path === '/admin/jadwal') return <AdminSchedulePage />
+  if (path === '/admin/monitoring') return <AdminMonitoringPage />
+  if (path === '/admin/analisis') return <AdminAnalysisPage />
+  if (path === '/admin/konfigurasi' || path === '/admin/threshold') return <AdminThresholdPage />
+  if (path === '/admin/riwayat-sinkronisasi') return <SyncHistoryPage loadHistory={loadAdminSyncHistory} />
   if (path === '/admin/jadwal') return <AdminSessionGuard><AdminSchedulePage /></AdminSessionGuard>
   if (path === '/admin/monitoring') return <AdminSessionGuard><AdminMonitoringPage /></AdminSessionGuard>
   if (path === '/admin/analisis') return <AdminSessionGuard><AdminAnalysisPage /></AdminSessionGuard>

@@ -2,7 +2,7 @@ import { useState, type MouseEvent } from 'react';
 import { adminLogout } from '../api';
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'thresholds';
 
 export function AdminNavigation({ active, busy = false, hideLogout = false }: { active: AdminPage; busy?: boolean; hideLogout?: boolean }) {
   const [leaving, setLeaving] = useState(false);
@@ -13,6 +13,7 @@ export function AdminNavigation({ active, busy = false, hideLogout = false }: { 
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
     { href: '/admin/analisis', label: 'Peninjauan Analisis', page: 'analysis' },
+    { href: '/admin/konfigurasi', label: 'Konfigurasi', page: 'thresholds' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },
     { href: '/admin/jadwal', label: 'Jadwal Pembaruan', page: 'schedules' },
   ];
