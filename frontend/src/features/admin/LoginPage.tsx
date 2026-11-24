@@ -176,7 +176,7 @@ export default function LoginPage() {
         <section className="visual-panel" aria-label="Ilustrasi DEKSI">
           <div className="visual-photo"><img className="hero-photo" src={heroImage} alt="" fetchPriority="high" decoding="async" /></div>
           <p className="art-title" aria-hidden="true"><span>DATA</span><span>DEKSI</span></p>
-          <div className="brand-plate"><a className="brand-home" href="/" aria-label="DEKSI, kembali ke dashboard publik"><BrandMark /><span className="brand-name">DEKSI</span></a><button type="button" className="plate-menu" onClick={openInfo} aria-label="Tentang DEKSI"><span /><span /></button></div>
+          <a className="brand-plate" href="/" aria-label="DEKSI, kembali ke dashboard publik"><BrandMark /><span className="brand-name">DEKSI</span></a>
         </section>
         <section className="login-form-panel" aria-labelledby="login-heading">
           <p className="eyebrow">AREA PENGELOLA</p><h1 id="login-heading" tabIndex={-1}>Masuk Admin.</h1>
