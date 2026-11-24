@@ -31,6 +31,7 @@ dist-ssr
 __pycache__/
 *.py[cod]
 *.sqlite3
+*.sqlite3.backup*
 
 # Local raw data
 backend/raw_storage/

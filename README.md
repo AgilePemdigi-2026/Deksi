@@ -14,10 +14,26 @@ Fitur yang dikembangkan mencakup login admin, lupa dan reset kata sandi, dashboa
 
 ```
 .
-├── backend/     Proyek Django (API dan logika bisnis)
-├── frontend/    Proyek React + TypeScript (antarmuka pengguna)
+├── backend/
+│   ├── admin_auth/       Autentikasi dan pemulihan akun Admin
+│   ├── backend/          Konfigurasi Django dan routing API
+│   ├── indicators/       API indikator, ingest, dan logika bisnis
+│   ├── docs/             Dokumentasi API dan verifikasi backend
+│   ├── scripts/          Skrip operasional dan verifikasi
+│   └── tools/            Utilitas inspeksi data dan provider
+├── frontend/
+│   ├── src/
+│   │   ├── components/   Komponen bersama dan halaman Admin
+│   │   └── features/     Fitur dashboard, indikator, dan autentikasi
+│   ├── tests/            Tes unit, integrasi, dan browser
+│   └── docs/             Catatan desain dan verifikasi frontend
+├── docs/                 Dokumentasi lintas aplikasi dan rencana ingest
+├── docker-compose.yml    Stack development
+├── docker-compose.prod.yml
 └── README.md
 ```
+
+Rencana ingest dan keputusan pemuatan data ada di [`docs/data-ingestion/`](docs/data-ingestion/).
 
 ## Prasyarat
 
@@ -152,14 +168,16 @@ npm run test:resync
 npm run test:resync:browser
 ```
 
-Tes browser memerlukan `HERMES_TEST_SCRATCH` menunjuk direktori scratch absolut,
+Tes browser memerlukan `HERMES_TEST_SCRATCH` menunjuk direktori sementara khusus
+pengujian dengan path absolut,
 Chrome lokal, dan menggunakan API sintetis. Jangan menjalankan tes terhadap database pengguna.
 
 Uji browser dengan **backend Django dan worker nyata, tetapi provider sintetis**:
 `npm run test:resync:integration` dari `frontend/`. Runner ini memerlukan Docker dengan
 image existing `deksi-qa-bab65d906565-backend:latest` dan `postgres:17-alpine`, Node/dependency
 frontend yang sudah ada, Chrome (atau `CHROME_BIN`), Python, serta `HERMES_TEST_SCRATCH`
-yang menunjuk folder absolut existing. Runner tidak memasang dependency atau membangun image.
+yang menunjuk direktori sementara khusus pengujian yang sudah ada. Runner tidak memasang
+dependency atau membangun image.
 Runner memakai PostgreSQL tmpfs baru, port backend loopback acak, akun dengan password
 sintetis yang dibuat saat run, CSRF/session normal, fixture provider offline, dan cleanup
 resource miliknya sendiri. Tidak membaca `.env` aplikasi atau volume database pengguna.
