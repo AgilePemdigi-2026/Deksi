@@ -71,47 +71,91 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
         "Dataset realisasi investasi triwulanan PMA/PMDN tingkat nasional.",
     )
 
+    from .source_status import InactiveSourceError
+    from .sync_history_service import begin_sync_run, finalize_sync_run
+
+    skipped_inactive = [source.source_id for source in (bi_source, bkpm_source)
+                        if source.status != Source.SourceStatus.ACTIVE]
+
+    def begin_if_active(source, paths):
+        if not paths:
+            return None
+        try:
+            run = begin_sync_run(source=source)
+            if source.source_id in skipped_inactive:
+                skipped_inactive.remove(source.source_id)
+            return run
+        except InactiveSourceError:
+            if source.source_id not in skipped_inactive:
+                skipped_inactive.append(source.source_id)
+            return None
+
+    input_paths = {
+        "BI": sorted(scraping_dir.glob("*.xlsx")),
+        # Pola nama BKPM resmi; bundle zip lain (mis. arsip gabungan) diabaikan.
+        "BKPM": sorted(scraping_dir.glob("data-realisasi-investasi-*.zip"))
+        + sorted(scraping_dir.glob("data-realisasi-investasi-*.csv")),
+    }
     created_bi = 0
     created_bkpm = 0
     errors = []
 
-    for path in sorted(scraping_dir.glob("*.xlsx")):
+    bi_run = begin_if_active(bi_source, input_paths["BI"])
+    bi_errors = False
+    bi_failure_stages = set()
+    for path in input_paths["BI"] if bi_run else []:
         name_lower = path.name.lower()
-        raw_file, is_new = save_raw_from_path(
-            bi_source,
-            path,
-            path.name,
-            source_url="file://Folder Scrapping/" + path.name,
-            period_label="",
-        )
+        raw_file, is_new = None, False
+        failure_stage = "store_file"
         try:
+            raw_file, is_new = save_raw_from_path(
+                bi_source, path, path.name,
+                source_url="file://Folder Scrapping/" + path.name, period_label="",
+            )
+            failure_stage = "read_file"
             if "bi-7day-rr" in name_lower:
                 obs = parse_bi_rr_xlsx(path, raw_file, bi_source)
+                failure_stage = "process_data"
                 created_bi += upsert_bi_observations(obs)
             elif "jisdor" in name_lower:
                 obs = parse_jisdor_xlsx(path, raw_file, bi_source)
+                failure_stage = "process_data"
                 created_bi += upsert_bi_observations(obs)
             elif "indikator-moneter" in name_lower or "indikator moneter" in name_lower:
                 obs = parse_moneter_xlsx(path, raw_file, bi_source)
+                failure_stage = "process_data"
                 created_bi += upsert_bi_observations(obs)
             else:
                 raise ValueError(f"unknown BI dataset type: {path.name}")
             if is_new:
+                failure_stage = "store_file"
                 raw_file.parse_status = RawFile.ParseStatus.PARSED
                 raw_file.save(update_fields=["parse_status"])
         except Exception as exc:
+            bi_errors = True
+            bi_failure_stages.add(failure_stage)
             errors.append(f"{path.name}: {exc}")
             if is_new:
                 raw_file.parse_error = str(exc)
                 raw_file.parse_status = RawFile.ParseStatus.FAILED
                 raw_file.save(update_fields=["parse_error", "parse_status"])
 
-    for path in sorted(scraping_dir.glob("*.zip")):
+    if bi_run:
+        stage = (next(iter(bi_failure_stages)) if len(bi_failure_stages) == 1
+                 else "multiple_stages" if bi_failure_stages else None)
+        finalize_sync_run(bi_run, success=not bi_errors, failure_stage=stage)
+    bkpm_run = begin_if_active(bkpm_source, input_paths["BKPM"])
+    bkpm_errors = False
+    bkpm_failure_stages = set()
+    for path in input_paths["BKPM"] if bkpm_run else []:
+        raw_file, is_new = None, False
+        failure_stage = "read_file"
         try:
             quarter_date = bkpm_quarter_date_from_filename(path.name)
             if quarter_date is None:
                 raise ValueError(f"cannot parse period from filename: {path.name}")
             period_label = bkpm_period_label_from_filename(path.name)
+            failure_stage = "store_file"
             raw_file, is_new = save_raw_from_path(
                 bkpm_source,
                 path,
@@ -119,7 +163,12 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
                 source_url="file://Folder Scrapping/" + path.name,
                 period_label=period_label,
             )
-            total = sum_bkpm_zip_csv(path)
+            failure_stage = "read_file"
+            if path.suffix.lower() == ".csv":
+                total = sum_bkpm_csv_file(path)
+            else:
+                total = sum_bkpm_zip_csv(path)
+            failure_stage = "process_data"
             indicator = get_or_create_indicator(
                 "investasi",
                 "Realisasi Investasi",
@@ -134,20 +183,28 @@ def ingest_local_datasets(scraping_dir: Path | None = None) -> dict:
                 frequency="quarterly", value=value_rp_triliun, unit="Rp Triliun", raw_file_id=raw_file.pk)
             created_bkpm += 1
             if is_new:
+                failure_stage = "store_file"
                 raw_file.parse_status = RawFile.ParseStatus.PARSED
                 raw_file.save(update_fields=["parse_status"])
         except Exception as exc:
+            bkpm_errors = True
+            bkpm_failure_stages.add(failure_stage)
             errors.append(f"{path.name}: {exc}")
-            raw = RawFile.objects.filter(document_name=path.name, source=bkpm_source).first()
-            if raw is not None:
-                raw.parse_error = str(exc)
-                raw.parse_status = RawFile.ParseStatus.FAILED
-                raw.save(update_fields=["parse_error", "parse_status"])
+            if is_new and raw_file is not None:
+                raw_file.parse_error = str(exc)
+                raw_file.parse_status = RawFile.ParseStatus.FAILED
+                raw_file.save(update_fields=["parse_error", "parse_status"])
+
+    if bkpm_run:
+        stage = (next(iter(bkpm_failure_stages)) if len(bkpm_failure_stages) == 1
+                 else "multiple_stages" if bkpm_failure_stages else None)
+        finalize_sync_run(bkpm_run, success=not bkpm_errors, failure_stage=stage)
 
     return {
         "bi_rows": created_bi,
         "bkpm_quarters": created_bkpm,
         "errors": errors,
+        "skipped_inactive": skipped_inactive,
         "scraping_dir": str(scraping_dir),
     }
 
@@ -163,7 +220,7 @@ def parse_bi_rr_xlsx(path: Path, raw_file, source) -> list[dict]:
         wb.close()
     indicator = get_or_create_indicator(
         "birate",
-        "BI-Rate (BI-7Day Repurchase Rate)",
+        "BI-Rate",
         "Kebijakan Moneter",
         "%",
         "avg",
@@ -315,38 +372,49 @@ def bkpm_period_label_from_filename(filename: str) -> str | None:
     return f"Triwulan {roman_labels[match.group(1)]} {match.group(2)}"
 
 
-def sum_bkpm_zip_csv(zip_path: Path) -> Decimal:
+def _sum_bkpm_csv_text(text: str, label: str) -> Decimal:
+    import csv
+
+    dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;")
+    reader = csv.reader(text.splitlines(), dialect)
+    header = next(reader)
+    if "investasi_rp_juta" not in header:
+        raise ValueError(f"investasi_rp_juta column missing in {label}")
+    col_index = header.index("investasi_rp_juta")
     total = Decimal(0)
     row_count = 0
+    for row in reader:
+        if len(row) <= col_index:
+            continue
+        raw = row[col_index].strip()
+        if raw == "":
+            continue
+        value = parsing.parse_bkpm_rp_juta(raw)
+        if value is None:
+            raise ValueError(f"unparseable BKPM value: {raw!r}")
+        total += value
+        row_count += 1
+    if row_count == 0:
+        raise ValueError("BKPM csv has no data rows")
+    return total
+
+
+def sum_bkpm_zip_csv(zip_path: Path) -> Decimal:
     with zipfile.ZipFile(zip_path) as archive:
         csv_names = [n for n in archive.namelist() if n.lower().endswith(".csv")]
         if not csv_names:
             raise ValueError("no csv inside BKPM zip")
         with archive.open(csv_names[0]) as fh:
-            import csv
             import io
 
             text = io.TextIOWrapper(fh, encoding="utf-8-sig").read()
-            dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;")
-            reader = csv.reader(text.splitlines(), dialect)
-            header = next(reader)
-            if "investasi_rp_juta" not in header:
-                raise ValueError(f"investasi_rp_juta column missing in {csv_names[0]}")
-            col_index = header.index("investasi_rp_juta")
-            for row in reader:
-                if len(row) <= col_index:
-                    continue
-                raw = row[col_index].strip()
-                if raw == "":
-                    continue
-                value = parsing.parse_bkpm_rp_juta(raw)
-                if value is None:
-                    raise ValueError(f"unparseable BKPM value: {raw!r}")
-                total += value
-                row_count += 1
-    if row_count == 0:
-        raise ValueError("BKPM csv has no data rows")
-    return total
+            return _sum_bkpm_csv_text(text, csv_names[0])
+
+
+def sum_bkpm_csv_file(csv_path: Path) -> Decimal:
+    """Jumlahkan CSV BKPM lepas (tanpa zip), format kolom sama."""
+    text = csv_path.read_text(encoding="utf-8-sig")
+    return _sum_bkpm_csv_text(text, csv_path.name)
 
 
 def normalize_none(value) -> str | None:

@@ -107,7 +107,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
   if (result.status === "success") {
     return (
       <div className="feedback-success" role="status">
-        <span className="feedback-success__icon" aria-hidden="true">Γ£ô</span>
+        <span className="feedback-success__icon" aria-hidden="true">✓</span>
         <p className="feedback-success__message">{result.message}</p>
         <button
           className="feedback-btn feedback-btn--secondary"
@@ -148,7 +148,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
           required
           disabled={result.status === "loading"}
         >
-          <option value="">ΓÇö Pilih kategori ΓÇö</option>
+          <option value="">Pilih kategori</option>
           {feedbackCategories.map((cat) => (
             <option key={cat.value} value={cat.value}>
               {cat.label}
@@ -169,7 +169,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
           id="fb-description"
           className={`feedback-textarea${fieldErrors.description ? " feedback-input--error" : ""}`}
           rows={5}
-          placeholder="Jelaskan secara spesifik apa yang perlu diperbaiki atau ditambahkanΓÇª"
+          placeholder="Jelaskan secara spesifik apa yang perlu diperbaiki atau ditambahkan…"
           value={payload.description}
           onChange={(e) => update("description", e.target.value)}
           required
@@ -263,7 +263,7 @@ export function FeedbackForm({ defaultIndicatorCode = "", defaultPeriod = "" }: 
         className="feedback-btn feedback-btn--primary"
         disabled={result.status === "loading"}
       >
-        {result.status === "loading" ? "MengirimΓÇª" : "Kirim Umpan Balik"}
+        {result.status === "loading" ? "Mengirim…" : "Kirim Umpan Balik"}
       </button>
     </form>
   );

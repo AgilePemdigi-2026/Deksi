@@ -33,6 +33,8 @@ class Command(BaseCommand):
         self.stdout.write(f"Folder dataset : {summary['scraping_dir']}")
         self.stdout.write(f"Baris BI       : {summary['bi_rows']}")
         self.stdout.write(f"Triwulan BKPM  : {summary['bkpm_quarters']}")
+        for source_id in summary.get("skipped_inactive", []):
+            self.stdout.write(self.style.WARNING(f"Sumber {source_id} nonaktif; impor dilewati."))
         if summary["errors"]:
             record_update_failure("Dataset BI dan BKPM", updated_by=user, message="; ".join(summary["errors"]))
             self.stdout.write(self.style.WARNING("Peringatan per file:"))

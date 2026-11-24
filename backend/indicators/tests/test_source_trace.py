@@ -6,6 +6,18 @@ from indicators.tests.support import IndicatorCase
 
 
 class SourceTraceTests(IndicatorCase):
+    def test_bkpm_json_provenance_does_not_claim_zip(self):
+        self.indicator.code = 'investasi'
+        self.indicator.save()
+        source = Source.objects.get(source_id='BKPM')
+        raw = RawFile.objects.create(source=source, document_name='data-preview.json',
+            source_url='https://data.bkpm.go.id/dataset-view/example',
+            checksum_sha256=hashlib.sha256(b'{}').hexdigest(), file_size_bytes=2)
+        self.observation(source=source, raw_file=raw, data_type='derived_sum')
+        trace = self.client.get('/api/indicators/investasi/source-trace/').json()
+        self.assertNotIn('ZIP', trace['derived']['formula'])
+        self.assertIn('investasi_rp_juta', trace['derived']['formula'])
+
     def trace(self, **query):
         return self.client.get("/api/indicators/inflasi/source-trace/", query)
 

@@ -1,0 +1,5 @@
+.resync-action{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.resync-action__button{min-height:44px;padding:10px 16px;border:1px solid #111;border-radius:4px;background:#111;color:#f4f4f4;font:inherit;cursor:pointer}
+.resync-action__button:focus-visible{outline:2px solid #111;outline-offset:3px}
+.resync-action__button:disabled{opacity:.55;cursor:not-allowed}
+.resync-action__message{margin:0;color:#333;font-size:13px;line-height:1.5}

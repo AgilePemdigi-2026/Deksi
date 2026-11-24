@@ -5,6 +5,7 @@ from . import kemenkeu
 from .lifecycle import ensure_import_master, stage_observation
 from .models import Indicator, RawFile, Source
 from .storage import save_raw
+from .sync_history_service import begin_sync_run, finalize_sync_run
 
 KEMENKEU_META = {
     "source_name": "APBN Kinerja dan Tindak Lanjut (APBN KiTa)",
@@ -54,21 +55,51 @@ def get_fiscal_indicators() -> dict[str, Indicator]:
 
 
 def ingest_kita_pdf_url(url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
-    pdf_bytes, parsed = kemenkeu.fetch_and_parse(url)
-    return ingest_kita_parsed(parsed, pdf_bytes, url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy)
+    source = get_kemenkeu_source()
+    run = begin_sync_run(source=source)
+    stage = "fetch_document"
+    try:
+        pdf_bytes, parsed = kemenkeu.fetch_and_parse(url)
+        stage = None
+        result = ingest_kita_parsed(
+            parsed, pdf_bytes, url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy, _source=source,
+        )
+    except Exception:
+        finalize_sync_run(run, success=False, failure_stage=stage)
+        raise
+    finalize_sync_run(run, success=True)
+    return result
 
 
 def ingest_kita_pdf_bytes(pdf_bytes: bytes, source_url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
     """Ingest PDF KiTa dari berkas lokal (arsip Folder Scrapping)."""
-    text = kemenkeu.pdf_to_text(pdf_bytes)
-    parsed = kemenkeu.parse_kita_text(text, source_url=source_url)
-    return ingest_kita_parsed(parsed, pdf_bytes, source_url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy)
+    source = get_kemenkeu_source()
+    run = begin_sync_run(source=source)
+    stage = "read_file"
+    try:
+        text = kemenkeu.pdf_to_text(pdf_bytes)
+        parsed = kemenkeu.parse_kita_text(text, source_url=source_url)
+        stage = None
+        result = ingest_kita_parsed(
+            parsed, pdf_bytes, source_url, scrap_dir=scrap_dir, no_scrap_copy=no_scrap_copy, _source=source,
+        )
+    except Exception:
+        finalize_sync_run(run, success=False, failure_stage=stage)
+        raise
+    finalize_sync_run(run, success=True)
+    return result
 
 
-def ingest_kita_parsed(parsed, pdf_bytes: bytes, url: str, scrap_dir=None, no_scrap_copy: bool = False) -> dict:
+def ingest_kita_parsed(
+    parsed, pdf_bytes: bytes, url: str, scrap_dir=None, no_scrap_copy: bool = False, *, _source=None,
+) -> dict:
+    if _source is None:
+        _source = get_kemenkeu_source()
+        from .source_status import require_active_source
+        require_active_source(_source)
     if parsed.cumulative_until is None:
         raise kemenkeu.KitaError("periode kumulatif tidak teridentifikasi pada dokumen; data tidak disimpan")
-    result = _store_parsed_result(url, pdf_bytes, parsed)
+    result = _store_parsed_result(url, pdf_bytes, parsed, _source)
     if not no_scrap_copy:
         result["scrap_copy"] = archive_to_scraping_dir(
             pdf_bytes, result["document_name"], url,
@@ -77,8 +108,7 @@ def ingest_kita_parsed(parsed, pdf_bytes: bytes, url: str, scrap_dir=None, no_sc
     return result
 
 
-def _store_parsed_result(url: str, pdf_bytes: bytes, parsed) -> dict:
-    source = get_kemenkeu_source()
+def _store_parsed_result(url: str, pdf_bytes: bytes, parsed, source: Source) -> dict:
     document_name = kemenkeu.suggested_document_name(parsed)
     raw_file, is_new = save_raw(
         source, pdf_bytes, document_name,

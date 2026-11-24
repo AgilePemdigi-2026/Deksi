@@ -1,6 +1,20 @@
 from django.urls import path
 
-from indicators import dashboard_views, feedback_views, source_admin_views, views
+from indicators import (
+    bulk_candidate_views,
+    candidate_views,
+    config_restore_views,
+    dashboard_views,
+    feedback_views,
+    monitoring_views,
+    notification_views,
+    resync_views,
+    schedule_views,
+    source_admin_views,
+    sync_history_views,
+    threshold_views,
+    views,
+)
 
 urlpatterns = [
     # ── Sistem ──────────────────────────────────────────────────────────────
@@ -33,6 +47,29 @@ urlpatterns = [
     ),
 
     # ── Fitur 10-11: Kelola Sumber Data (Admin, session auth + staf) ─────────
+    path("admin/sync-history/", sync_history_views.admin_sync_history, name="admin-sync-history"),
+    path("admin/resync-jobs/<int:job_id>/", resync_views.resync_status, name="admin-resync-status"),
+    path("admin/resync-jobs/<int:job_id>/reconcile/", resync_views.reconcile_resync, name="admin-resync-reconcile"),
+    path("admin/sources/<str:source_id>/resync/", resync_views.request_resync, name="admin-source-resync"),
+    path("admin/sources/<str:source_id>/resync-active/", resync_views.active_resync, name="admin-source-resync-active"),
+    path("admin/analysis-results/", candidate_views.analysis_result_list, name="admin-analysis-results"),
+    path("admin/analysis-results/<int:candidate_id>/decision/",
+         candidate_views.analysis_result_decision, name="admin-analysis-result-decision"),
+    path("admin/sources/<str:source_id>/candidates/", candidate_views.candidate_list, name="admin-candidate-list"),
+    path("admin/sources/<str:source_id>/candidates/bulk-preview/",
+         bulk_candidate_views.bulk_candidate_preview, name="admin-candidate-bulk-preview"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/active/",
+         bulk_candidate_views.bulk_candidate_active, name="admin-candidate-bulk-active"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/confirm/",
+         bulk_candidate_views.bulk_candidate_confirm, name="admin-candidate-bulk-confirm"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/reconcile/",
+         bulk_candidate_views.bulk_candidate_reconcile, name="admin-candidate-bulk-reconcile"),
+    path("admin/sources/<str:source_id>/candidates/bulk-review/<uuid:batch_id>/",
+         bulk_candidate_views.bulk_candidate_status, name="admin-candidate-bulk-status"),
+    path("admin/sources/<str:source_id>/candidates/<int:candidate_id>/",
+         candidate_views.candidate_detail, name="admin-candidate-detail"),
+    path("admin/sources/<str:source_id>/candidates/<int:candidate_id>/review/",
+         candidate_views.candidate_review, name="admin-candidate-review"),
     path("admin/session/", source_admin_views.admin_session, name="admin-session"),
     path("admin/login/", source_admin_views.admin_login, name="admin-login"),
     path("admin/logout/", source_admin_views.admin_logout, name="admin-logout"),
@@ -42,6 +79,9 @@ urlpatterns = [
         name="admin-acquisition-methods",
     ),
     path("admin/sources/", source_admin_views.admin_source_list, name="admin-source-list"),
+    path("admin/sources/<str:source_id>/archive/", source_admin_views.admin_source_archive, name="admin-source-archive"),
+    path("admin/sources/<str:source_id>/restore/", source_admin_views.admin_source_restore, name="admin-source-restore"),
+    path("admin/sources/<str:source_id>/delete/", source_admin_views.admin_source_delete, name="admin-source-delete"),
     path(
         "admin/sources/create/",
         source_admin_views.admin_source_create,
@@ -63,6 +103,36 @@ urlpatterns = [
         name="admin-source-update",
     ),
 
+    # ── Feature 24: Konfigurasi Threshold Diagnostik (Admin, session auth + staf)
+    path("admin/thresholds/", threshold_views.threshold_list, name="admin-threshold-list"),
+    path("admin/thresholds/supported/", threshold_views.threshold_supported, name="admin-threshold-supported"),
+    path("admin/thresholds/evaluate/", threshold_views.diagnostic_evaluate, name="admin-threshold-evaluate"),
+    path(
+        "admin/thresholds/<str:code>/<str:param>/history/",
+        threshold_views.threshold_history,
+        name="admin-threshold-history",
+    ),
+    path(
+        "admin/thresholds/<str:code>/<str:param>/",
+        threshold_views.threshold_detail,
+        name="admin-threshold-detail",
+    ),
+    path(
+        "admin/thresholds/<str:code>/<str:param>/update/",
+        threshold_views.threshold_update,
+        name="admin-threshold-update",
+    ),
+    # ── Feature 23: Konfigurasi Jadwal Pembaruan ──────────────────────────
+    path("admin/schedules/", schedule_views.schedule_list, name="admin-schedule-list"),
+    path("admin/schedules/next/", schedule_views.schedule_next, name="admin-schedule-next"),
+    path("admin/schedules/<str:source_id>/", schedule_views.schedule_update, name="admin-schedule-update"),
+    # ── Feature 19: Dashboard Monitoring Admin ──────────────────────────
+    path("admin/monitoring/summary/", monitoring_views.admin_monitoring_summary, name="admin-monitoring-summary"),
+    path("admin/monitoring/sources/", monitoring_views.admin_monitoring_sources, name="admin-monitoring-sources"),
+    path("admin/monitoring/history/", monitoring_views.admin_monitoring_history, name="admin-monitoring-history"),
+    path("admin/monitoring/runs/<int:run_id>/", monitoring_views.admin_monitoring_run_detail,
+         name="admin-monitoring-run-detail"),
+
     # ── Fitur 15-18: Daftar, Detail, Pencarian, dan Status Umpan Balik ──────
     path("admin/feedback/", feedback_views.admin_feedback_list, name="admin-feedback-list"),
     path(
@@ -75,4 +145,12 @@ urlpatterns = [
         feedback_views.admin_feedback_update_status,
         name="admin-feedback-status",
     ),
+
+       # ── Feature 26: Konfigurasi Notifikasi ──────────────────────────────────
+    path("admin/notifications/", notification_views.notification_list, name="admin-notification-list"),
+    path("admin/notifications/events/", notification_views.notification_events, name="admin-notification-events"),
+    path("admin/notifications/<str:kind>/", notification_views.notification_update, name="admin-notification-update"),
+
+    # ── Feature 27: Kembalikan Konfigurasi ke Default ───────────────────────
+    path("admin/config/restore/", config_restore_views.config_restore, name="admin-config-restore"),
 ]

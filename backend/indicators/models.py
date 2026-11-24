@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -8,12 +10,18 @@ from indicators.fields import ObservationDecimalField
 class Source(models.Model):
     class AcquisitionMethod(models.TextChoices):
         API_BPS = "api_bps", "API resmi (WebAPI BPS)"
+        API_BIS = "api_bis", "API BIS (suku bunga Indonesia)"
         PDF_KITA = "pdf_kita", "PDF resmi (APBN KiTa Kemenkeu)"
         FILE_XLSX = "file_xlsx", "File resmi (XLSX dataset)"
         FILE_ZIP_CSV = "file_zip_csv", "File resmi (ZIP berisi CSV)"
+        WEB_BI = "web_bi", "Sinkronisasi online (tabel resmi BI)"
+        WEB_BKPM = "web_bkpm", "Sinkronisasi online (pratinjau publik BKPM)"
+        WEB_KEMENKEU = "web_kemenkeu", "Sinkronisasi online (arsip APBN KiTa)"
 
     class DataFormat(models.TextChoices):
         JSON = "json", "JSON"
+        XML = "xml", "XML"
+        HTML = "html", "HTML"
         PDF = "pdf", "PDF"
         XLSX = "xlsx", "XLSX"
         ZIP_CSV = "zip_csv", "ZIP-CSV"
@@ -21,6 +29,7 @@ class Source(models.Model):
     class SourceStatus(models.TextChoices):
         ACTIVE = "active", "Aktif"
         INACTIVE = "inactive", "Nonaktif"
+        ARCHIVED = "archived", "Diarsipkan"
 
     source_id = models.CharField(max_length=32, unique=True)
     source_name = models.CharField(max_length=200)
@@ -182,6 +191,7 @@ class ObservationCandidate(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending"
         PUBLISHED = "published"
+        NEEDS_REVISION = "needs_revision"
         REJECTED = "rejected"
 
     indicator = models.ForeignKey(Indicator, on_delete=models.PROTECT)
@@ -189,7 +199,7 @@ class ObservationCandidate(models.Model):
     payload = models.JSONField()
     base_snapshot = models.JSONField()
     fingerprint = models.CharField(max_length=64, unique=True)
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
     review_notes = models.TextField(blank=True, default="")
@@ -202,10 +212,88 @@ class ObservationCandidate(models.Model):
         return f"Kandidat {self.pk}: {self.indicator.code} ({self.status})"
 
 
+class AnalysisReviewAudit(models.Model):
+    class Decision(models.TextChoices):
+        PUBLISH = "publish", "Layak publikasi"
+        NEEDS_REVISION = "needs_revision", "Perlu revisi"
+        REJECT = "reject", "Ditolak"
+
+    candidate = models.ForeignKey(
+        ObservationCandidate, on_delete=models.PROTECT, related_name="review_audits"
+    )
+    fingerprint = models.CharField(max_length=64)
+    version_snapshot = models.JSONField()
+    decision = models.CharField(max_length=16, choices=Decision.choices)
+    notes = models.CharField(max_length=500, blank=True, default="")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deksi_analysis_reviews",
+    )
+    reviewed_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ["-reviewed_at", "-id"]
+
+    def __str__(self):
+        return f"Review {self.candidate_id}: {self.get_decision_display()}"
+
+
+class BulkCandidateReview(models.Model):
+    class Status(models.TextChoices):
+        PREVIEW = "preview", "Preview"
+        RUNNING = "running", "Berlangsung"
+        COMPLETED = "completed", "Selesai"
+        UNKNOWN = "unknown", "Hasil tidak diketahui"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source = models.ForeignKey(Source, on_delete=models.PROTECT, related_name="bulk_candidate_reviews")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                 related_name="bulk_candidate_reviews")
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PREVIEW)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                    null=True, blank=True, related_name="resolved_bulk_candidate_reviews")
+    resolution_reason = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
+class BulkCandidateReviewItem(models.Model):
+    class Status(models.TextChoices):
+        EXCLUDED = "excluded", "Dikecualikan"
+        PENDING = "pending", "Menunggu"
+        PUBLISHED = "published", "Dipublikasikan"
+        SKIPPED = "skipped", "Dilewati"
+        UNKNOWN = "unknown", "Tidak diketahui"
+
+    batch = models.ForeignKey(BulkCandidateReview, on_delete=models.CASCADE, related_name="items")
+    candidate = models.ForeignKey(ObservationCandidate, on_delete=models.PROTECT, related_name="bulk_review_items")
+    candidate_snapshot = models.JSONField()
+    eligible = models.BooleanField(default=False)
+    exclusion_reason = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    reason = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        ordering = ["candidate_id"]
+        constraints = [models.UniqueConstraint(fields=["batch", "candidate"], name="bulk_review_candidate_once")]
+
+
 class DataUpdateLog(models.Model):
     class Status(models.TextChoices):
         SUCCESS = "success"
         FAILED = "failed"
+
+    class EventKind(models.TextChoices):
+        UNKNOWN = "unknown", "Tidak diketahui"
+        PUBLICATION = "publication", "Publikasi observasi"
 
     updated_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_by = models.ForeignKey(
@@ -217,6 +305,7 @@ class DataUpdateLog(models.Model):
     )
     source = models.CharField(max_length=300, blank=True, default="")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.SUCCESS)
+    event_kind = models.CharField(max_length=16, choices=EventKind.choices, default=EventKind.UNKNOWN)
     observation_count = models.PositiveIntegerField(default=0)
     message = models.TextField(blank=True, default="")
 
@@ -229,3 +318,12 @@ class DataUpdateLog(models.Model):
 
 # Re-export agar migration discovery berfungsi dari satu modul
 from indicators.feedback_model import Feedback, FeedbackAuditLog  # noqa: E402, F401
+from indicators.notification_model import (  # noqa: E402, F401
+    NotificationAudit,
+    NotificationEvent,
+    NotificationPreference,
+)
+from indicators.resync_model import ResyncJob  # noqa: E402, F401
+from indicators.schedule_model import ScheduleAudit, ScheduleConfig  # noqa: E402, F401
+from indicators.sync_history_model import SyncRun  # noqa: E402, F401
+from indicators.threshold_model import DiagnosticThreshold, DiagnosticThresholdAudit  # noqa: E402, F401

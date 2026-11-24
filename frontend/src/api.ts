@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import type { SyncHistoryQuery, SyncHistoryResult } from "./features/sync-history/types";
+import { authOrigin, createAuthClient } from "./features/admin/auth";
 
 export const API_BASE = "/api";
 
@@ -101,10 +103,14 @@ export function useTrend(code: string) {
   const [trend, setTrend] = useState<TrendResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previousCode, setPreviousCode] = useState(code);
+  if (previousCode !== code) {
+    setPreviousCode(code);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     const load = async () => {
       try {
         const res = await fetch(`${API_BASE}/indicators/${code}/trend/`);
@@ -151,10 +157,15 @@ export function useDashboardFilter(filters: DashboardFilters) {
   const [summary, setSummary] = useState<FilteredSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const filterKey = JSON.stringify([filters.category, filters.year]);
+  const [previousFilter, setPreviousFilter] = useState(filterKey);
+  if (previousFilter !== filterKey) {
+    setPreviousFilter(filterKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     const params = new URLSearchParams();
     if (filters.category) params.set("category", filters.category);
@@ -329,6 +340,7 @@ export interface AdminSession {
   authenticated: boolean;
   username: string | null;
   isStaff: boolean;
+  canReviewCandidates?: boolean;
 }
 
 export interface AcquisitionMethod {
@@ -339,6 +351,20 @@ export interface AcquisitionMethod {
   endpointRequired: boolean;
   description: string;
 }
+
+export type ResyncStatus = "queued" | "running" | "success" | "failed" | "cancelled" | "unknown";
+
+export interface AdminResyncJob {
+  id: string;
+  sourceId: string;
+  status: ResyncStatus;
+  requestedAt: string;
+  finishedAt: string | null;
+  runId: string | null;
+  message: string | null;
+}
+
+export interface AdminResyncAccepted { id: string; status: "queued" | "running" }
 
 export interface AdminSourceEntry {
   sourceId: string;
@@ -354,6 +380,7 @@ export interface AdminSourceEntry {
   updateSchedule: string;
   status: string;
   lastFetch: { retrievedAt: string | null; documentName: string | null; parseStatus: string | null };
+  resyncAvailable?: boolean;
 }
 
 export interface SourceCreatePayload {
@@ -371,12 +398,243 @@ export interface SourceCreatePayload {
 }
 
 async function adminFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init });
+  const method = (init?.method ?? "GET").toUpperCase();
+  const headers = new Headers(init?.headers);
+  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const bootstrap = await fetch(`${API_BASE}/auth/csrf/`, { credentials: "include", signal: init?.signal });
+    if (!bootstrap.ok) throw new Error("Token keamanan tidak tersedia.");
+    const body = await bootstrap.json();
+    if (typeof body?.csrfToken !== "string" || !body.csrfToken) throw new Error("Token keamanan tidak tersedia.");
+    headers.set("X-CSRFToken", body.csrfToken);
+  }
+  if (init?.signal?.aborted) throw new DOMException("The operation was aborted", "AbortError");
+  const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init, headers });
   return res;
 }
 
-export async function fetchAdminSession(): Promise<AdminSession> {
-  const res = await adminFetch("/admin/session/");
+export interface ReviewCandidate {
+  id: number; fingerprint: string; indicator: string | null; indicatorName: string | null;
+  sourceId: string; sourceName: string | null; sourceUrl: string | null; period: string | null;
+  observationDate: string | null; publicationDate: string | null; frequency: string | null;
+  dataType: string | null; value: string | null; unit: string | null; rawFileId: number | null;
+  previousValue: string | null; previousUnit: string | null; previousPeriod: string | null;
+  rawEvidence?: { documentName: string | null; periodLabel: string | null; retrievedAt: string | null; checksumSha256: string | null } | null;
+  status: string; createdAt: string; reviewedAt: string | null; reviewedBy: string | null; reviewNotes: string;
+  reviewHistory?: { decision: string; notes: string; reviewedAt: string; reviewedBy: string | null; fingerprint: string }[];
+}
+
+export type AnalysisDecision = 'publish' | 'needs_revision' | 'reject';
+
+export interface CandidatePage {
+  items: ReviewCandidate[]; page: number; pageSize: number; total: number; hasNext: boolean;
+}
+
+export class CandidateReviewError extends Error {
+  readonly kind: 'conflict' | 'unauthenticated' | 'forbidden';
+  constructor(kind: 'conflict' | 'unauthenticated' | 'forbidden', message: string) {
+    super(message);
+    this.kind = kind;
+  }
+}
+
+async function withCandidateDeadline<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs = 15_000): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  const timedOut = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('Waktu tunggu kandidat habis.'));
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([run(controller.signal), timedOut]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
+export async function fetchReviewCandidates(sourceId: string, page: number, status: 'pending' | 'published' | 'needs_revision' | 'rejected' = 'pending', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/?page=${page}&status=${status}`, { signal });
+    if (!res.ok) {
+      if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+      if (res.status === 403) throw new CandidateReviewError('forbidden', 'Akses ditolak: periksa izin review kandidat dengan pengelola.');
+      throw new Error('Daftar kandidat tidak dapat dimuat.');
+    }
+    const body = await res.json() as CandidatePage;
+    if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons kandidat tidak valid.');
+    return body;
+  }, options?.timeoutMs);
+}
+
+export async function fetchAdminAnalysisResults(page: number, status: 'all' | 'pending' | 'published' | 'needs_revision' | 'rejected', options?: { timeoutMs?: number }): Promise<CandidatePage> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/analysis-results/?page=${page}&status=${status}`, { signal });
+    if (!res.ok) {
+      if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali untuk meninjau hasil analisis.');
+      if (res.status === 403) throw new CandidateReviewError('forbidden', 'Akses ditolak: periksa izin review hasil analisis dengan pengelola.');
+      throw new Error('Daftar hasil analisis tidak dapat dimuat.');
+    }
+    const body = await res.json() as CandidatePage;
+    if (!Array.isArray(body.items) || body.page !== page || !Number.isInteger(body.total)) throw new Error('Respons hasil analisis tidak valid.');
+    return body;
+  }, options?.timeoutMs);
+}
+
+export async function submitAdminAnalysisDecision(candidate: ReviewCandidate, decision: AnalysisDecision, notes: string, options?: { timeoutMs?: number }): Promise<void> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/analysis-results/${candidate.id}/decision/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+      signal,
+    });
+    const body = await res.json().catch(() => ({})) as { id?: number; status?: string; error?: string };
+    if (res.status === 409) throw new CandidateReviewError('conflict', body.error ?? 'Versi berubah atau telah diputuskan. Muat ulang.');
+    if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali untuk menetapkan keputusan.');
+    if (res.status === 403) throw new CandidateReviewError('forbidden', 'Keputusan ditolak: periksa izin Admin dan token keamanan.');
+    const expectedStatus = decision === 'publish' ? 'published' : decision === 'needs_revision' ? 'needs_revision' : 'rejected';
+    if (!res.ok) throw new Error(body.error ?? 'Keputusan publikasi tidak dapat disimpan.');
+    if (body.id !== candidate.id || body.status !== expectedStatus) {
+      throw new Error('Respons keputusan tidak sesuai. Muat ulang hasil untuk memeriksa status terbaru.');
+    }
+  }, options?.timeoutMs);
+}
+
+export async function submitCandidateReview(sourceId: string, candidate: ReviewCandidate, decision: 'publish' | 'reject', notes: string, options?: { timeoutMs?: number }): Promise<void> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${candidate.id}/review/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision, fingerprint: candidate.fingerprint, notes }),
+      signal,
+    });
+    if (res.status === 409) throw new CandidateReviewError('conflict', 'Kandidat berubah atau sudah direview. Periksa status terbaru.');
+    if (res.status === 401) throw new CandidateReviewError('unauthenticated', 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+    if (res.status === 403) throw new CandidateReviewError('forbidden', 'Review ditolak: periksa izin Admin dan token keamanan.');
+    if (!res.ok) throw new Error('Review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+    const result = await res.json() as { id?: number; status?: string };
+    if (result.id !== candidate.id || result.status !== (decision === 'publish' ? 'published' : 'rejected')) {
+      throw new Error('Hasil review belum dapat dipastikan. Periksa status kandidat sebelum mencoba lagi.');
+    }
+  }, options?.timeoutMs);
+}
+
+export async function fetchReviewCandidate(sourceId: string, id: number, options?: { timeoutMs?: number }): Promise<ReviewCandidate> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/candidates/${id}/`, { signal });
+    if (!res.ok) throw new Error('Status kandidat tidak dapat dipastikan.');
+    const body = await res.json() as { candidate?: ReviewCandidate };
+    if (!body.candidate || body.candidate.id !== id || body.candidate.sourceId !== sourceId) throw new Error('Status kandidat tidak valid.');
+    return body.candidate;
+  }, options?.timeoutMs);
+}
+
+export interface BulkPreview {
+  id: string; status: 'preview'; expiresAt: string; total: number; eligible: number; excluded: number;
+  totalPending?: number; hasMore?: boolean;
+  items: Array<ReviewCandidate & { eligible: boolean; exclusionReason: string | null }>;
+}
+export interface BulkReviewResult {
+  id: string; status: 'running' | 'completed' | 'unknown';
+  resolvedAt?: string | null; resolvedBy?: string | null; resolutionReason?: string | null;
+  items: Array<{ id: number; status: 'excluded' | 'pending' | 'published' | 'skipped' | 'unknown'; reason: string | null }>;
+  counts: { total: number; eligible: number; excluded: number; published: number; skipped: number; pending: number; unknown: number };
+}
+const bulkPath = (sourceId: string) => `/admin/sources/${encodeURIComponent(sourceId)}/candidates/`;
+async function bulkError(res: Response): Promise<Error> {
+  let detail: string | undefined;
+  try {
+    const body = await res.json() as { error?: unknown };
+    if (typeof body.error === 'string' && body.error.trim()) detail = body.error.trim();
+  } catch { /* abaikan body tidak valid, pakai fallback status */ }
+  if (res.status === 401) return new CandidateReviewError('unauthenticated', detail ?? 'Sesi Admin tidak tersedia. Masuk kembali sebelum review.');
+  if (res.status === 403) return new CandidateReviewError('forbidden', detail ?? 'Izin review atau token keamanan ditolak.');
+  if (res.status === 409) return new CandidateReviewError('conflict', detail ?? 'Ada konflik pratinjau atau operasi sumber. Periksa status operasi sebelum keputusan baru.');
+  return new Error(detail ?? 'Operasi kandidat belum dapat dipastikan. Periksa statusnya sebelum mengambil keputusan baru.');
+}
+const validBulkId = (id: unknown): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id);
+function validBulkResult(body: BulkReviewResult, id: string): boolean {
+  const counts = body?.counts;
+  return body?.id === id && ['running', 'completed', 'unknown'].includes(body.status) &&
+    Array.isArray(body.items) && counts != null &&
+    (['total', 'eligible', 'excluded', 'published', 'skipped', 'pending', 'unknown'] as const).every(key => Number.isSafeInteger(counts[key]) && counts[key] >= 0) &&
+    body.items.every(item => Number.isSafeInteger(item.id) && item.id > 0);
+}
+
+export async function createBulkPreview(sourceId: string): Promise<BulkPreview> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-preview/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal,
+    });
+    if (!res.ok) throw await bulkError(res);
+    const body = await res.json() as BulkPreview;
+    if (!validBulkId(body?.id) || body.status !== 'preview' || !Array.isArray(body.items) ||
+        !Number.isSafeInteger(body.total) || body.total !== body.items.length ||
+        !Number.isSafeInteger(body.eligible) || !Number.isSafeInteger(body.excluded) ||
+        body.total !== body.eligible + body.excluded ||
+        (body.totalPending !== undefined && (!Number.isSafeInteger(body.totalPending) || body.totalPending < body.total)) ||
+        (body.hasMore !== undefined && typeof body.hasMore !== 'boolean') ||
+        body.items.some(item => item.sourceId !== sourceId || !Number.isSafeInteger(item.id) ||
+          typeof item.fingerprint !== 'string' || typeof item.eligible !== 'boolean')) {
+      throw new Error('Pratinjau kandidat tidak valid.');
+    }
+    return body;
+  });
+}
+
+export async function confirmBulkReview(sourceId: string, id: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id)) throw new Error('Identitas operasi tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/confirm/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmed: true }), signal,
+    });
+    if (!res.ok) throw await bulkError(res);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id)) throw new Error('Hasil operasi belum dapat dipastikan.');
+    return body;
+  });
+}
+
+export async function reconcileBulkReview(sourceId: string, id: string, reason: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id) || !reason.trim() || reason.trim().length > 500) throw new Error('Identitas atau alasan pemeriksaan tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/reconcile/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acknowledged: true, reason: reason.trim() }), signal,
+    });
+    if (!res.ok) throw await bulkError(res);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id) || !body.resolvedAt || !body.resolvedBy || !body.resolutionReason) {
+      throw new Error('Hasil pemeriksaan belum dapat dipastikan. Periksa status operasi.');
+    }
+    return body;
+  });
+}
+
+export async function fetchBulkReview(sourceId: string, id: string): Promise<BulkReviewResult> {
+  if (!validBulkId(id)) throw new Error('Identitas operasi tidak valid.');
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/${id}/`, { signal });
+    if (!res.ok) throw await bulkError(res);
+    const body = await res.json() as BulkReviewResult;
+    if (!validBulkResult(body, id)) throw new Error('Status operasi tidak valid.');
+    return body;
+  });
+}
+
+export async function fetchActiveBulkReview(sourceId: string): Promise<BulkReviewResult | null> {
+  return withCandidateDeadline(async signal => {
+    const res = await adminFetch(`${bulkPath(sourceId)}bulk-review/active/`, { signal });
+    if (!res.ok) throw await bulkError(res);
+    const body = await res.json() as { batch?: BulkReviewResult | null };
+    if (body?.batch == null) return null;
+    if (!validBulkId(body.batch.id) || !validBulkResult(body.batch, body.batch.id)) throw new Error('Status operasi tidak valid.');
+    return body.batch;
+  });
+}
+
+export async function fetchAdminSession(signal?: AbortSignal): Promise<AdminSession> {
+  const res = await adminFetch("/admin/session/", { cache: "no-store", signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as AdminSession;
 }
@@ -393,8 +651,14 @@ export async function adminLogin(username: string, password: string): Promise<vo
   }
 }
 
-export async function adminLogout(): Promise<void> {
-  await adminFetch("/admin/logout/", { method: "POST" });
+export async function adminLogout(signal?: AbortSignal): Promise<void> {
+  const response = await adminFetch("/admin/logout/", { method: "POST", signal });
+  if (!response.ok) throw new Error("Sesi Admin tidak dapat diakhiri.");
+  if ((await fetchAdminSession(signal)).authenticated) {
+    throw new Error("Sesi Admin masih aktif setelah permintaan keluar.");
+  }
+  const configuredOrigin = authOrigin();
+  if (configuredOrigin) await createAuthClient(configuredOrigin).logout(signal);
 }
 
 export async function fetchAcquisitionMethods(): Promise<{ methods: AcquisitionMethod[]; frequencies: string[] }> {
@@ -411,7 +675,8 @@ export async function fetchAdminSources(): Promise<AdminSourceEntry[]> {
     throw new Error(`HTTP ${res.status}`);
   }
   const body = await res.json();
-  return (body?.sources ?? []) as AdminSourceEntry[];
+  if (!Array.isArray(body?.sources)) throw new Error("Respons daftar sumber tidak valid.");
+  return body.sources as AdminSourceEntry[];
 }
 
 export async function createAdminSource(payload: SourceCreatePayload): Promise<AdminSourceEntry> {
@@ -427,6 +692,7 @@ export async function createAdminSource(payload: SourceCreatePayload): Promise<A
 
 export interface AdminSourceDetail extends AdminSourceEntry {
   revisionCount: number;
+  revisionVersion: number;
 }
 
 export interface AdminRevision {
@@ -440,6 +706,7 @@ export interface AdminRevision {
 }
 
 export interface SourceUpdatePayload {
+  expectedRevision: number;
   sourceName?: string;
   institution?: string;
   primaryUrl?: string;
@@ -467,6 +734,93 @@ export async function fetchAdminSourceDetail(sourceId: string): Promise<AdminSou
   return (await res.json()) as AdminSourceDetail;
 }
 
+export async function loadAdminSyncHistory(
+  query: SyncHistoryQuery,
+  options: { signal: AbortSignal; timeoutMs?: number },
+): Promise<SyncHistoryResult> {
+  const params = new URLSearchParams({page: String(query.page), pageSize: String(query.pageSize)});
+  if (query.sourceId) params.set("sourceId", query.sourceId);
+  if (query.status) params.set("status", query.status);
+
+  const timeoutController = new AbortController();
+  const timeout = setTimeout(() => timeoutController.abort(), options.timeoutMs ?? 15_000);
+  const signal = AbortSignal.any([options.signal, timeoutController.signal]);
+  let onAbort = () => {};
+  const cancelled = new Promise<never>((_, reject) => {
+    onAbort = () => reject(new DOMException("The operation was aborted", "AbortError"));
+    if (signal.aborted) onAbort();
+    else signal.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    return await Promise.race([cancelled, (async () => {
+      if (signal.aborted) throw new DOMException("The operation was aborted", "AbortError");
+      const response = await adminFetch(`/admin/sync-history/?${params}`, { signal });
+      if (!response.ok) {
+        if (response.status === 401) throw new Error("Sesi admin telah berakhir atau diperlukan. Silakan masuk kembali.");
+        if (response.status === 403) throw new Error("Anda tidak berwenang melihat riwayat sinkronisasi.");
+        throw new Error("Gagal memuat riwayat sinkronisasi.");
+      }
+      return await response.json() as SyncHistoryResult;
+    })()]);
+  } catch (error) {
+    if (options.signal.aborted) throw new DOMException("The operation was aborted", "AbortError");
+    if (timeoutController.signal.aborted) throw new Error("Waktu tunggu pemuatan riwayat sinkronisasi habis. Silakan coba lagi.");
+    if (error instanceof Error && error.message.startsWith("Sesi admin")) throw error;
+    if (error instanceof Error && error.message.startsWith("Anda tidak berwenang")) throw error;
+    if (error instanceof Error && error.message.startsWith("Gagal memuat riwayat")) throw error;
+    throw new Error("Koneksi ke layanan riwayat sinkronisasi bermasalah. Silakan coba lagi.");
+  } finally {
+    clearTimeout(timeout);
+    signal.removeEventListener("abort", onAbort);
+  }
+}
+
+export async function requestAdminBpsResync(sourceId: string, requestId: string): Promise<AdminResyncAccepted> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/resync/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestId }),
+  });
+  if (res.status === 401) throw new Error("Sesi admin berakhir. Periksa riwayat sebelum mengambil tindakan lain.");
+  if (!res.ok) throw new Error(`Permintaan sinkronisasi belum dapat dipastikan (HTTP ${res.status}). Periksa riwayat sebelum mengulang.`);
+  const body = await res.json() as AdminResyncAccepted;
+  if (!body?.id || !["queued", "running"].includes(body.status)) throw new Error("Respons permintaan tidak dapat dipastikan. Periksa riwayat sebelum mengulang.");
+  return body;
+}
+
+export async function fetchAdminResyncJob(id: string, sourceId?: string): Promise<AdminResyncJob> {
+  const res = await adminFetch(`/admin/resync-jobs/${encodeURIComponent(id)}/`);
+  if (res.status === 401) throw new Error("Sesi admin telah berakhir. Silakan masuk kembali.");
+  if (!res.ok) throw new Error(`Status sinkronisasi tidak dapat dimuat (HTTP ${res.status}).`);
+  const body = await res.json() as AdminResyncJob;
+  if (body?.id !== id || (sourceId !== undefined && body.sourceId !== sourceId)) {
+    throw new Error("Status pekerjaan tidak sesuai dengan sumber yang diminta.");
+  }
+  return body;
+}
+
+export async function fetchActiveAdminResync(sourceId: string): Promise<AdminResyncJob | null> {
+  const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/resync-active/`);
+  if (!res.ok) throw new Error("Status antrean tidak dapat diperiksa. Muat ulang sebelum melanjutkan.");
+  const body = await res.json() as { job: AdminResyncJob | null };
+  if (!body || !(body.job === null || (typeof body.job?.id === "string" &&
+      body.job.sourceId === sourceId && ["queued", "running"].includes(body.job.status)))) {
+    throw new Error("Status antrean tidak dapat dipastikan. Muat ulang sebelum melanjutkan.");
+  }
+  return body.job;
+}
+
+export async function reconcileAdminResyncJob(id: string, payload: { confirmed: true; reason: string }): Promise<AdminResyncJob> {
+  if (payload.confirmed !== true || !payload.reason.trim()) throw new Error("Konfirmasi pemeriksaan dan alasan wajib diisi.");
+  const res = await adminFetch(`/admin/resync-jobs/${encodeURIComponent(id)}/reconcile/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmed: true, reason: payload.reason.trim() }),
+  });
+  if (!res.ok) throw new Error(`Rekonsiliasi tidak dapat dipastikan (HTTP ${res.status}). Muat ulang status sebelum mencoba lagi.`);
+  return await res.json() as AdminResyncJob;
+}
+
 export async function fetchAdminSourceRevisions(sourceId: string): Promise<AdminRevision[]> {
   const res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/revisions/`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -486,6 +840,19 @@ export async function updateAdminSource(
   const body = await res.json().catch(() => ({}));
   if (res.ok) return body as SourceUpdateResult;
   throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+}
+
+export async function changeAdminSourceLifecycle(sourceId: string, action: "archive" | "restore" | "delete", expectedRevision: number): Promise<void> {
+  let res: Response;
+  try {
+    res = await adminFetch(`/admin/sources/${encodeURIComponent(sourceId)}/${action}/`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision }),
+    });
+  } catch {
+    throw new Error("Hasil tindakan belum dapat dipastikan. Muat ulang daftar sebelum mencoba lagi.");
+  }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -644,4 +1011,252 @@ export async function updateAdminFeedbackStatus(
     throw new Error(body?.error ?? `Gagal memperbarui status (HTTP ${res.status})`);
   }
   return { ...body.feedback, csrfToken: body.csrfToken } as AdminFeedbackDetail;
+}
+
+// ---------------------------------------------------------------------------
+// Feature 26 – Konfigurasi Notifikasi
+// ---------------------------------------------------------------------------
+
+export interface NotificationEntry {
+  kind: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  configured: boolean;
+  version: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+export async function fetchNotifications(): Promise<{ notifications: NotificationEntry[]; events?: { kind: string; sourceId: string | null; notified: boolean; message: string; createdAt: string | null }[] }> {
+  const res = await adminFetch("/admin/notifications/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  let events: { kind: string; sourceId: string | null; notified: boolean; message: string; createdAt: string | null }[] = [];
+  try {
+    const ev = await adminFetch("/admin/notifications/events/?limit=20");
+    if (ev.ok) events = ((await ev.json()) as { events: typeof events }).events ?? [];
+  } catch {
+    events = [];
+  }
+  return { notifications: (body?.notifications ?? []) as NotificationEntry[], events };
+}
+
+export async function updateNotification(kind: string, enabled: boolean): Promise<NotificationEntry> {
+  const res = await adminFetch(`/admin/notifications/${encodeURIComponent(kind)}/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return (body as { notification: NotificationEntry }).notification;
+}
+
+// ---------------------------------------------------------------------------
+// Feature 27 – Kembalikan Konfigurasi ke Default
+// ---------------------------------------------------------------------------
+
+export async function restoreDefaults(domains?: string[]): Promise<{ results: Record<string, { kind: string; status: string }[]>; message: string }> {
+  const res = await adminFetch("/admin/config/restore/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(domains ? { domains } : {}),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return body as { results: Record<string, { kind: string; status: string }[]>; message: string };
+}
+// ---------------------------------------------------------------------------
+// Feature 23 – Jadwal Pembaruan
+// ---------------------------------------------------------------------------
+
+export interface ScheduleEntry {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  intervalDays: number;
+  runTime: string | null;
+  enabled: boolean;
+  nextRun: string | null;
+  version: number;
+  configured: boolean;
+  currentScheduleText: string;
+  updatedAt: string | null;
+}
+
+export async function fetchSchedules(): Promise<ScheduleEntry[]> {
+  const res = await adminFetch("/admin/schedules/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.schedules ?? []) as ScheduleEntry[];
+}
+
+export async function updateSchedule(sourceId: string, payload: { intervalDays: number; runTime: string | null; enabled: boolean }): Promise<ScheduleEntry> {
+  const res = await adminFetch(`/admin/schedules/${encodeURIComponent(sourceId)}/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return (body as { schedule: ScheduleEntry }).schedule;
+}
+
+// ---------------------------------------------------------------------------
+// Feature 19 – Dashboard Monitoring Admin
+// ---------------------------------------------------------------------------
+
+export interface MonitoringSummary {
+  totalSources: number;
+  activeSources: number;
+  inactiveSources: number;
+  syncSuccess: number;
+  syncFailed: number;
+  syncRunning: number;
+  quality: { label: string; validated: number; total: number };
+  lastSyncAt: string | null;
+  lastUpdateAt: string | null;
+}
+
+export interface MonitoringSource {
+  sourceId: string;
+  sourceName: string;
+  institution: string;
+  status: string;
+  active: boolean;
+  lastSyncStatus: string | null;
+  lastSyncAt: string | null;
+  lastSyncMessage: string;
+  lastPeriod: string | null;
+  lastObservationDate: string | null;
+  observationCount: number;
+  updateSchedule: string;
+}
+
+export async function fetchMonitoringSummary(): Promise<MonitoringSummary> {
+  const res = await adminFetch("/admin/monitoring/summary/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as MonitoringSummary;
+}
+
+export async function fetchMonitoringSources(): Promise<MonitoringSource[]> {
+  const res = await adminFetch("/admin/monitoring/sources/");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.sources ?? []) as MonitoringSource[];
+}
+
+export async function fetchMonitoringHistory(params?: { page?: number; pageSize?: number; status?: string; sourceId?: string }): Promise<{ items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number }> {
+  const q = new URLSearchParams();
+  q.set("page", String(params?.page ?? 1));
+  q.set("pageSize", String(params?.pageSize ?? 20));
+  if (params?.status) q.set("status", params.status);
+  if (params?.sourceId) q.set("sourceId", params.sourceId);
+  const res = await adminFetch(`/admin/monitoring/history/?${q}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as { items: { id: string; sourceId: string | null; status: string; startedAt: string | null; message: string }[]; total: number };
+}
+
+// ---------------------------------------------------------------------------
+// Feature 24 – Konfigurasi Threshold Diagnostik
+// ---------------------------------------------------------------------------
+
+export interface ThresholdEntry {
+  indicatorCode: string;
+  indicatorName: string;
+  category: string;
+  paramKey: string;
+  label: string;
+  value: string;
+  unit: string;
+  minAllowed: string;
+  maxAllowed: string;
+  description: string;
+  status: string;
+  configured: boolean;
+  version: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  latestValue: string | null;
+}
+
+export interface ThresholdEvaluation {
+  threshold: string;
+  unit: string;
+  observed: string | null;
+  exceeded: boolean;
+  status: string;
+  impact: string;
+}
+
+export interface ThresholdHistoryItem {
+  oldValue: Record<string, string>;
+  newValue: Record<string, string>;
+  actor: string | null;
+  reason: string;
+  createdAt: string | null;
+}
+
+export async function fetchThresholds(): Promise<ThresholdEntry[]> {
+  const res = await adminFetch("/admin/thresholds/");
+  if (!res.ok) {
+    if (res.status === 401) throw new Error("Sesi admin diperlukan. Silakan login.");
+    if (res.status === 403) throw new Error("Hak akses admin diperlukan.");
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const body = await res.json();
+  return (body?.thresholds ?? []) as ThresholdEntry[];
+}
+
+export async function fetchThresholdDetail(
+  code: string,
+  param: string,
+): Promise<{ threshold: ThresholdEntry; evaluation: ThresholdEvaluation; latestPeriod: string | null; latestUnit: string | null }> {
+  const res = await adminFetch(`/admin/thresholds/${encodeURIComponent(code)}/${encodeURIComponent(param)}/`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  }
+  return (await res.json()) as {
+    threshold: ThresholdEntry;
+    evaluation: ThresholdEvaluation;
+    latestPeriod: string | null;
+    latestUnit: string | null;
+  };
+}
+
+export async function updateThreshold(
+  code: string,
+  param: string,
+  payload: { value: string; status?: string; reason?: string },
+): Promise<{ threshold: ThresholdEntry; evaluation: ThresholdEvaluation; message: string }> {
+  const res = await adminFetch(`/admin/thresholds/${encodeURIComponent(code)}/${encodeURIComponent(param)}/update/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+  return body as { threshold: ThresholdEntry; evaluation: ThresholdEvaluation; message: string };
+}
+
+export async function fetchThresholdHistory(code: string, param: string): Promise<ThresholdHistoryItem[]> {
+  const res = await adminFetch(`/admin/thresholds/${encodeURIComponent(code)}/${encodeURIComponent(param)}/history/`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const body = await res.json();
+  return (body?.history ?? []) as ThresholdHistoryItem[];
+}
+
+/** Validasi sisi klien sebelum request. Kembalikan pesan error atau null bila valid. */
+export function validateThresholdInput(value: string, minAllowed: string, maxAllowed: string, unit: string, expectedUnit: string): string | null {
+  if (!value.trim()) return "Nilai threshold wajib diisi.";
+  if (!/^-?\d+(?:\.\d+)?$/.test(value.trim())) return "Nilai threshold harus berupa angka.";
+  if (unit !== expectedUnit) return `Satuan harus '${expectedUnit}' sesuai definisi parameter.`;
+  const v = Number(value);
+  if (Number.isNaN(v)) return "Nilai threshold harus berupa angka.";
+  if (v < Number(minAllowed) || v > Number(maxAllowed)) {
+    return `Nilai threshold berada di luar rentang yang diperbolehkan (${minAllowed}-${maxAllowed} ${expectedUnit}). Periksa kembali nilai dan satuan yang digunakan.`;
+  }
+  return null;
 }

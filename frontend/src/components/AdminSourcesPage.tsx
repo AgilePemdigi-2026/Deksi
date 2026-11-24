@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import ResyncAction from "../features/resync/ResyncAction";
+import CandidateReview from "../features/candidates/CandidateReview";
+import { AdminNavigation } from "./AdminNavigation";
+import "./admin-source-card.css";
 import {
   adminLogin,
   adminLogout,
+  changeAdminSourceLifecycle,
   createAdminSource,
   displayOrUnavailable,
   fetchAcquisitionMethods,
@@ -38,13 +43,55 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
+function SourceDialog({ label, wide, onClose, returnFocus, children }: {
+  label: string; wide?: boolean; onClose: () => void; returnFocus: HTMLElement | null; children: ReactNode;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const closeHandler = useRef(onClose);
+  useLayoutEffect(() => { closeHandler.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const element = dialog.current;
+    const cancel = (event: Event) => { event.preventDefault(); closeHandler.current(); };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeHandler.current();
+    };
+    element?.addEventListener("cancel", cancel);
+    document.addEventListener("keydown", onKeyDown, true);
+    element?.showModal();
+    return () => {
+      element?.removeEventListener("cancel", cancel);
+      document.removeEventListener("keydown", onKeyDown, true);
+      if (element?.open) element.close();
+      if (returnFocus?.isConnected) returnFocus.focus();
+      if (!returnFocus?.isConnected || document.activeElement !== returnFocus) {
+        document.getElementById("admin-sources-title")?.focus();
+      }
+    };
+  }, [returnFocus]);
+  return <dialog ref={dialog} className={`admin-source-dialog${wide ? " admin-source-dialog--wide" : ""}`}
+    aria-label={label}>
+    {children}
+  </dialog>;
+}
+
 export function AdminSourcesPage() {
+  const [dialogOpener, setDialogOpener] = useState<HTMLElement | null>(null);
+  const [reviewSource, setReviewSource] = useState<string | null>(null);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const editRequest = useRef(0);
+  const toggleBusy = useRef(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [canReviewCandidates, setCanReviewCandidates] = useState<boolean | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const [sources, setSources] = useState<AdminSourceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,10 +106,14 @@ export function AdminSourcesPage() {
   const [revisions, setRevisions] = useState<AdminRevision[]>([]);
   const [revisionsLoading, setRevisionsLoading] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [initialForm, setInitialForm] = useState<typeof EMPTY_FORM | null>(null);
+  const [initialRevision, setInitialRevision] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   const reload = async () => {
     setLoading(true);
@@ -83,6 +134,7 @@ export function AdminSourcesPage() {
     fetchAdminSession()
       .then((s) => {
         setAuthenticated(s.authenticated);
+        setCanReviewCandidates(typeof s.canReviewCandidates === "boolean" ? s.canReviewCandidates : null);
         if (s.authenticated) void reload();
         else setLoading(false);
       })
@@ -98,6 +150,12 @@ export function AdminSourcesPage() {
       await adminLogin(username.trim(), password);
       setAuthenticated(true);
       setPassword("");
+      try {
+        const session = await fetchAdminSession();
+        setCanReviewCandidates(session.authenticated && typeof session.canReviewCandidates === "boolean" ? session.canReviewCandidates : null);
+      } catch {
+        setCanReviewCandidates(null);
+      }
       await reload();
     } catch (e) {
       setLoginError(e instanceof Error ? e.message : "Login gagal.");
@@ -107,9 +165,23 @@ export function AdminSourcesPage() {
   };
 
   const doLogout = async () => {
-    await adminLogout();
-    setAuthenticated(false);
-    setSources([]);
+    setLogoutLoading(true);
+    setLogoutError(null);
+    try {
+      await adminLogout();
+      editRequest.current += 1;
+      setAuthenticated(false);
+      setCanReviewCandidates(null);
+      setUsername("");
+      setPassword("");
+      setReviewSource(null);
+      setSources([]);
+      window.location.replace("/admin/login");
+    } catch {
+      setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
+    } finally {
+      setLogoutLoading(false);
+    }
   };
 
   const set = (key: keyof typeof EMPTY_FORM, value: string) => {
@@ -144,7 +216,14 @@ export function AdminSourcesPage() {
   };
 
   const submit = async () => {
-    const problem = validate();
+    if (mode === "edit" && (initialForm === null || initialRevision === null)) {
+      setFormError("Detail sumber belum tersedia. Buka kembali sebelum menyimpan.");
+      return;
+    }
+    const statusOnly = mode === "edit" && initialForm !== null && form.status !== initialForm.status &&
+      (Object.keys(EMPTY_FORM) as (keyof typeof EMPTY_FORM)[])
+        .filter((key) => key !== "status").every((key) => form[key] === initialForm[key]);
+    const problem = statusOnly ? null : validate();
     if (problem) {
       setFormError(problem);
       return;
@@ -153,7 +232,8 @@ export function AdminSourcesPage() {
     setFormError(null);
     try {
       if (mode === "edit" && editingId) {
-        const result = await updateAdminSource(editingId, {
+        const result = await updateAdminSource(editingId, statusOnly ? { status: form.status, expectedRevision: initialRevision! } : {
+          expectedRevision: initialRevision!,
           sourceName: form.sourceName.trim(),
           institution: form.institution.trim(),
           primaryUrl: form.primaryUrl.trim(),
@@ -198,18 +278,46 @@ export function AdminSourcesPage() {
   };
 
   const resetForm = () => {
+    editRequest.current += 1;
+    setDetailLoading(false);
+    setRevisionsLoading(false);
     setShowForm(false);
     setMode("add");
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setInitialForm(null);
+    setInitialRevision(null);
     setDirty(false);
     setFormError(null);
     setRevisions([]);
   };
 
   const cancelForm = () => {
+    if (saving) return;
     if (dirty && !window.confirm("Batalkan? Perubahan form akan hilang.")) return;
     resetForm();
+  };
+
+  const changeLifecycle = async (action: "archive" | "restore" | "delete") => {
+    if (!editingId || initialRevision === null || saving || detailLoading) return;
+    const messages = {
+      archive: `Arsipkan ${editingId}? Data dan riwayat tetap disimpan; akuisisi baru dihentikan.`,
+      restore: `Pulihkan ${editingId}? Sumber akan berstatus nonaktif sampai diaktifkan kembali.`,
+      delete: `Hapus permanen ${editingId}? Hanya sumber tanpa data terkait yang dapat dihapus. Riwayat revisinya ikut terhapus.`,
+    };
+    if (!window.confirm(`${messages[action]}${dirty ? " Perubahan form yang belum disimpan akan hilang." : ""}`)) return;
+    setSaving(true);
+    setFormError(null);
+    try {
+      await changeAdminSourceLifecycle(editingId, action, initialRevision);
+      setSuccess(`Sumber ${editingId} berhasil ${action === "archive" ? "diarsipkan" : action === "restore" ? "dipulihkan" : "dihapus"}.`);
+      resetForm();
+      await reload();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Tindakan gagal. Muat ulang sebelum mencoba lagi.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startAdd = () => {
@@ -218,17 +326,47 @@ export function AdminSourcesPage() {
     setSuccess(null);
   };
 
+  const toggleSource = async (source: AdminSourceEntry) => {
+    if (toggleBusy.current || showForm || !["active", "inactive"].includes(source.status)) return;
+    toggleBusy.current = true;
+    setToggling(true);
+    setToggleError(null);
+    setSuccess(null);
+    try {
+      const detail = await fetchAdminSourceDetail(source.sourceId);
+      if (detail.status !== source.status || !Number.isInteger(detail.revisionVersion)) {
+        throw new Error("Status sumber berubah. Muat ulang sebelum mencoba kembali.");
+      }
+      const status = detail.status === "active" ? "inactive" : "active";
+      await updateAdminSource(source.sourceId, {status, expectedRevision: detail.revisionVersion});
+      setSuccess(`Status ${source.sourceId} berhasil diubah.`);
+      await reload();
+    } catch (e) {
+      setToggleError(e instanceof Error ? e.message : "Status sumber tidak dapat diubah.");
+    } finally {
+      toggleBusy.current = false;
+      setToggling(false);
+    }
+  };
+
   const startEdit = async (sourceId: string) => {
     if (dirty && showForm && !window.confirm("Batalkan perubahan berjalan dan edit sumber lain?")) return;
+    const requestId = ++editRequest.current;
     setShowForm(true);
     setMode("edit");
     setEditingId(sourceId);
+    setInitialForm(null);
+    setInitialRevision(null);
+    setForm(EMPTY_FORM);
+    setRevisions([]);
+    setRevisionsLoading(false);
     setSuccess(null);
     setFormError(null);
     setDetailLoading(true);
     try {
       const detail = await fetchAdminSourceDetail(sourceId);
-      setForm({
+      if (requestId !== editRequest.current) return;
+      const loadedForm = {
         sourceId: detail.sourceId,
         sourceName: detail.sourceName,
         institution: detail.institution,
@@ -240,17 +378,20 @@ export function AdminSourcesPage() {
         frequency: detail.frequency,
         updateSchedule: detail.updateSchedule,
         status: detail.status,
-      });
+      };
+      setForm(loadedForm);
+      setInitialForm(loadedForm);
+      setInitialRevision(Number.isInteger(detail.revisionVersion) ? detail.revisionVersion : null);
       setDirty(false);
       setRevisionsLoading(true);
       fetchAdminSourceRevisions(sourceId)
-        .then(setRevisions)
-        .catch(() => setRevisions([]))
-        .finally(() => setRevisionsLoading(false));
+        .then((rows) => { if (requestId === editRequest.current) setRevisions(rows); })
+        .catch(() => { if (requestId === editRequest.current) setRevisions([]); })
+        .finally(() => { if (requestId === editRequest.current) setRevisionsLoading(false); });
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Detail sumber tidak dapat dimuat.");
+      if (requestId === editRequest.current) setFormError(e instanceof Error ? e.message : "Detail sumber tidak dapat dimuat.");
     } finally {
-      setDetailLoading(false);
+      if (requestId === editRequest.current) setDetailLoading(false);
     }
   };
 
@@ -258,21 +399,25 @@ export function AdminSourcesPage() {
     <section className="sources-page" aria-labelledby="admin-sources-title">
       <div className="section-head">
         <div>
-          <h2 className="section-title" id="admin-sources-title">Kelola Sumber Data</h2>
+          <h2 className="section-title" id="admin-sources-title" tabIndex={-1}>Kelola Sumber Data</h2>
           <p className="section-sub">
             Area Admin. Penambahan sumber tercatat di audit log dan berlaku pada siklus
             akuisisi berikutnya. Tanpa sinkronisasi otomatis.
           </p>
         </div>
-        <span className="section-badge">Admin DEKSI</span>
       </div>
 
-      <nav className="sources-nav" aria-label="Navigasi halaman">
-        <a href="/">Beranda</a>
-        <a href="/sumber-data">Sumber Data</a>
-        <a href="/admin/sumber-data" aria-current="page">Kelola Sumber</a>
-        <a href="/#/admin/feedback">Kelola Umpan Balik</a>
-      </nav>
+      <div className="admin-nav-row">
+        <AdminNavigation active="sources" busy={reviewBusy} hideLogout />
+        <span className="admin-nav-actions">
+          <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>{" "}
+        </span>
+      </div>
+      <div className="admin-logout-row">
+        <button type="button" className="tab admin-logout-button" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>
+          {logoutLoading ? "Keluar…" : "Keluar"}
+        </button>
+      </div>
 
       {!sessionChecked || (loading && !authenticated) ? (
         <p className="summary-loading">Memeriksa sesi admin…</p>
@@ -281,8 +426,8 @@ export function AdminSourcesPage() {
           <h3 className="trace-title">Login Admin</h3>
           <p className="trace-note">Khusus staf pengelola sumber. Publik tidak dapat menambah sumber.</p>
           <div className="trace-grid">
-            <label className="trace-row">Username<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" /></label>
-            <label className="trace-row">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></label>
+            <label className="trace-row">Username<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" /></label>
+            <label className="trace-row">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" /></label>
           </div>
           {loginError && <p className="summary-error">{loginError}</p>}
           <footer className="trace-foot">
@@ -293,43 +438,63 @@ export function AdminSourcesPage() {
         </article>
       ) : (
         <>
-          <div className="source-detail-head">
-            <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
-            <span>
-              <button type="button" className="tab" onClick={() => (showForm && mode === "add" ? cancelForm() : startAdd())}>Tambah Sumber Data</button>{" "}
-              <button type="button" className="tab" onClick={doLogout}>Keluar</button>
-            </span>
-          </div>
+          <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
 
+          {logoutError && <p className="summary-error" role="alert">{logoutError}</p>}
           {success && <p className="summary-loading">{success}</p>}
+          {toggleError && <p className="summary-error" role="alert">{toggleError}</p>}
           {loading && <p className="summary-loading">Memuat registry sumber…</p>}
           {!loading && error && <p className="summary-error">{error}</p>}
+          {canReviewCandidates !== true && <p className="admin-source-card__permission" role="status" id="candidate-review-permission">
+            {canReviewCandidates === false ? "Akun ini tidak memiliki izin review kandidat. Hubungi pengelola untuk meminta izin." : "Izin review kandidat belum dapat dipastikan. Muat ulang halaman atau hubungi pengelola."}
+          </p>}
+
+          {!loading && !error && sources.length === 0 && <p className="summary-empty" role="status">Belum ada sumber data. Gunakan Tambah Sumber Data untuk membuat sumber.</p>}
 
           {!loading && !error && (
-            <div className="sources-grid">
+            <div className="sources-grid admin-sources-grid">
               {sources.map((s) => (
-                <article key={s.sourceId} className="source-card">
-                  <p className="source-institution">{s.institution} · {s.status}</p>
-                  <p className="source-name">{s.sourceName}</p>
-                  <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
-                  <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
-                  <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
-                  <button type="button" className="source-trace-link" onClick={() => startEdit(s.sourceId)}>
-                    Edit ↗
-                  </button>
+                <article key={s.sourceId} className="source-card admin-source-card">
+                  <div className="admin-source-card__heading">
+                    <p className="source-institution">{s.institution} · {s.status === "archived" ? "Diarsipkan" : s.status}</p>
+                    <p className="source-name">{s.sourceName}</p>
+                    <p className="source-desc">{s.acquisitionMethodLabel || displayOrUnavailable(s.acquisitionMethod)} · {displayOrUnavailable(s.dataFormat)}</p>
+                  </div>
+                  <div className="admin-source-card__meta">
+                    <p className="source-meta">Jadwal: {displayOrUnavailable(s.updateSchedule || s.frequency)}</p>
+                    <p className="source-meta">Fetch terakhir: {displayOrUnavailable(s.lastFetch.retrievedAt)} {s.lastFetch.documentName ? `· ${s.lastFetch.documentName}` : ""}</p>
+                  </div>
+                  {["BPS", "BI", "BKPM", "BIS", "KEMENKEU"].includes(s.sourceId) && !showForm && <ResyncAction sourceId={s.sourceId} sourceName={s.sourceName} active={s.status === "active"} supported={s.resyncAvailable === true} />}
+                  <div className="admin-source-card__actions">
+                    {!showForm && <button type="button" className="source-trace-link admin-source-card__review" disabled={reviewBusy || canReviewCandidates !== true} aria-describedby={canReviewCandidates !== true ? "candidate-review-permission" : undefined} aria-label={`Lihat kandidat ${s.sourceName}`} onClick={(event) => { setDialogOpener(event.currentTarget); setReviewSource(s.sourceId); }}>Lihat Kandidat</button>}
+                    <button type="button" className="source-trace-link" disabled={toggling || saving || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); void startEdit(s.sourceId); }}>
+                      Edit ↗
+                    </button>
+                    <button type="button" className="source-trace-link" disabled={toggling || showForm || reviewBusy || !["active", "inactive"].includes(s.status)}
+                      aria-label={`${s.status === "active" ? "Nonaktifkan" : "Aktifkan"} ${s.sourceName}`}
+                      onClick={() => void toggleSource(s)}>
+                      {s.status === "archived" ? "Diarsipkan" : s.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
           )}
 
+          {reviewSource && <SourceDialog label={`Kandidat ${reviewSource}`} wide returnFocus={dialogOpener} onClose={() => { if (!reviewBusy) setReviewSource(null); }}>
+            <CandidateReview key={reviewSource} sourceId={reviewSource} onClose={() => { if (!reviewBusy) setReviewSource(null); }} onBusyChange={setReviewBusy} />
+          </SourceDialog>}
+
           {showForm && (
+            <SourceDialog label={mode === "edit" ? `Edit sumber ${editingId}` : "Tambah sumber data"} returnFocus={dialogOpener} onClose={cancelForm}>
             <article className="trace-panel" aria-label={mode === "edit" ? "Form edit sumber" : "Form tambah sumber"}>
               <h3 className="trace-title">{mode === "edit" ? `Edit Sumber ${editingId}` : "Tambah Sumber Data"} * wajib</h3>
+              <button type="button" className="admin-source-dialog__close" aria-label="Tutup form sumber" onClick={cancelForm} disabled={saving}>×</button>
               {detailLoading ? (
                 <p className="summary-loading">Memuat detail sumber…</p>
               ) : (
               <>
-              <div className="trace-grid">
+              <fieldset className="trace-grid" disabled={initialForm?.status === "archived" || saving} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
                 <label className="trace-row">Source ID *<input value={form.sourceId} onChange={(e) => set("sourceId", e.target.value.toUpperCase())} placeholder="CONTOH_ID" disabled={mode === "edit"} title={mode === "edit" ? "Identitas tidak dapat diubah" : undefined} /></label>
                 <label className="trace-row">Nama sumber *<input value={form.sourceName} onChange={(e) => set("sourceName", e.target.value)} /></label>
                 <label className="trace-row">Institusi *<input value={form.institution} onChange={(e) => set("institution", e.target.value)} /></label>
@@ -352,19 +517,24 @@ export function AdminSourcesPage() {
                 <label className="trace-row">Status<select value={form.status} onChange={(e) => set("status", e.target.value)}>
                   <option value="active">Aktif</option>
                   <option value="inactive">Nonaktif</option>
+                  {initialForm?.status === "archived" && <option value="archived">Diarsipkan</option>}
                 </select></label>
-              </div>
+              </fieldset>
               {activeMethod && <p className="trace-note">Handler: {activeMethod.handler}. {activeMethod.description}</p>}
               {formError && <p className="summary-error">{formError}</p>}
               <footer className="trace-foot">
-                <button type="button" className="tab tab-active" onClick={submit} disabled={saving || detailLoading}>{saving ? "Menyimpan…" : mode === "edit" ? "Simpan Perubahan" : "Simpan"}</button>
+                <button type="button" className="tab tab-active" onClick={submit} disabled={saving || detailLoading || initialForm?.status === "archived"}>{saving ? "Memproses…" : mode === "edit" ? "Simpan Perubahan" : "Simpan"}</button>
                 <button type="button" className="tab" onClick={cancelForm} disabled={saving}>Batal</button>
+                {mode === "edit" && <>
+                  <button type="button" className="tab" disabled={saving || initialRevision === null} onClick={() => void changeLifecycle(initialForm?.status === "archived" ? "restore" : "archive")}>{initialForm?.status === "archived" ? "Pulihkan Sumber" : "Arsipkan Sumber"}</button>
+                  <button type="button" className="tab" disabled={saving || initialRevision === null} onClick={() => void changeLifecycle("delete")}>Hapus Permanen</button>
+                </>}
               </footer>
               </>
               )}
               {mode === "edit" && editingId && (
                 <details className="trace-raw">
-                  <summary>Riwayat revisi {editingId} (tidak pernah dihapus)</summary>
+                  <summary>Riwayat revisi {editingId} (ikut terhapus jika sumber dihapus permanen)</summary>
                   {revisionsLoading ? (
                     <p className="summary-loading">Memuat riwayat…</p>
                   ) : revisions.length === 0 ? (
@@ -383,6 +553,7 @@ export function AdminSourcesPage() {
                 </details>
               )}
             </article>
+            </SourceDialog>
           )}
         </>
       )}

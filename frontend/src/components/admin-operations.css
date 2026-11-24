@@ -1,0 +1,44 @@
+.admin-operations {
+    min-height: 100vh;
+    padding: 90px clamp(24px, 5.4vw, 104px);
+    background: #dadada;
+    color: #111;
+    font-family: var(--sans, 'Inter Tight', sans-serif);
+}
+
+.admin-operations section { max-width: 1600px; }
+.admin-operations .catalog-crumb { color: #444; font-size: 12px; margin-bottom: 12px; }
+.admin-operations h2 { font-size: clamp(32px, 4vw, 52px); line-height: 1.08; letter-spacing: -.035em; margin-bottom: 24px; }
+.admin-operations h3 { color: #111; font-size: 20px; margin: 24px 0 14px; }
+.admin-operations .catalog-note { color: #333; font-size: 15px; line-height: 1.6; margin: -8px 0 24px; }
+.admin-operations .catalog-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 28px 0 38px; }
+.admin-operations .catalog-stat { background: #e4e4e2; border: 1px solid #c8c8c6; border-radius: 12px; padding: 20px; min-width: 0; box-shadow: 6px 6px 14px #bcbcb9, -5px -5px 14px #eeeeec; }
+.admin-operations .catalog-stat p { color: #444; font-size: 12px; font-weight: 700; }
+.admin-operations .catalog-stat strong { color: #111; font-size: clamp(20px, 2.1vw, 30px); overflow-wrap: anywhere; }
+.admin-operations .catalog-stat span, .admin-operations .catalog-sub { color: #444; font-size: 13px; }
+.admin-operations .catalog-explore-head { align-items: center; margin-top: 16px; }
+.admin-operations .catalog-explore-head h3 { margin: 0; }
+.admin-operations .catalog-count { background: #c9c9c7; color: #111; font-size: 13px; }
+.admin-operations .catalog-filters { grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr); max-width: 800px; gap: 16px; margin: 20px 0; }
+.admin-operations .catalog-filters label { color: #333; font-size: 14px; font-weight: 600; }
+.admin-operations .catalog-filters input, .admin-operations .catalog-filters select,
+.admin-operations .catalog-table input:not([type='checkbox']) { min-height: 44px; border: 1px solid #888; border-radius: 8px; background: #eee; color: #111; padding: 9px 12px; font-size: 14px; }
+.admin-operations .catalog-table input:not([type='checkbox']) { width: 110px; max-width: 100%; }
+.admin-operations .catalog-table input[type='checkbox'] { width: 20px; height: 20px; accent-color: #111; }
+.admin-operations .catalog-table-wrap { border: 1px solid #bbb; border-radius: 12px; background: #e4e4e2; }
+.admin-operations .catalog-table { min-width: 900px; font-size: 14px; }
+.admin-operations .catalog-table th { background: #cececc; color: #333; font-size: 12px; }
+.admin-operations .catalog-table td { border-color: #c8c8c6; color: #111; }
+.admin-operations .catalog-table button { min-height: 44px; padding: 9px 18px; border: 1px solid #111; border-radius: 999px; background: #111; color: #fff; font-weight: 700; }
+.admin-operations .catalog-table button:hover { background: #333; }
+.admin-operations :is(a, button, input, select, [tabindex]):focus-visible { outline: 2px solid #111; outline-offset: 3px; }
+.admin-operations__state { max-width: 900px; padding: 22px; border: 1px solid #aaa; border-radius: 12px; background: #e4e4e2; line-height: 1.6; }
+
+@media (max-width: 900px) {
+    .admin-operations .catalog-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .admin-operations { padding: 48px 20px; }
+    .admin-operations .catalog-filters { grid-template-columns: 1fr; }
+    .admin-operations .catalog-explore-head { flex-wrap: wrap; }
+}

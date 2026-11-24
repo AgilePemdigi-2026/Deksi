@@ -30,6 +30,8 @@ services:
       POSTGRES_PORT: "5432"
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
       SECURE_SSL_REDIRECT: "False"
+      BPS_API_KEY: ${BPS_API_KEY:-}
+      BPS_API_BASE_URL: https://webapi.bps.go.id/v1
     command:
       - sh
       - -c
@@ -38,6 +40,9 @@ services:
       - "8000"
     volumes:
       - backend_data:/data
+      # Folder Scrapping (di-upload ke ./scraping di server, read-only).
+      # Tanpa folder ini backend tetap jalan; ingest via exec ke DB yang sama.
+      - ./scraping:/scraping:ro
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +53,32 @@ services:
       retries: 5
       start_period: 30s
 
+  resync-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.production
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: backend.settings_production
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in Coolify}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?Set ALLOWED_HOSTS in Coolify}
+      POSTGRES_DB: ${POSTGRES_DB:-deksi}
+      POSTGRES_USER: ${POSTGRES_USER:-deksi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      BPS_API_KEY: ${BPS_API_KEY:-}
+      BPS_API_BASE_URL: https://webapi.bps.go.id/v1
+    command: ["python", "manage.py", "process_resync"]
+    volumes:
+      - backend_data:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+
   frontend:
+    image: ${COMPOSE_PROJECT_NAME:-deksi}-frontend:production
+    pull_policy: build
     build:
       context: .
       dockerfile: frontend/Dockerfile.production

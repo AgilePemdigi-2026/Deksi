@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AdminNavigation } from "./AdminNavigation";
 import {
   adminLogin,
   adminLogout,
@@ -18,6 +19,8 @@ export function AdminFeedbackPage() {
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const [feedbacks, setFeedbacks] = useState<AdminFeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,12 +168,24 @@ export function AdminFeedbackPage() {
   };
 
   const handleLogout = async () => {
+    setLogoutLoading(true);
+    setLogoutError(null);
     try {
       await adminLogout();
-    } finally {
       feedbackRequestId.current += 1;
+      detailRequestId.current += 1;
       setAuthenticated(false);
+      setAdminUsername("");
+      setLoginUser("");
+      setLoginPass("");
       setFeedbacks([]);
+      setDetail(null);
+      setSelectedFeedbackId(null);
+      window.location.replace("/admin/login");
+    } catch {
+      setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
+    } finally {
+      setLogoutLoading(false);
     }
   };
 
@@ -225,12 +240,13 @@ export function AdminFeedbackPage() {
             <p>Masuk untuk mengelola daftar laporan umpan balik pengguna.</p>
           </div>
           {loginError && <div className="admin-fb-alert error">{loginError}</div>}
-          <form onSubmit={handleLogin} className="admin-fb-form">
+          <form onSubmit={handleLogin} className="admin-fb-form" autoComplete="off">
             <div className="admin-fb-form-group">
               <label htmlFor="admin-user">Username</label>
               <input
                 id="admin-user"
                 type="text"
+                autoComplete="off"
                 value={loginUser}
                 onChange={(e) => setLoginUser(e.target.value)}
                 required
@@ -242,6 +258,7 @@ export function AdminFeedbackPage() {
               <input
                 id="admin-pass"
                 type="password"
+                autoComplete="off"
                 value={loginPass}
                 onChange={(e) => setLoginPass(e.target.value)}
                 required
@@ -273,18 +290,18 @@ export function AdminFeedbackPage() {
           </p>
         </div>
         <div className="admin-fb-actions">
-          <a href="/#/admin/sumber" className="admin-fb-btn secondary">
+          <a href={statusUpdating ? undefined : "/admin/sumber"} aria-disabled={statusUpdating || undefined} className="admin-fb-btn secondary">
             Kelola Sumber Data
           </a>
-          <a href="/" className="admin-fb-btn secondary">
-            Lihat Dashboard Publik
-          </a>
-          <button onClick={handleLogout} className="admin-fb-btn outline danger">
+          <button onClick={handleLogout} disabled={logoutLoading || statusUpdating} className="admin-fb-btn outline danger">
             Keluar ({adminUsername || "Admin"})
           </button>
         </div>
       </header>
 
+      <AdminNavigation active="feedback" busy={statusUpdating} />
+
+      {logoutError && <p className="admin-fb-alert error" role="alert">{logoutError}</p>}
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
         <div className="admin-fb-search-wrap">
           <input
@@ -560,6 +577,7 @@ export function AdminFeedbackPage() {
                   </section>
                   <section className="admin-fb-detail-card highlight">
                     <h3>Tindak Lanjut dan Perubahan Status</h3>
+                    {statusUpdating && <p role="status">Tunggu hingga penyimpanan dan pemuatan ulang selesai sebelum berpindah halaman.</p>}
                     {statusUpdateMessage && (
                     <div className={`admin-fb-alert ${statusUpdateMessage.type}`} role="status">
                       {statusUpdateMessage.text}

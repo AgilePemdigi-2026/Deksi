@@ -107,3 +107,16 @@ test('Logout confirmation rejects a server session that is still authenticated',
   const mock=replies({body:{csrfToken:'synthetic'}},{body:{authenticated:false,user:null}},{body:{authenticated:true,user:admin}})
   await assert.rejects(createAuthClient('',mock.fetcher).logout(),error=>error.code==='invalid_response')
 })
+
+test('Portal confirmation requires the same authenticated staff identity', async () => {
+  const mock = replies({body:{authenticated:true,username:admin.username,isStaff:true}})
+  await createAuthClient('', mock.fetcher).confirmPortalSession(admin)
+  assert.equal(mock.calls[0].url, '/api/admin/session/')
+  for (const body of [
+    {authenticated:false,username:null,isStaff:false},
+    {authenticated:true,username:'another-admin',isStaff:true},
+    {authenticated:true,username:admin.username,isStaff:false},
+  ]) {
+    await assert.rejects(createAuthClient('', replies({body}).fetcher).confirmPortalSession(admin), error => error.code === 'invalid_response')
+  }
+})
