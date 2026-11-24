@@ -2,6 +2,7 @@ import { useState, type MouseEvent } from 'react';
 import { adminLogout } from '../api';
 import './admin-navigation.css';
 
+type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'notifications';
 type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'thresholds';
 
 export function AdminNavigation({ active, busy = false, hideLogout = false }: { active: AdminPage; busy?: boolean; hideLogout?: boolean }) {
@@ -15,6 +16,7 @@ export function AdminNavigation({ active, busy = false, hideLogout = false }: { 
     { href: '/admin/analisis', label: 'Peninjauan Analisis', page: 'analysis' },
     { href: '/admin/konfigurasi', label: 'Konfigurasi', page: 'thresholds' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },
+    { href: '/admin/notifikasi', label: 'Notifikasi', page: 'notifications' },
     { href: '/admin/jadwal', label: 'Jadwal Pembaruan', page: 'schedules' },
   ];
   const leaveDashboard = async (event: MouseEvent<HTMLAnchorElement>) => {
