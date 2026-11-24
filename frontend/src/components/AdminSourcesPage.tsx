@@ -405,15 +405,18 @@ export function AdminSourcesPage() {
             akuisisi berikutnya. Tanpa sinkronisasi otomatis.
           </p>
         </div>
-        <span className="section-badge">Admin DEKSI</span>
       </div>
 
       <div className="admin-nav-row">
         <AdminNavigation active="sources" busy={reviewBusy} hideLogout />
         <span className="admin-nav-actions">
           <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>{" "}
-          <button type="button" className="tab" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>Keluar</button>
         </span>
+      </div>
+      <div className="admin-logout-row">
+        <button type="button" className="tab admin-logout-button" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>
+          {logoutLoading ? "Keluar…" : "Keluar"}
+        </button>
       </div>
 
       {!sessionChecked || (loading && !authenticated) ? (
