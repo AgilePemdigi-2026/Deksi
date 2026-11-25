@@ -1,0 +1,16 @@
+{
+  "scenario": "BDD-F26-04 - Event kegagalan tercatat mengikuti preferensi aktif",
+  "api_mocked": false,
+  "database": "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-pzs6sqzb\\test.sqlite3",
+  "backend_live_url": "http://localhost:56655",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-pzs6sqzb\\test.sqlite3"
+    ]
+  ],
+  "server_requests": [],
+  "status": "Status.passed",
+  "cleanup": {}
+}

@@ -43,7 +43,7 @@ def _git_state(path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--suite", choices=["as-built", "baseline", "sources", "feedback-admin"], default="as-built")
+    parser.add_argument("--suite", choices=["as-built", "baseline", "sources", "feedback-admin", "monitoring-schedules", "config", "analysis-review"], default="as-built")
     parser.add_argument("--tags", default="@sprint1")
     parser.add_argument("--label", default="sprint1")
     args = parser.parse_args()
@@ -51,8 +51,8 @@ def main():
         parser.error("label must be alphanumeric")
     global BE
     dotenv_hidden = None
-    if args.suite in ("sources", "feedback-admin"):
-        # Fitur sumber dan feedback admin hanya ada di kode live, bukan checkpoint pin.
+    if args.suite in ("sources", "feedback-admin", "monitoring-schedules", "config", "analysis-review"):
+        # Fitur admin hanya ada di kode live, bukan checkpoint pin.
         # DB tetap disposable via bdd_settings; .env aplikasi diparkir sementara
         # dan dikembalikan di finally (guard test_settings tetap berlaku).
         BE = ROOT / "backend"
@@ -67,7 +67,7 @@ def main():
     elif (BE / ".env").exists():
         raise RuntimeError("Refusing an application .env")
     suite_manifest = None
-    if args.suite in ("sources", "feedback-admin"):
+    if args.suite in ("sources", "feedback-admin", "monitoring-schedules", "config", "analysis-review"):
         pass  # kode live; tanpa manifest pin
     elif args.suite == 'as-built':
         suite_manifest = json.loads((QA / 'as-built-manifest.json').read_text(encoding='utf-8'))
@@ -136,6 +136,12 @@ def main():
             command += ['--include', r'(?:[/\\]sources[/\\][^/\\]+\.feature)$']
         elif args.suite == 'feedback-admin':
             command += ['--include', r'(?:[/\\]feedback-admin[/\\][^/\\]+\.feature)$']
+        elif args.suite == 'monitoring-schedules':
+            command += ['--include', r'(?:[/\\]monitoring-schedules[/\\][^/\\]+\.feature)$']
+        elif args.suite == 'config':
+            command += ['--include', r'(?:[/\\]config[/\\][^/\\]+\.feature)$']
+        elif args.suite == 'analysis-review':
+            command += ['--include', r'(?:[/\\]analysis-review[/\\][^/\\]+\.feature)$']
         else:
             command += ['--exclude', r'[/\\](as-built|sources)[/\\]']
         print("ARTIFACTS", artifacts, flush=True)
@@ -166,18 +172,22 @@ def main():
                 pass  # setup itself failed; nothing task-owned to close
             # Closing only task-owned SQLite connections before disposable directory teardown.
             db_left = (run_dir / "test.sqlite3").exists()
-            live_sha, live_tree = _git_state(ROOT) if args.suite == 'sources' else (None, None)
+            tracked_suites = ('sources', 'feedback-admin', 'monitoring-schedules', 'config', 'analysis-review')
+            live_sha, live_tree = _git_state(ROOT) if args.suite in tracked_suites else (None, None)
             payload = {
                 "exit_code": result, "tags": args.tags, "command": command,
                 "suite_id": suite_manifest['suite_id'] if suite_manifest else (
                     'sprint1-sources-v1' if args.suite == 'sources'
                     else 'sprint2-admin-feedback-v1' if args.suite == 'feedback-admin'
+                    else 'sprint2-monitoring-schedules-v1' if args.suite == 'monitoring-schedules'
+                    else 'sprint2-config-v1' if args.suite == 'config'
+                    else 'sprint2-analysis-review-v1' if args.suite == 'analysis-review'
                     else 'sprint1-baseline-v1'
                 ),
                 "suite_manifest": suite_manifest,
-                "backend_code": "live working tree" if args.suite in ('sources', 'feedback-admin') else "pinned checkpoint",
-                "backend_live_sha": live_sha if args.suite in ('sources', 'feedback-admin') else None,
-                "backend_live_tree": live_tree if args.suite in ('sources', 'feedback-admin') else None,
+                "backend_code": "live working tree" if args.suite in tracked_suites else "pinned checkpoint",
+                "backend_live_sha": live_sha if args.suite in tracked_suites else None,
+                "backend_live_tree": live_tree if args.suite in tracked_suites else None,
                 "interpreter": sys.executable,
                 "database": "disposable file-backed SQLite created/destroyed by Behave-Django",
                 "test_database_file_remaining_before_cleanup": db_left,

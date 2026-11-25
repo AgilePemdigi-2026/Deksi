@@ -1,0 +1,60 @@
+{
+  "scenario": "BDD-F21-01 - Daftar hasil analisis memuat versi pending",
+  "api_mocked": false,
+  "database": "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-p_wdpkju\\test.sqlite3",
+  "backend_live_url": "http://localhost:62847",
+  "main_database_list": [
+    [
+      0,
+      "main",
+      "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-p_wdpkju\\test.sqlite3"
+    ],
+    [
+      1,
+      "temp",
+      ""
+    ]
+  ],
+  "server_requests": [
+    {
+      "method": "GET",
+      "path": "/api/auth/csrf/",
+      "query": "",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-p_wdpkju\\test.sqlite3"
+        ],
+        [
+          1,
+          "temp",
+          ""
+        ]
+      ],
+      "configured_database": "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-p_wdpkju\\test.sqlite3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/analysis-results/",
+      "query": "page=1&status=pending",
+      "status": 200,
+      "database_list": [
+        [
+          0,
+          "main",
+          "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-p_wdpkju\\test.sqlite3"
+        ],
+        [
+          1,
+          "temp",
+          ""
+        ]
+      ],
+      "configured_database": "C:\\Users\\azkad\\AppData\\Local\\Temp\\deksi-bdd-p_wdpkju\\test.sqlite3"
+    }
+  ],
+  "status": "Status.passed",
+  "cleanup": {}
+}

@@ -9,16 +9,18 @@ from indicators.sync_history_model import SyncRun
 
 class MonitoringTests(TestCase):
     def setUp(self):
+        # Isolasi dari sumber seed migrasi agar hitungan ringkasan deterministik.
+        Source.objects.all().delete()
         um = get_user_model()
         self.admin = um.objects.create_user(username="mon-admin", password="x", is_staff=True)
         self.client = Client()
         self.client.force_login(self.admin)
         self.src = Source.objects.create(
-            source_id="BPS", source_name="Badan Pusat Statistik",
+            source_id="MONTEST", source_name="Badan Pusat Statistik",
             institution="BPS", primary_url="https://bps.go.id",
         )
         SyncRun.objects.create(
-            source=self.src, source_id_snapshot="BPS",
+            source=self.src, source_id_snapshot="MONTEST",
             source_name_snapshot="Badan Pusat Statistik",
             status=SyncRun.Status.SUCCESS,
             started_at=timezone.now(), finished_at=timezone.now(), item_count=5,

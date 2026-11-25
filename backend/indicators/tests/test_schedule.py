@@ -15,13 +15,13 @@ class ScheduleTests(TestCase):
         self.client = Client()
         self.client.force_login(self.admin)
         self.src = Source.objects.create(
-            source_id="BPS", source_name="BPS", institution="BPS",
+            source_id="SCHEDTEST", source_name="BPS", institution="BPS",
             primary_url="https://bps.go.id",
         )
 
     def test_valid_save_and_audit(self):
         r = self.client.put(
-            "/api/admin/schedules/BPS/",
+            "/api/admin/schedules/SCHEDTEST/",
             data=json.dumps({"intervalDays": 30, "runTime": "02:00", "enabled": True}),
             content_type="application/json",
         )
@@ -33,10 +33,10 @@ class ScheduleTests(TestCase):
         self.assertIn("30 hari", self.src.update_schedule)
 
     def test_invalid_interval_rejected_and_old_kept(self):
-        self.client.put("/api/admin/schedules/BPS/",
+        self.client.put("/api/admin/schedules/SCHEDTEST/",
             data=json.dumps({"intervalDays": 30, "enabled": True}),
             content_type="application/json")
-        r = self.client.put("/api/admin/schedules/BPS/",
+        r = self.client.put("/api/admin/schedules/SCHEDTEST/",
             data=json.dumps({"intervalDays": 0, "enabled": True}),
             content_type="application/json")
         self.assertEqual(r.status_code, 400)
@@ -44,7 +44,7 @@ class ScheduleTests(TestCase):
         self.assertEqual(cfg.interval_days, 30)
 
     def test_invalid_time_format(self):
-        r = self.client.put("/api/admin/schedules/BPS/",
+        r = self.client.put("/api/admin/schedules/SCHEDTEST/",
             data=json.dumps({"intervalDays": 7, "runTime": "25:99", "enabled": True}),
             content_type="application/json")
         self.assertEqual(r.status_code, 400)
