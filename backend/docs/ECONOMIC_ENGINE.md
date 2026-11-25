@@ -1,5 +1,7 @@
 # Economic Engine BPS dan preview penjelasan Gemini
 
+> Update main: Economic Engine dan fondasi AI kini diintegrasikan bersama main terbaru. Status integrasi, perbaikan graph migrasi, pemeriksaan gabungan dan batas produksi ada di [ENGINE_AI_MAIN_INTEGRATION.md](ENGINE_AI_MAIN_INTEGRATION.md). Keterangan branch terpisah di bawah merekam scope publication awal; ini tidak mengaktifkan generasi/publikasi Gemini produksi.
+
 ## Scope branch
 
 Branch ini memuat kalkulasi deterministik porsi PMTB/PDB dan konsumsi rumah tangga/PDB, API read-only, kartu dashboard, guard Source Trace, tes, dan preview development untuk jawaban Gemini tersimpan. Ini bukan penyelesaian seluruh Economic/Diagnostic Engine atau deployment produksi.

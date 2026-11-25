@@ -397,7 +397,7 @@ export interface SourceCreatePayload {
   status?: string;
 }
 
-async function adminFetch(path: string, init?: RequestInit) {
+export async function adminFetch(path: string, init?: RequestInit) {
   const method = (init?.method ?? "GET").toUpperCase();
   const headers = new Headers(init?.headers);
   if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
@@ -437,7 +437,7 @@ export class CandidateReviewError extends Error {
   }
 }
 
-async function withCandidateDeadline<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs = 15_000): Promise<T> {
+export async function withCandidateDeadline<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs = 15_000): Promise<T> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
   const timedOut = new Promise<never>((_, reject) => {

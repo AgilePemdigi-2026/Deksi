@@ -2,3 +2,5 @@
 /backend/indicators/tests/fixtures/gemini_engine_preview/** -text
 /backend/docs/bps-economic-inputs/live-q1-2025-20261124T184632Z-f208b5b5/*.json -text
 /backend/docs/bps-economic-inputs/ui-readability-batch2-20261125/real-preview-engine-packet.json -text
+# Public historical/synthetic fixture bytes are pinned by checksums.
+/backend/indicators/tests/fixtures/*.json -text
