@@ -78,6 +78,6 @@ def fetch_document(get, *, today=None):
         points.append({'code': 'fiskal' if key == 'defisit_pdb' else key,
             'observation_date': period, 'data_type': 'cumulative_ytd',
             'period_label': parsed.period_label, 'frequency': 'monthly',
-            'value': metric.value, 'unit': metric.unit, 'publication_date': None})
+            'value': metric.value, 'unit': metric.unit, 'publication_date': parsed.publication_date})
     return {'content': pdf, 'source_url': url, 'document_name': kemenkeu.suggested_document_name(parsed),
             'period_label': parsed.period_label, 'points': points}

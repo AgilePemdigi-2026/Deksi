@@ -192,6 +192,30 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
     setPage(safePage);
   };
 
+  const scrollToTracePanel = () => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.getElementById("source-trace-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    });
+  };
+
+  const openIndicator = (code: string) => {
+    if (!detail || detail.sourceId !== activeSource) return;
+    if (code !== activeIndicator) {
+      setActiveIndicator(code);
+      setActivePeriod(undefined);
+      window.history.replaceState(null, "", `/sumber-data?source=${encodeURIComponent(detail.sourceId)}&indicator=${encodeURIComponent(code)}`);
+    }
+    scrollToTracePanel();
+  };
+
+  const openTrace = () => {
+    const code = activeIndicator ?? activeDetailIndicators[0]?.code;
+    if (!code) return;
+    openIndicator(code);
+  };
+
   const pagerPages = useMemo(() => {
     const set = new Set<number>([1, totalPages, safePage - 1, safePage, safePage + 1]);
     return [...set].filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
@@ -300,7 +324,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
           <p>⛨ TRANSPARANSI DATA</p>
           <h3>Setiap indikator memiliki jejak sumber.</h3>
           <p>Source Trace menghubungkan publikasi resmi, periode rilis, data input, dan perhitungan DEKSI.</p>
-          <button type="button" onClick={() => activeIndicator && document.getElementById("source-trace-panel")?.scrollIntoView({ behavior: "smooth" })}>↗ Buka Source Trace</button>
+          <button type="button" onClick={openTrace} disabled={!activeIndicator && activeDetailIndicators.length === 0}>↗ Buka Source Trace</button>
         </div>
       </div>
 
@@ -349,11 +373,7 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
                     <button
                       key={ind.code}
                       type="button"
-                      onClick={() => {
-                        setActiveIndicator(ind.code);
-                        setActivePeriod(undefined);
-                        window.location.assign(`/sumber-data?source=${encodeURIComponent(detail.sourceId)}&indicator=${encodeURIComponent(ind.code)}`);
-                      }}
+                      onClick={() => openIndicator(ind.code)}
                       className={ind.code === activeIndicator ? "source-ind active" : "source-ind"}
                     >
                       <span className="source-ind-name">{ind.name}</span>
@@ -372,7 +392,9 @@ export function SourceDataPage({ selection }: { selection: SourcePageSelection }
       )}
 
       {activeIndicator && detail && detail.sourceId === activeSource && (
-        <SourceTracePanel key={`${activeSource}:${activeIndicator}`} code={activeIndicator} period={activePeriod} />
+        <div id="source-trace-panel">
+          <SourceTracePanel key={`${activeSource}:${activeIndicator}`} code={activeIndicator} period={activePeriod} />
+        </div>
       )}
       </main>
     </FeatureShell>

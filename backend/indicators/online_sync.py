@@ -14,7 +14,7 @@ from .resync_methods import resync_method
 from .storage import save_raw
 
 INDICATORS = {
-    'birate': ('BI-Rate (BI-7Day Repurchase Rate)', 'Kebijakan Moneter', '%', 'avg', 5),
+    'birate': ('BI-Rate', 'Kebijakan Moneter', '%', 'avg', 5),
     'jisdor': ('Kurs Referensi (JISDOR)', 'Kebijakan Moneter', 'Rp/USD', 'avg', 6),
     'cad_devisa': ('Cadangan Devisa', 'Kebijakan Moneter', 'USD Miliar', 'end', 7),
     'investasi': ('Realisasi Investasi', 'Rencana Modal', 'Rp Triliun', 'sum', 4),

@@ -1,0 +1,22 @@
+{
+  "status": "valid_contract_human_review_pending",
+  "providerPosts": 1,
+  "requestSha256": "62ddede8ded686048d0178ca28548374c1cb8858bdd35ad52efac89837893e8d",
+  "model": "gemini-3.5-flash-lite",
+  "reservedAt": "2026-11-24T22:58:02.946788+00:00",
+  "automaticRetry": false,
+  "reportedModel": "gemini-3.5-flash-lite",
+  "responseSha256": "f28fab36fdc85d2194b9e08feae8eb51b77fd22d1df30e6ddf6ba00943fe6c40",
+  "narrative": {
+    "summary": "Data ini menunjukkan porsi Pembentukan Modal Tetap Bruto serta konsumsi rumah tangga terhadap total produk domestik bruto pada harga berlaku untuk periode yang dipilih. Pembentukan Modal Tetap Bruto adalah pengeluaran untuk barang modal, bukan seluruh investasi atau data dari badan koordinasi penanaman modal. Konsumsi rumah tangga adalah pengeluaran untuk barang dan jasa oleh masyarakat.",
+    "meaning": "Pembilang adalah nilai komponen pengeluaran, sedangkan penyebut adalah total produk domestik bruto pada harga berlaku. Porsi ini menunjukkan perbandingan besar komponen terhadap total ekonomi pada periode yang dipilih.",
+    "comparison": null,
+    "limitations": "Status revisi belum diketahui dan tanggal rilis belum tersedia. Belum ada verifikasi independen terhadap data ini. Alur review adalah simulasi lokal. Ini bukan laju pertumbuhan, bukan data investasi secara keseluruhan, dan tidak ada pembanding waktu.",
+    "factRefs": [
+      "metrics.pmtb_share",
+      "metrics.household_consumption_share"
+    ]
+  },
+  "humanApproval": false,
+  "productionPublication": false
+}

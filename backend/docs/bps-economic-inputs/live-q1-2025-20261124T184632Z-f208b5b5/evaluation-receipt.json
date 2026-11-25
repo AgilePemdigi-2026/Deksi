@@ -1,0 +1,51 @@
+{
+  "startedAt": "2026-11-24T18:50:04.687049+00:00",
+  "scope": "offline real-source correspondence and engine sample",
+  "syntheticNumbers": false,
+  "workflowStateSimulated": true,
+  "humanApproval": false,
+  "productionPublication": false,
+  "networkCallsAllowed": false,
+  "checks": [
+    "Three exact source values match HTTP bytes, importer output, excerpts and live metadata",
+    "Previously tested application source hashes are unchanged",
+    "Pending real inputs remain unavailable through the actual Django API",
+    "Both actual engine results equal a separate 80-digit Decimal arithmetic check",
+    "API computation does not mutate observations or RAW metadata",
+    "Unchanged actual inputs produce identical version-bound response digests",
+    "Changed value or missing RAW refuses the real-data ratio; restored fixture reproduces the result"
+  ],
+  "status": "passed_single_real_quarter_technical_validation",
+  "providerNotesUntrustedHtml": "<p>2024: Angka sementara <br />\n2025: Angka sangat sementara <br />\n2026: Angka sangat sangat sementara <br /></p>",
+  "captureArtifactSha256": {
+    "response-01.json": "45b184173dfdafd59aa9f198a0f9757e0125ec7bdca1aac95d77f6e8fb83a688",
+    "response-02.json": "fe1e00febfb1e389edef16cfb11d608548a237461da282c935e243021a4cebf1",
+    "response-03.json": "921ca27d6e5a0db9541635adc6ef55404eb5933c01cc82edfa42fdb0d122e385",
+    "response-04.json": "78ba9a14157954944aa4df8105621b2594feee3e6a01c8cef5b0887c78febfd2",
+    "response-05.json": "ee66979f1c8dfe57d5769190b7abe105208bc365e92bdd6527d1851bb97aec0f",
+    "response-06.json": "b394bfbb3237de1b1f115da6a8a9fe74fcc9d1790d9cfee048e8da11862ced7c",
+    "response-07.json": "28bf22cf2b7aa692a751ef1ea24ed688db6efddf566ea38c26eb40edad7fd0aa",
+    "response-08.json": "ada3562e34de009c4e2660059ffdd146ff2b64b4da487836d58d26c8ac207b12",
+    "excerpt-pdb_nominal.json": "c747c48771f61b2858181dde14a7a8067faab532cc273ae36811aa9304f17753",
+    "response-09.json": "9225044cfe83527adaa6248403122995e98571086e2c91fc1f188f30391c8f72",
+    "excerpt-pmtb_nominal.json": "bc3ce823b61bb3278314356d423203021687e8888ccff6f127ab26f22e40bf16",
+    "response-10.json": "15865c39fb9da3b00595f60d28231fc681eb0c5374c74d49a300402b8b30e378",
+    "excerpt-konsumsi_rumah_tangga.json": "8b934dbba2c57e1069eb77975a07e08150096bef585a3d646a725ab14bc75162",
+    "selected-inputs.json": "6f4bcf76a33328607a73b51f681358273ec645ce26100db4088f1acd17659056"
+  },
+  "captureReceiptSha256": "01ca7e3ee1c36b7b7e1f52eb6b0f23902f330267bded876db4ac58071277fd95",
+  "resultsPercent": {
+    "pmtb_share": "28.03",
+    "household_consumption_share": "54.56"
+  },
+  "methodVersion": "bps-gdp-shares.v2",
+  "inputValuesRpMiliar": {
+    "pdb_nominal": "5665946.7",
+    "pmtb_nominal": "1588439.58",
+    "konsumsi_rumah_tangga": "3091225.48"
+  },
+  "packetSha256": "be7e8e84f98cc0cf1939de55ceadc5b7a82bdf8b76288ec5f1a07e99e6f6ea6e",
+  "ownedDirectoryRemoved": true,
+  "finishedAt": "2026-11-24T18:50:06.282748+00:00",
+  "evaluatorSha256": "7c42974bbd82f433c265d63392632fc055d598fa56f4a416aa5d159f61ee4b37"
+}

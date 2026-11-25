@@ -1,0 +1,14 @@
+{
+  "evidence": "Original model content from operator terminal reports; envelopes for replay are reconstructed, not raw HTTP captures",
+  "attempt1": {
+    "model": "gemma4:12b",
+    "finishReason": "length",
+    "content": "```json\n{\n  \"summary\": \"Pertumbuhan PDB Indonesia untuk triwulan kedua"
+  },
+  "attempt2": {
+    "model": "gemma4:12b",
+    "finishReason": "stop",
+    "content": "```json\n{\n  \"summary\": \"Pertumbuhan PDB Indonesia untuk triwulan kedua tahun 2025 sudah tersedia. Data ini menggunakan perbandingan tahun ke tahun.\",\n  \"meaning\": \"PDB mengukur total aktivitas ekonomi di Indonesia. Angka ini bukan menunjukkan pendapatan tiap keluarga. Ini menunjukkan seberapa besar ekonomi tumbuh dibandingkan dengan periode yang sama pada tahun sebelumnya.\",\n  \"comparison\": null,\n  \"limitations\": \"Tanggal rilis data tidak diketahui. Data ini adalah data uji sintetis dan bukan data resmi. Pertumbuhan PDB bukan nilai PDB dalam rupiah dan tidak menunjukkan keadaan setiap keluarga. Kebenaran data belum diperiksa secara independen.\",\n  \"factRefs\": [\n    \"facts.current\"\n  ]\n}\n```",
+    "contentSha256": "498398522ef17ee56eb9b58b3481f47e1bcd4afa52d5dd3391e04bf1310af72b"
+  }
+}

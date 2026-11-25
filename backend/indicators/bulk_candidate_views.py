@@ -41,8 +41,8 @@ def _eligibility(candidate):
         if not isinstance(payload.get("period_label"), str) or not payload["period_label"].strip():
             return False, "missing_period_label"
     publication_date = payload.get("publication_date")
-    if publication_date is None and candidate.source.source_id in ("BPS", "BKPM", "BI"):
-        pass  # BPS, BKPM, BI observations may lack an independently established release date.
+    if publication_date is None and candidate.source.source_id in ("BPS", "BKPM", "BI", "KEMENKEU"):
+        pass  # BPS, BKPM, BI, KEMENKEU observations may lack an independently established release date.
     elif not isinstance(publication_date, str):
         return False, "missing_publication_date"
     else:

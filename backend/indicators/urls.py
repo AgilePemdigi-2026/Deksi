@@ -1,10 +1,12 @@
 from django.urls import path
 
 from indicators import (
+    ai_narrative_views,
     bulk_candidate_views,
     candidate_views,
     config_restore_views,
     dashboard_views,
+    economic_engine_views,
     feedback_views,
     monitoring_views,
     notification_views,
@@ -17,6 +19,13 @@ from indicators import (
 )
 
 urlpatterns = [
+    path('admin/ai-narratives/capabilities/', ai_narrative_views.capabilities),
+    path('admin/ai-narratives/observations/', ai_narrative_views.observations),
+    path('admin/ai-narratives/lookup/', ai_narrative_views.lookup),
+    path('admin/ai-narratives/', ai_narrative_views.collection),
+    path('admin/ai-narratives/<int:draft_id>/', ai_narrative_views.detail),
+    path('admin/ai-narratives/<int:draft_id>/review/', ai_narrative_views.review),
+    path('admin/ai-narratives/<int:draft_id>/reconcile/', ai_narrative_views.reconcile),
     # ── Sistem ──────────────────────────────────────────────────────────────
     path("status/", views.system_status, name="system-status"),
     path("system/update-status/", views.update_status, name="update-status"),
@@ -52,6 +61,8 @@ urlpatterns = [
     path("admin/resync-jobs/<int:job_id>/reconcile/", resync_views.reconcile_resync, name="admin-resync-reconcile"),
     path("admin/sources/<str:source_id>/resync/", resync_views.request_resync, name="admin-source-resync"),
     path("admin/sources/<str:source_id>/resync-active/", resync_views.active_resync, name="admin-source-resync-active"),
+    path("economic-engine/gdp/", economic_engine_views.gdp_shares, name="economic-engine-gdp"),
+    path("economic-engine/trade/", economic_engine_views.trade_unavailable, name="economic-engine-trade"),
     path("admin/analysis-results/", candidate_views.analysis_result_list, name="admin-analysis-results"),
     path("admin/analysis-results/<int:candidate_id>/decision/",
          candidate_views.analysis_result_decision, name="admin-analysis-result-decision"),
@@ -153,5 +164,4 @@ urlpatterns = [
 
     # ── Feature 27: Kembalikan Konfigurasi ke Default ───────────────────────
     path("admin/config/restore/", config_restore_views.config_restore, name="admin-config-restore"),
-]
 ]

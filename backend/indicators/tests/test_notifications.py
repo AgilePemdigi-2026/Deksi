@@ -11,7 +11,7 @@ from indicators.notification_model import (
     NotificationEvent,
     NotificationPreference,
 )
-from indicators.notification_service import record_event, should_notify
+from indicators.notification_service import should_notify
 from indicators.sync_history_model import SyncRun
 from indicators.sync_history_service import finalize_sync_run
 
@@ -44,7 +44,7 @@ class NotificationTests(TestCase):
         self.assertEqual(r.status_code, 400)
 
     def test_sync_failure_logged_and_notified_per_preference(self):
-        src = Source.objects.create(source_id="BPS", source_name="BPS",
+        src = Source.objects.create(source_id="NOTIFTEST", source_name="BPS",
             institution="BPS", primary_url="https://bps.go.id")
         run = SyncRun.objects.create(source=src, source_id_snapshot="BPS",
             source_name_snapshot="BPS", status=SyncRun.Status.RUNNING,
