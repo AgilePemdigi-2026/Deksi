@@ -32,7 +32,7 @@ function parseSummary(raw: unknown, code: string): SummaryReading | null {
     frequency: text(row.frequency), dataType: text(row.dataType), sourceId: text(row.sourceId), source: text(row.source),
     publicationDate: text(row.publicationDate), retrievedAt: text(row.retrievedAt), delta: text(row.delta), note: text(row.note) }
 }
-function parseReading(raw: unknown, code: string): SourceReading {
+export function parseReading(raw: unknown, code: string): SourceReading {
   const row = object(raw)
   if (row.indicatorCode !== code) throw new Error('Identitas indikator Source Trace tidak cocok')
   const source = row.source == null ? null : object(row.source), file = row.rawFile == null ? null : object(row.rawFile)

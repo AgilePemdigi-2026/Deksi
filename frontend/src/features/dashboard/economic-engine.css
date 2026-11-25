@@ -1,0 +1,149 @@
+/* Scoped metric layout: preserve the dashboard's paper/ink identity. */
+#economic-engine {
+  padding: clamp(40px, 6vw, 88px) 0;
+  color: #242424;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: normal;
+}
+#economic-engine .engine-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+#economic-engine .engine-header > div { max-width: 730px; }
+#economic-engine h2 {
+  font-family: 'Archivo', sans-serif;
+  font-size: clamp(32px, 3.4vw, 48px);
+  font-weight: 580;
+  line-height: 1.1;
+  letter-spacing: -.04em;
+  margin: 12px 0 16px;
+}
+#economic-engine .engine-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  line-height: 1.5;
+}
+#economic-engine .engine-intro { font-size: 18px; margin-bottom: 12px; }
+#economic-engine .engine-meta { color: #505050; font-size: 14px; line-height: 1.6; }
+#economic-engine .engine-button {
+  min-height: 44px;
+  padding: 11px 20px;
+  border: 1px solid #929292;
+  border-radius: 999px;
+  background: #e9e9e9;
+  color: #242424;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+  box-shadow: 2px 3px 7px #00000010, -2px -2px 6px #ffffff60;
+}
+#economic-engine .engine-button:hover { background: #f3f3f3; }
+#economic-engine .engine-button:active { background: #d4d4d4; box-shadow: inset 1px 2px 4px #00000015; }
+#economic-engine :is(button, summary, [tabindex]):focus-visible { outline: 2px solid #242424; outline-offset: 4px; }
+#economic-engine button:disabled { opacity: .6; cursor: wait; }
+#economic-engine .engine-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 28px;
+}
+#economic-engine .engine-card {
+  min-width: 0;
+  padding: clamp(20px, 2.5vw, 32px);
+  border: 1px solid #bcbcbc;
+  border-radius: 24px;
+  background: #e4e4e4;
+  box-shadow: 4px 6px 12px #0000000c, -3px -3px 9px #ffffff50;
+}
+#economic-engine .engine-card h3 {
+  min-height: 2.6em;
+  margin: 12px 0 18px;
+  font-size: 21px;
+  font-weight: 550;
+  line-height: 1.3;
+  letter-spacing: -.015em;
+}
+#economic-engine .engine-value {
+  font-family: 'Archivo', sans-serif;
+  font-size: clamp(44px, 4.5vw, 64px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+}
+#economic-engine .engine-unit { font-size: .55em; margin-left: 6px; }
+#economic-engine .engine-unavailable { font-size: 28px; line-height: 1.3; font-weight: 550; }
+#economic-engine .engine-period { margin-top: 10px; font-weight: 500; }
+#economic-engine .engine-definition { margin-top: 20px; max-width: 55ch; }
+#economic-engine .engine-formula-block {
+  margin: 24px 0;
+  padding: 18px 0;
+  border-top: 1px solid #bcbcbc;
+  border-bottom: 1px solid #bcbcbc;
+}
+#economic-engine h4 { margin: 0 0 14px; font-size: 14px; font-weight: 600; }
+#economic-engine .engine-formula { display: flex; align-items: center; gap: 16px; font-size: 18px; font-weight: 500; }
+#economic-engine .engine-formula > span:last-child { flex-shrink: 0; }
+#economic-engine .engine-fraction { display: grid; text-align: center; max-width: 70%; }
+#economic-engine .engine-fraction > span { padding: 4px 8px; }
+#economic-engine .engine-fraction > span:first-child { border-bottom: 1px solid currentColor; }
+#economic-engine .engine-warning { padding-left: 14px; border-left: 3px solid #707070; font-size: 14px; }
+#economic-engine .engine-warning p + p { margin-top: 6px; }
+#economic-engine .engine-details { margin-top: 20px; border-top: 1px solid #bcbcbc; }
+#economic-engine summary { padding: 14px 0; min-height: 48px; font-size: 15px; font-weight: 550; cursor: pointer; }
+#economic-engine summary::marker { color: #505050; }
+#economic-engine .engine-details > p { margin-top: 12px; }
+#economic-engine .engine-table-scroll { max-width: 100%; overflow-x: auto; }
+#economic-engine table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
+#economic-engine caption { text-align: left; padding-bottom: 12px; color: #505050; }
+#economic-engine :is(th, td) { padding: 12px 8px; border-bottom: 1px solid #bcbcbc; text-align: left; vertical-align: top; }
+#economic-engine th { font-weight: 550; }
+#economic-engine :is(th, td):nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#economic-engine th small { display: block; color: #505050; font-size: 12px; font-weight: 400; margin-top: 4px; }
+#economic-engine .engine-source { padding: 0 4px; min-height: 44px; background: none; border: none; color: #242424; font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
+#economic-engine .engine-source:hover { text-decoration-thickness: 2px; }
+#economic-engine .engine-substitution { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#economic-engine .engine-audit { font-size: 14px; }
+#economic-engine .engine-audit code { font-size: 12px; overflow-wrap: anywhere; }
+#economic-engine .engine-audit-input { margin: 16px 0; padding-top: 12px; border-top: 1px solid #bcbcbc; }
+#economic-engine .engine-audit-input p + p { margin-top: 6px; }
+#economic-engine .engine-feedback { margin: 24px 0; }
+#economic-engine .engine-feedback button { margin-top: 12px; }
+#economic-engine .engine-trace-status:not(:empty) { padding: 16px 0; }
+#economic-engine .engine-trade { border-top: 1px solid #aaa; margin-top: 32px; padding-top: 24px; }
+#economic-engine .engine-trade h3 { margin-bottom: 8px; font-size: 18px; font-weight: 550; }
+#economic-engine .engine-trade p { font-size: 14px; color: #505050; max-width: 70ch; }
+#economic-engine .engine-narrative {
+  margin-top: 32px;
+  padding: clamp(20px, 3vw, 36px);
+  border: 1px solid #aeb9b4;
+  border-radius: 24px;
+  background: #e3e9e5;
+  box-shadow: 4px 6px 12px #0000000c, -3px -3px 9px #ffffff50;
+  overflow-wrap: anywhere;
+}
+#economic-engine .engine-narrative > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+#economic-engine .engine-narrative h3 { font-size: 26px; line-height: 1.25; margin-top: 8px; font-weight: 550; }
+#economic-engine .engine-narrative-badge { padding: 6px 12px; border: 1px solid #8c9c93; border-radius: 999px; font-size: 13px; color: #34483d; }
+#economic-engine .engine-narrative > p + p { margin-top: 10px; }
+#economic-engine .engine-narrative-copy { max-width: 78ch; margin: 28px 0; }
+#economic-engine .engine-narrative-copy section + section { margin-top: 24px; }
+#economic-engine .engine-narrative-copy h4 { font-size: 16px; margin-bottom: 8px; }
+#economic-engine .engine-narrative-copy p { font-size: 16px; line-height: 1.75; }
+#economic-engine .engine-narrative-limitations { border-top: 1px solid #aeb9b4; padding-top: 24px; }
+@media (max-width: 960px) {
+  #economic-engine .engine-grid { grid-template-columns: minmax(0, 1fr); }
+  #economic-engine .engine-header { align-items: flex-start; flex-direction: column; gap: 20px; }
+  #economic-engine .engine-card h3 { min-height: 0; }
+}
+@media (max-width: 480px) {
+  #economic-engine .dash-container { max-width: calc(100% - 32px); }
+  #economic-engine .engine-formula { font-size: 16px; gap: 10px; }
+  #economic-engine .engine-card { padding: 20px; border-radius: 20px; }
+}
