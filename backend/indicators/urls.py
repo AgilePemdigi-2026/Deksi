@@ -1,6 +1,7 @@
 from django.urls import path
 
 from indicators import (
+    ai_narrative_views,
     bulk_candidate_views,
     candidate_views,
     dashboard_views,
@@ -14,6 +15,13 @@ from indicators import (
 )
 
 urlpatterns = [
+    path('admin/ai-narratives/capabilities/', ai_narrative_views.capabilities),
+    path('admin/ai-narratives/observations/', ai_narrative_views.observations),
+    path('admin/ai-narratives/lookup/', ai_narrative_views.lookup),
+    path('admin/ai-narratives/', ai_narrative_views.collection),
+    path('admin/ai-narratives/<int:draft_id>/', ai_narrative_views.detail),
+    path('admin/ai-narratives/<int:draft_id>/review/', ai_narrative_views.review),
+    path('admin/ai-narratives/<int:draft_id>/reconcile/', ai_narrative_views.reconcile),
     # ── Sistem ──────────────────────────────────────────────────────────────
     path("status/", views.system_status, name="system-status"),
     path("system/update-status/", views.update_status, name="update-status"),

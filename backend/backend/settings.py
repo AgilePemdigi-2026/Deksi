@@ -160,6 +160,13 @@ DEKSI_SCRAPING_DIR = BASE_DIR.parent.parent / 'Folder Scrapping'
 BPS_API_KEY = env('BPS_API_KEY')
 BPS_API_BASE_URL = env('BPS_API_BASE_URL')
 
+# Narrative generation is opt-in; no network call happens while serving a page.
+DEKSI_AI_NARRATIVES_ENABLED = env.bool('DEKSI_AI_NARRATIVES_ENABLED', default=False)
+LLM_BASE_URL = env.str('LLM_BASE_URL', default='')
+LLM_MODEL = env.str('LLM_MODEL', default='')
+LLM_API_KEY = env.str('LLM_API_KEY', default='')
+DEKSI_AI_TIMEOUT_SECONDS = env.int('DEKSI_AI_TIMEOUT_SECONDS', default=120)
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 

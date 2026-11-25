@@ -3,6 +3,7 @@ import { CandidateReviewError, fetchAdminAnalysisResults, type CandidatePage, ty
 import { safeExternalUrl } from '../features/indicators/data'
 import { AdminNavigation } from './AdminNavigation'
 import './admin-analysis.css'
+import AiNarrativesPanel from '../features/ai-narratives/AiNarrativesPanel'
 
 type StatusFilter = 'all' | 'pending' | 'published' | 'rejected'
 
@@ -25,6 +26,7 @@ export function AdminAnalysisPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const [narrativeUnsettled, setNarrativeUnsettled] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -64,13 +66,15 @@ export function AdminAnalysisPage() {
         <span className="admin-analysis__badge">Admin DEKSI</span>
       </header>
 
-      <AdminNavigation active="analysis" />
+      <div inert={narrativeUnsettled ? true : undefined}>
+        <AdminNavigation active="analysis" busy={narrativeUnsettled} />
+      </div>
 
-      <section className="admin-analysis__panel" aria-labelledby="analysis-list-title">
+      <section className="admin-analysis__panel" aria-labelledby="analysis-list-title" inert={narrativeUnsettled ? true : undefined}>
         <div className="admin-analysis__panel-header">
           <div>
             <p className="admin-analysis__eyebrow">REVIEW / VERSI HASIL</p>
-            <h2 id="analysis-list-title">Hasil yang tersedia</h2>
+            <h2 id="analysis-list-title">Kandidat angka — peninjauan data</h2>
           </div>
           <label className="admin-analysis__filter">
             Status
@@ -126,7 +130,7 @@ export function AdminAnalysisPage() {
       </section>
 
       {selected && (
-        <section className="admin-analysis__panel admin-analysis__detail" aria-labelledby="analysis-detail-title">
+        <section className="admin-analysis__panel admin-analysis__detail" aria-labelledby="analysis-detail-title" inert={narrativeUnsettled ? true : undefined}>
           <div className="admin-analysis__panel-header">
             <div>
               <p className="admin-analysis__eyebrow">VERSI #{selected.id} · {valueOrUnavailable(selected.indicator)}</p>
@@ -188,6 +192,7 @@ export function AdminAnalysisPage() {
           </section>
         </section>
       )}
+      <AiNarrativesPanel onUnsettledChange={setNarrativeUnsettled} />
     </main>
   )
 }

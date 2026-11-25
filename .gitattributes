@@ -1,0 +1,2 @@
+# Public historical/synthetic fixture bytes are pinned by checksums.
+/backend/indicators/tests/fixtures/*.json -text
