@@ -1,0 +1,52 @@
+{
+  "scope": "real source values, not human-reviewed",
+  "provider": "https://webapi.bps.go.id/v1",
+  "retrievedAt": "2026-11-24T18:46:39.866151+00:00",
+  "observations": [
+    {
+      "code": "pdb_nominal",
+      "componentId": 800,
+      "varId": 1955,
+      "value": "5665946.7",
+      "unit": "Rp miliar",
+      "period": "Q1 2025",
+      "observationDate": "2025-03-31",
+      "frequency": "quarterly",
+      "dataType": "level",
+      "releaseAt": null,
+      "vintage": null,
+      "excerpt": "excerpt-pdb_nominal.json",
+      "excerptSha256": "c747c48771f61b2858181dde14a7a8067faab532cc273ae36811aa9304f17753"
+    },
+    {
+      "code": "pmtb_nominal",
+      "componentId": 400,
+      "varId": 1955,
+      "value": "1588439.58",
+      "unit": "Rp miliar",
+      "period": "Q1 2025",
+      "observationDate": "2025-03-31",
+      "frequency": "quarterly",
+      "dataType": "level",
+      "releaseAt": null,
+      "vintage": null,
+      "excerpt": "excerpt-pmtb_nominal.json",
+      "excerptSha256": "bc3ce823b61bb3278314356d423203021687e8888ccff6f127ab26f22e40bf16"
+    },
+    {
+      "code": "konsumsi_rumah_tangga",
+      "componentId": 100,
+      "varId": 1955,
+      "value": "3091225.48",
+      "unit": "Rp miliar",
+      "period": "Q1 2025",
+      "observationDate": "2025-03-31",
+      "frequency": "quarterly",
+      "dataType": "level",
+      "releaseAt": null,
+      "vintage": null,
+      "excerpt": "excerpt-konsumsi_rumah_tangga.json",
+      "excerptSha256": "8b934dbba2c57e1069eb77975a07e08150096bef585a3d646a725ab14bc75162"
+    }
+  ]
+}

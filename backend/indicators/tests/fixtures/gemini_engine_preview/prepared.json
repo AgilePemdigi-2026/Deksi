@@ -1,0 +1,12 @@
+{
+  "status": "prepared_no_inference",
+  "providerPosts": 0,
+  "requestSha256": "62ddede8ded686048d0178ca28548374c1cb8858bdd35ad52efac89837893e8d",
+  "inputDigest": "bd4b201699025dd68901bbb37c6b0214750eb5667de1fb85c1549c826012a211",
+  "snapshotSha256": "2297a71cd31f7e88dcbaa8f8b282a287206fe73028e07d50d6134c38849763ee",
+  "model": "gemini-3.5-flash-lite",
+  "promptVersion": "gdp-shares-plain-id.v1",
+  "workflowStateSimulated": true,
+  "humanApproval": false,
+  "productionPublication": false
+}
