@@ -54,14 +54,6 @@
     max-width: 650px;
 }
 
-.admin-fb-actions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-
 /* Buttons */
 
 .admin-fb-btn {
@@ -86,31 +78,6 @@
 
 .admin-fb-btn.primary:hover:not(:disabled) {
     opacity: 0.85;
-}
-
-.admin-fb-btn.secondary {
-    background: #f4f4f4;
-    color: var(--ink, #111);
-    border-color: #d8d8d8;
-}
-
-.admin-fb-btn.secondary:hover {
-    background: #e5e5e5;
-}
-
-.admin-fb-btn.outline {
-    background: transparent;
-    color: #111;
-    border-color: #888;
-}
-.admin-fb-btn.outline.danger {
-    color: #7f1d1d;
-    border-color: #923535;
-    background: transparent;
-}
-.admin-fb-btn.outline.danger:hover {
-    background: #923535;
-    color: #fff;
 }
 
 .admin-fb-btn.small {

@@ -109,7 +109,6 @@ export function AdminThresholdPage() {
             Setiap perubahan tercatat berversi di audit log.
           </p>
         </div>
-        <span className="section-badge">Admin DEKSI</span>
       </div>
 
       <AdminNavigation active="thresholds" />

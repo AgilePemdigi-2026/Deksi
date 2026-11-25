@@ -77,7 +77,7 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
     <main className="sync-history" aria-labelledby="sync-history-title">
       <header className="sync-history__header">
         <div>
-          <p className="sync-history__eyebrow">DEKSI / AREA ADMIN</p>
+          <p className="sync-history__eyebrow">AREA PENGELOLA</p>
           <h1 id="sync-history-title">Riwayat Sinkronisasi</h1>
           <p className="sync-history__intro">
             Pantau proses pengambilan data dari sumber. Riwayat ini terpisah dari perubahan
@@ -85,7 +85,6 @@ export default function SyncHistoryPage({ loadHistory }: Props = {}) {
           </p>
           <a className="sync-history__back" href="/admin/sumber">Kelola Sumber Data</a>
         </div>
-        <span className="sync-history__badge">Admin DEKSI</span>
       </header>
 
       <AdminNavigation active="history" />

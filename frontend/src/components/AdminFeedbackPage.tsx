@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AdminNavigation } from "./AdminNavigation";
 import {
   adminLogin,
-  adminLogout,
   fetchAdminSession,
   fetchAdminFeedbacks,
   fetchAdminFeedbackDetail,
@@ -14,13 +13,10 @@ import {
 export function AdminFeedbackPage() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
-  const [adminUsername, setAdminUsername] = useState("");
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [logoutLoading, setLogoutLoading] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const [feedbacks, setFeedbacks] = useState<AdminFeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +42,6 @@ export function AdminFeedbackPage() {
     fetchAdminSession()
       .then((session) => {
         setAuthenticated(session.authenticated);
-        if (session.username) setAdminUsername(session.username);
       })
       .catch(() => setAuthenticated(false))
       .finally(() => setSessionChecked(true));
@@ -159,33 +154,10 @@ export function AdminFeedbackPage() {
     try {
       await adminLogin(loginUser, loginPass);
       setAuthenticated(true);
-      setAdminUsername(loginUser);
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : "Login gagal. Periksa username dan password.");
     } finally {
       setLoginLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setLogoutLoading(true);
-    setLogoutError(null);
-    try {
-      await adminLogout();
-      feedbackRequestId.current += 1;
-      detailRequestId.current += 1;
-      setAuthenticated(false);
-      setAdminUsername("");
-      setLoginUser("");
-      setLoginPass("");
-      setFeedbacks([]);
-      setDetail(null);
-      setSelectedFeedbackId(null);
-      window.location.replace("/admin/login");
-    } catch {
-      setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
-    } finally {
-      setLogoutLoading(false);
     }
   };
 
@@ -236,7 +208,7 @@ export function AdminFeedbackPage() {
       <div className="admin-fb-container">
         <div className="admin-fb-login-box">
           <div className="admin-fb-login-header">
-            <h2>DEKSI · Portal Admin</h2>
+            <h2>Masuk Admin</h2>
             <p>Masuk untuk mengelola daftar laporan umpan balik pengguna.</p>
           </div>
           {loginError && <div className="admin-fb-alert error">{loginError}</div>}
@@ -283,25 +255,15 @@ export function AdminFeedbackPage() {
     <div className="admin-fb-container">
       <header className="admin-fb-header">
         <div>
-          <span className="admin-fb-eyebrow">PORTAL ADMINISTRASI DEKSI</span>
           <h1 className="admin-fb-title">Daftar Laporan Umpan Balik</h1>
           <p className="admin-fb-subtitle">
             Daftar kritik, verifikasi data, dan saran dari publik.
           </p>
         </div>
-        <div className="admin-fb-actions">
-          <a href={statusUpdating ? undefined : "/admin/sumber"} aria-disabled={statusUpdating || undefined} className="admin-fb-btn secondary">
-            Kelola Sumber Data
-          </a>
-          <button onClick={handleLogout} disabled={logoutLoading || statusUpdating} className="admin-fb-btn outline danger">
-            Keluar ({adminUsername || "Admin"})
-          </button>
-        </div>
       </header>
 
       <AdminNavigation active="feedback" busy={statusUpdating} />
 
-      {logoutError && <p className="admin-fb-alert error" role="alert">{logoutError}</p>}
       <section className="admin-fb-toolbar" aria-label="Filter daftar umpan balik">
         <div className="admin-fb-search-wrap">
           <input

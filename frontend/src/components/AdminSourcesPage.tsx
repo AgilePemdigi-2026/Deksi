@@ -5,7 +5,6 @@ import { AdminNavigation } from "./AdminNavigation";
 import "./admin-source-card.css";
 import {
   adminLogin,
-  adminLogout,
   changeAdminSourceLifecycle,
   createAdminSource,
   displayOrUnavailable,
@@ -90,8 +89,6 @@ export function AdminSourcesPage() {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [logoutLoading, setLogoutLoading] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const [sources, setSources] = useState<AdminSourceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,26 +158,6 @@ export function AdminSourcesPage() {
       setLoginError(e instanceof Error ? e.message : "Login gagal.");
     } finally {
       setLoginLoading(false);
-    }
-  };
-
-  const doLogout = async () => {
-    setLogoutLoading(true);
-    setLogoutError(null);
-    try {
-      await adminLogout();
-      editRequest.current += 1;
-      setAuthenticated(false);
-      setCanReviewCandidates(null);
-      setUsername("");
-      setPassword("");
-      setReviewSource(null);
-      setSources([]);
-      window.location.replace("/admin/login");
-    } catch {
-      setLogoutError("Sesi keluar belum dapat dipastikan. Periksa koneksi lalu coba kembali.");
-    } finally {
-      setLogoutLoading(false);
     }
   };
 
@@ -407,17 +384,12 @@ export function AdminSourcesPage() {
         </div>
       </div>
 
-      <div className="admin-nav-row">
-        <AdminNavigation active="sources" busy={reviewBusy} hideLogout />
-        <span className="admin-nav-actions">
-          <button type="button" className="tab" disabled={toggling || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>{" "}
-        </span>
-      </div>
-      <div className="admin-logout-row">
-        <button type="button" className="tab admin-logout-button" disabled={toggling || saving || logoutLoading || reviewBusy} onClick={doLogout}>
-          {logoutLoading ? "Keluar…" : "Keluar"}
-        </button>
-      </div>
+      <AdminNavigation
+        active="sources"
+        busy={reviewBusy}
+        logoutDisabled={toggling || saving}
+        trailingAction={<button type="button" className="tab" disabled={toggling || saving || reviewBusy} onClick={(event) => { setDialogOpener(event.currentTarget); if (showForm && mode === "add") cancelForm(); else startAdd(); }}>Tambah Sumber Data</button>}
+      />
 
       {!sessionChecked || (loading && !authenticated) ? (
         <p className="summary-loading">Memeriksa sesi admin…</p>
@@ -440,7 +412,6 @@ export function AdminSourcesPage() {
         <>
           <p className="source-meta">Masuk sebagai {displayOrUnavailable(username || "admin")}. Konfigurasi gagal tidak mengubah data lama.</p>
 
-          {logoutError && <p className="summary-error" role="alert">{logoutError}</p>}
           {success && <p className="summary-loading">{success}</p>}
           {toggleError && <p className="summary-error" role="alert">{toggleError}</p>}
           {loading && <p className="summary-loading">Memuat registry sumber…</p>}

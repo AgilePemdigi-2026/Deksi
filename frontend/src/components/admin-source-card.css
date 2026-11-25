@@ -3,35 +3,6 @@
   align-items: stretch;
 }
 
-.admin-logout-row {
-  display: flex;
-  justify-content: flex-end;
-  margin: -16px 0 28px;
-}
-
-.sources-page .admin-logout-button {
-  min-width: 120px;
-  border-color: #111;
-  background: #111;
-  color: #fff;
-  font-weight: 600;
-}
-
-.sources-page .admin-logout-button:hover:not(:disabled) {
-  border-color: #444;
-  background: #333;
-}
-
-.sources-page .admin-logout-button:focus-visible {
-  outline: 2px solid #111;
-  outline-offset: 3px;
-}
-
-.sources-page .admin-logout-button:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
-
 .admin-source-card__permission {
   max-width: 720px;
   margin: 0 0 16px;

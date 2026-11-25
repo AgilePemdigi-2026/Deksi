@@ -55,8 +55,8 @@ try {
   await wait('document.body.innerText.includes("Browser Fixture") && document.body.innerText.includes("Berhasil")')
   assert(await evaluate('document.querySelector("tbody")?.innerText.includes("BROWSER_FIXTURE")'))
   await send('Page.navigate',{url:`http://127.0.0.1:${app.httpServer.address().port}/admin/sumber-data`})
-  await wait('Array.from(document.querySelectorAll("button")).some(x=>x.textContent.trim()==="Keluar")')
-  await evaluate('Array.from(document.querySelectorAll("button")).find(x=>x.textContent.trim()==="Keluar").click()')
+  await wait('Array.from(document.querySelectorAll("button")).some(x=>x.textContent.trim()==="Keluar (admin)")')
+  await evaluate('Array.from(document.querySelectorAll("button")).find(x=>x.textContent.trim()==="Keluar (admin)").click()')
   await wait('location.pathname === "/admin/login" && document.querySelector("#login-submit") && !document.querySelector("#login-submit").disabled')
   console.log('PASS: browser login, deactivate, reactivate, reload and logout with real isolated Django')
 } catch(e) {console.error(e);console.error('Sanitized API trace:',JSON.stringify(trace));process.exitCode=1}

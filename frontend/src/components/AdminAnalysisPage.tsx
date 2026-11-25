@@ -54,14 +54,13 @@ export function AdminAnalysisPage() {
     <main className="admin-analysis" aria-labelledby="admin-analysis-title">
       <header className="admin-analysis__header">
         <div>
-          <p className="admin-analysis__eyebrow">DEKSI / AREA ADMIN</p>
+          <p className="admin-analysis__eyebrow">AREA PENGELOLA</p>
           <h1 id="admin-analysis-title">Detail Peninjauan Hasil Analisis</h1>
           <p className="admin-analysis__intro">
             Periksa nilai resmi, periode, provenance sumber, dan status setiap versi sebelum
             menetapkan kelayakan publikasi.
           </p>
         </div>
-        <span className="admin-analysis__badge">Admin DEKSI</span>
       </header>
 
       <AdminNavigation active="analysis" />

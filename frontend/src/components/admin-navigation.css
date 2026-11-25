@@ -1,8 +1,51 @@
+.admin-navigation-shell {
+    margin: 0 0 28px;
+}
+
+.admin-navigation-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+.admin-navigation__logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid #b33a3a;
+    border-radius: 999px;
+    background: transparent;
+    color: #a32626;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-navigation__logout:hover:not(:disabled) {
+    border-color: #a32626;
+    background: #a32626;
+    color: #fff;
+}
+
+.admin-navigation__logout:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+
+.admin-navigation__logout:focus-visible {
+    outline: 2px solid #a32626;
+    outline-offset: 3px;
+}
+
 .admin-navigation {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin: 0 0 28px;
+    margin: 0;
 }
 
 .admin-navigation a {
@@ -35,10 +78,16 @@
 }
 
 .admin-navigation__error {
-    flex-basis: 100%;
-    margin: -16px 0 24px;
+    margin: 12px 0 0;
     color: #7f1d1d;
     font-size: 13px;
+}
+
+.admin-navigation__status {
+    margin: 0 0 12px;
+    color: #7f1d1d;
+    font-size: 13px;
+    text-align: right;
 }
 
 .admin-navigation a:focus-visible {
@@ -51,7 +100,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    margin: 0 0 28px;
+    margin: 0;
 }
 
 .admin-nav-row .admin-navigation {

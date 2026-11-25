@@ -70,7 +70,6 @@ export function AdminNotificationPage() {
             Area Admin. Mekanisme didukung: pencatatan event. Kanal email/Telegram belum tersedia di backend.
           </p>
         </div>
-        <span className="section-badge">Admin DEKSI</span>
       </div>
 
       <AdminNavigation active="notifications" />
