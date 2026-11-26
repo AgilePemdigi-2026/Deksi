@@ -14,7 +14,11 @@ assert(scratch, 'Set HERMES_TEST_SCRATCH to the agent-owned scratch directory')
 const cacheDir = await mkdtemp(path.join(scratch, 'deksi-ai-narratives-'))
 const vite = await createServer({ root, configFile: false, plugins: [react()], cacheDir,
   server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom' })
-after(async () => { await vite.close(); await rm(cacheDir, { recursive: true, force: true }) })
+after(async () => {
+  await vite.close()
+  // Windows may release Vite optimizer files just after shutdown.
+  await rm(cacheDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+})
 const api = await vite.ssrLoadModule('/src/features/ai-narratives/api.ts')
 
 const factPackage = {

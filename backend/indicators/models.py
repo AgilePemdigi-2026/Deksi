@@ -317,6 +317,9 @@ class DataUpdateLog(models.Model):
 
 
 # Re-export agar migration discovery berfungsi dari satu modul
+from indicators.public_engine_ai_model import (  # noqa: E402, F401
+    PublicEngineAIDailyUsage, PublicEngineAIRequest, PublicEngineAIReview,
+)
 from indicators.ai_narrative_model import AINarrativeDraft, AINarrativeReview  # noqa: E402, F401
 from indicators.feedback_model import Feedback, FeedbackAuditLog  # noqa: E402, F401
 from indicators.notification_model import (  # noqa: E402, F401

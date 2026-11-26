@@ -32,6 +32,10 @@ services:
       SECURE_SSL_REDIRECT: "False"
       BPS_API_KEY: ${BPS_API_KEY:-}
       BPS_API_BASE_URL: https://webapi.bps.go.id/v1
+      DEKSI_PUBLIC_ENGINE_AI_ENABLED: ${DEKSI_PUBLIC_ENGINE_AI_ENABLED:-false}
+      DEKSI_ENGINE_AI_DAILY_LIMIT: ${DEKSI_ENGINE_AI_DAILY_LIMIT:-0}
+      DEKSI_PUBLIC_ENGINE_AI_MODEL: ${DEKSI_PUBLIC_ENGINE_AI_MODEL:-}
+
     command:
       - sh
       - -c
@@ -72,6 +76,30 @@ services:
     command: ["python", "manage.py", "process_resync"]
     volumes:
       - backend_data:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  public-engine-ai-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.production
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      DJANGO_SETTINGS_MODULE: backend.settings_production
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in Coolify}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?Set ALLOWED_HOSTS in Coolify}
+      POSTGRES_DB: ${POSTGRES_DB:-deksi}
+      POSTGRES_USER: ${POSTGRES_USER:-deksi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      DEKSI_PUBLIC_ENGINE_AI_ENABLED: ${DEKSI_PUBLIC_ENGINE_AI_ENABLED:-false}
+      DEKSI_ENGINE_AI_DAILY_LIMIT: ${DEKSI_ENGINE_AI_DAILY_LIMIT:-0}
+      DEKSI_PUBLIC_ENGINE_AI_MODEL: ${DEKSI_PUBLIC_ENGINE_AI_MODEL:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    command: ["sh", "-c", "while true; do python manage.py process_public_engine_ai --once || true; sleep 5; done"]
     depends_on:
       backend:
         condition: service_healthy

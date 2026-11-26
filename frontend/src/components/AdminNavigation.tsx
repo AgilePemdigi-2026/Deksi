@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { adminLogout } from '../api';
 import './admin-navigation.css';
 
-type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'thresholds' | 'notifications';
+type AdminPage = 'sources' | 'history' | 'feedback' | 'schedules' | 'monitoring' | 'analysis' | 'engine-ai' | 'thresholds' | 'notifications';
 
 export function AdminNavigation({ active, busy = false, logoutDisabled = false, trailingAction }: {
   active: AdminPage;
@@ -17,6 +17,7 @@ export function AdminNavigation({ active, busy = false, logoutDisabled = false, 
     { href: '/admin/sumber-data', label: 'Kelola Sumber', page: 'sources' },
     { href: '/admin/riwayat-sinkronisasi', label: 'Riwayat Sinkronisasi', page: 'history' },
     { href: '/admin/analisis', label: 'Peninjauan Analisis', page: 'analysis' },
+    { href: '/admin/public-engine-ai', label: 'Review Narasi AI', page: 'engine-ai' },
     { href: '/admin/konfigurasi', label: 'Konfigurasi', page: 'thresholds' },
     { href: '/admin/feedback', label: 'Kelola Umpan Balik', page: 'feedback' },
     { href: '/admin/notifikasi', label: 'Notifikasi', page: 'notifications' },

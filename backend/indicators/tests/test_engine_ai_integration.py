@@ -7,14 +7,11 @@ class EngineAIIntegrationTests(TestCase):
     def test_main_and_ai_schema_have_one_shared_leaf(self):
         loader = MigrationLoader(None)
         self.assertEqual(loader.detect_conflicts(), {})
-        self.assertEqual(loader.graph.leaf_nodes('indicators'),
-                         [('indicators', '0026_merge_ai_narrative_main')])
-        migration = loader.disk_migrations[('indicators', '0026_merge_ai_narrative_main')]
-        self.assertEqual(migration.operations, [])
-        self.assertEqual(set(migration.dependencies), {
-            ('indicators', '0025_ai_narrative_drafts'),
-            ('indicators', '0025_merge_20261124_2326'),
-        })
+        self.assertEqual(loader.graph.leaf_nodes('indicators'), [('indicators', '0027_public_engine_ai')])
+        migration = loader.disk_migrations[('indicators', '0027_public_engine_ai')]
+        self.assertIn(('indicators', '0026_merge_ai_narrative_main'), migration.dependencies)
+        self.assertIn(('auth', '__first__'), migration.dependencies)
+        self.assertTrue(migration.operations)
 
     def test_public_calculations_do_not_enable_admin_generation_or_draft_preview(self):
         public = self.client.get('/api/economic-engine/gdp/')

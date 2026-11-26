@@ -4,6 +4,7 @@ import { contextGuard, contextHref, formatDecimal } from '../indicators/data'
 import { fetchGdp, matchesInput } from './economicEngineClient'
 import type { Gdp, Input } from './economicEngineClient'
 import { EngineNarrativePreview } from './EngineNarrativePreview'
+import { PublicEngineAIRequest } from './PublicEngineAIRequest'
 import './economic-engine.css'
 
 export function EconomicEngine() {
@@ -143,6 +144,8 @@ export function EconomicEngineView({ data, error, loading, navigating, traceStat
         </article>
       })}</div>}
       {import.meta.env.DEV && previewNarrativeEnabled && data && !loading && !error && <EngineNarrativePreview data={data}
+        key={Object.values(data.metrics).map(metric => `${metric.period}:${metric.inputDigest}:${metric.resultDigest}`).join('|')} />}
+      {data && !loading && !error && <PublicEngineAIRequest data={data}
         key={Object.values(data.metrics).map(metric => `${metric.period}:${metric.inputDigest}:${metric.resultDigest}`).join('|')} />}
       <p className="engine-trace-status" role="status">{traceStatus}</p>
       <article className="engine-trade"><h3>Perdagangan barang</h3><p>Belum tersedia: kesesuaian metodologi ekspor dan impor masih perlu diverifikasi.</p></article>

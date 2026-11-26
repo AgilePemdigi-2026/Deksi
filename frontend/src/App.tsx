@@ -21,6 +21,7 @@ import { AdminMonitoringPage } from './components/AdminMonitoringPage'
 import { AdminAnalysisPage } from './components/AdminAnalysisPage'
 import { AdminNotificationPage } from './components/AdminNotificationPage'
 import { AdminThresholdPage } from './components/AdminThresholdPage'
+import { AdminPublicEngineAIPage } from './features/admin/AdminPublicEngineAIPage'
 import SyncHistoryPage from './features/sync-history/SyncHistoryPage'
 import { loadAdminSyncHistory } from './api'
 
@@ -82,6 +83,7 @@ export default function App({ pathname = typeof window === 'undefined' ? '/' : w
   if (path === '/admin/notifikasi') return <AdminSessionGuard><AdminNotificationPage /></AdminSessionGuard>
   if (path === '/admin/konfigurasi' || path === '/admin/threshold') return <AdminSessionGuard><AdminThresholdPage /></AdminSessionGuard>
   if (path === '/admin/riwayat-sinkronisasi') return <AdminSessionGuard><SyncHistoryPage loadHistory={loadAdminSyncHistory} /></AdminSessionGuard>
+  if (path === '/admin/public-engine-ai') return <AdminSessionGuard><AdminPublicEngineAIPage /></AdminSessionGuard>
   const route = parseRoute(path, search)
   if (path === '/admin/jadwal') return <AdminSessionGuard><AdminSchedulePage /></AdminSessionGuard>
   if (path === '/admin/monitoring') return <AdminSessionGuard><AdminMonitoringPage /></AdminSessionGuard>

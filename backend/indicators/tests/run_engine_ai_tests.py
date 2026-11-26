@@ -10,6 +10,8 @@ def main():
         'indicators.tests.test_economic_engine',
         'indicators.tests.test_engine_narrative_preview',
         'indicators.tests.test_engine_ai_integration',
+        'indicators.tests.test_public_engine_ai',
+
     )
     return namespace['main']()
 

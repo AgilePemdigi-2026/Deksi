@@ -1,5 +1,7 @@
 # Integrasi Economic Engine dan AI pada main
 
+> Kelanjutan 26 November 2026: [PUBLIC_ENGINE_AI.md](PUBLIC_ENGINE_AI.md) menjelaskan tombol produksi, antrean Gemini, review Admin, konfigurasi runtime dan batas verifikasinya. Catatan di bawah tetap bukti historis integrasi awal, bukan status aktivasi fitur baru.
+
 Izin pengguna pada 25 November 2026: direct push dua fitur ke main, tanpa API key. Base main yang dipertahankan: `c722e7ac3ca4599d4566ea0f616f5af988a09b51`. Head feature: engine `e9f8dc330c65c8991267a21ec0de831dd712fbff` dan AI `30847de08944990e467856a7f4e4caa398decd91`.
 
 ## Hasil integrasi

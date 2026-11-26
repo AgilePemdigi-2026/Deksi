@@ -39,7 +39,7 @@ SYSTEM_PROMPT = (
     'Keluarkan HANYA satu objek JSON murni tanpa pagar kode, Markdown, HTML, URL atau tool call. '
     'Field harus tepat summary, meaning, comparison, limitations, factRefs. '
     'summary, meaning, limitations masing-masing maksimal enam ratus karakter; comparison wajib null. '
-    'factRefs wajib tepat ["metrics.pmtb_share","metrics.household_consumption_share"]. '
+    'factRefs wajib tepat daftar referensi metric yang tersedia. '
     'Jangan menambahkan fakta, angka, sumber atau status verifikasi.'
 )
 
@@ -84,10 +84,13 @@ def build_engine_package(packet, *, workflow_simulated):
         if (type(workflow_simulated) is not bool or type(packet) is not dict
                 or set(packet) != {'schemaVersion', 'methodVersion', 'metrics'}
                 or packet['schemaVersion'] != ENGINE_SCHEMA or packet['methodVersion'] != ENGINE_METHOD
-                or type(packet['metrics']) is not dict or set(packet['metrics']) != set(NUMERATORS)):
+                or type(packet['metrics']) is not dict or not packet['metrics']
+                or not set(packet['metrics']).issubset(NUMERATORS)):
+
             raise ValueError
         metrics, shared_period, denominator = {}, None, None
-        for metric_id, numerator in NUMERATORS.items():
+        for metric_id in packet['metrics']:
+            numerator = NUMERATORS[metric_id]
             row = packet['metrics'][metric_id]
             period, day = row['period'], row['observationDate']
             parsed = date.fromisoformat(day)
@@ -146,8 +149,8 @@ def gemini_config(api_key, model):
 def validate_engine_narrative(value, package):
     try:
         refs = value['factRefs']
-        if (type(refs) is not list or len(refs) != 2 or any(type(ref) is not str for ref in refs)
-                or set(refs) != {f'metrics.{key}' for key in NUMERATORS}):
+        if (type(refs) is not list or any(type(ref) is not str for ref in refs)
+                or len(refs) != len(set(refs)) or set(refs) != {f'metrics.{key}' for key in package['metrics']}):
             raise ValueError
         # Reuse the exact existing text rules; only reference identities differ from the YoY pilot.
         validate_narrative({**value, 'factRefs': ['facts.current']}, {'facts': {'comparison': None}})
@@ -173,7 +176,8 @@ def validate_engine_package(package):
                 or package['schemaVersion'] != SCHEMA_VERSION or package['promptVersion'] != PROMPT_VERSION
                 or package['priceBasis'] != 'current_prices' or package['revisionStatus'] != 'unknown'
                 or package['officialVerification'] != 'unassessed' or type(package['workflowStateSimulated']) is not bool
-                or package['limitations'] != LIMITATIONS or set(package['metrics']) != set(NUMERATORS)
+                or package['limitations'] != LIMITATIONS or not package['metrics']
+                or not set(package['metrics']).issubset(NUMERATORS)
                 or package['inputDigest'] != digest({key: value for key, value in package.items() if key != 'inputDigest'})):
             raise ValueError
         day = date.fromisoformat(package['observationDate'])
@@ -181,7 +185,8 @@ def validate_engine_package(package):
                 or day.day != monthrange(day.year, day.month)[1] or package['period'] != f'Q{day.month // 3} {day.year}'):
             raise ValueError
         denominator = None
-        for metric_id, numerator in NUMERATORS.items():
+        for metric_id in package['metrics']:
+            numerator = NUMERATORS[metric_id]
             metric = package['metrics'][metric_id]
             if (set(metric) != {'name', 'value', 'unit', 'classification', 'formula', 'formulaVersion',
                     'methodVersion', 'resultDigest', 'sourceInputDigest', 'inputs'}

@@ -95,6 +95,7 @@ class EngineProviderTests(TestCase):
         self.assertEqual(body['response_format'], {'type': 'json_object'})
         self.assertEqual(body['max_tokens'], 4096)
         self.assertIn('bukan pertumbuhan', body['messages'][0]['content'])
+        self.assertIn('tersedia. Jangan menambahkan', body['messages'][0]['content'])
         self.assertNotIn('YoY membandingkan', body['messages'][0]['content'])
         self.assertEqual(json.loads(body['messages'][1]['content']), package)
         self.assertEqual(json.loads(raw[0])['model'], config.model)

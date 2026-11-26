@@ -166,6 +166,10 @@ LLM_BASE_URL = env.str('LLM_BASE_URL', default='')
 LLM_MODEL = env.str('LLM_MODEL', default='')
 LLM_API_KEY = env.str('LLM_API_KEY', default='')
 DEKSI_AI_TIMEOUT_SECONDS = env.int('DEKSI_AI_TIMEOUT_SECONDS', default=120)
+# Public engine narrative is opt-in and has no default spend/quota.
+DEKSI_PUBLIC_ENGINE_AI_ENABLED = env.bool('DEKSI_PUBLIC_ENGINE_AI_ENABLED', default=False)
+DEKSI_ENGINE_AI_DAILY_LIMIT = env.int('DEKSI_ENGINE_AI_DAILY_LIMIT', default=0)
+DEKSI_PUBLIC_ENGINE_AI_MODEL = env.str('DEKSI_PUBLIC_ENGINE_AI_MODEL', default='')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/

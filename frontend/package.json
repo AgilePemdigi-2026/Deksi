@@ -19,6 +19,8 @@
     "test:ai-narratives": "node --test tests/ai-narratives-client.test.mjs",
     "test:source-trace:browser": "node tests/indicator-browser.test.mjs --source-trace",
     "test:economic-engine": "node --test tests/economic-engine.test.mjs",
+    "test:public-engine-ai": "node --test tests/public-engine-ai.test.mjs",
+    "test:public-engine-ai:browser": "node tests/public-engine-ai.browser.mjs",
     "test:economic-engine:browser": "node tests/economic-engine.browser.mjs",
     "test:browser": "node tests/browser.test.mjs",
     "test:sprint-1": "node --test tests/dashboard-client.test.mjs tests/dashboard-routes.test.mjs tests/auth.test.mjs tests/password-reset.test.mjs tests/recoveryClient.test.mjs tests/indicator-api.test.mjs tests/indicator-data.test.mjs tests/indicator-pages.test.mjs tests/source-trace.test.mjs",
